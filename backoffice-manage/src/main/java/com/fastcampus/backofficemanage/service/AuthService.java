@@ -8,12 +8,15 @@ import com.fastcampus.backofficemanage.entity.Keys;
 import com.fastcampus.backofficemanage.entity.Merchant;
 import com.fastcampus.backofficemanage.repository.MerchantRepository;
 import com.fastcampus.backofficemanage.security.JwtProvider;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +25,8 @@ public class AuthService {
     private final MerchantRepository merchantRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final RedisTemplate<String, String> redisTemplate;
+    private final HttpServletRequest request;
 
     @Transactional
     public MerchantSignUpResponse signup(MerchantSignUpRequest request) {
@@ -75,5 +80,35 @@ public class AuthService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
+    }
+
+    @Transactional
+    public void logout(HttpServletRequest request) {
+        String token = resolveToken(request);
+        long exp = jwtProvider.getRemainingExpiration(token);
+        redisTemplate.opsForValue().set("BL:" + token, "logout", exp, TimeUnit.MILLISECONDS);
+    }
+
+    private String resolveToken(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+        throw new IllegalArgumentException("Authorization header is missing or invalid");
+    }
+
+    @Transactional(readOnly = true)
+    public String reissue(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new IllegalArgumentException("리프레시 토큰이 없습니다.");
+        }
+        if (refreshToken.startsWith("Bearer ")) {
+            refreshToken = refreshToken.substring(7);
+        }
+        if (!jwtProvider.validateToken(refreshToken)) {
+            throw new IllegalArgumentException("유효하지 않은 리프레시 토큰입니다.");
+        }
+        String loginId = jwtProvider.getSubject(refreshToken);
+        return jwtProvider.generateAccessToken(loginId);
     }
 }

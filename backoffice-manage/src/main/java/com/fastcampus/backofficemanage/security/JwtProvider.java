@@ -7,10 +7,12 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import lombok.extern.slf4j.Slf4j;
 
 import java.security.Key;
 import java.util.Date;
 
+@Slf4j
 @Component
 public class JwtProvider {
 
@@ -30,6 +32,7 @@ public class JwtProvider {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             return true;
         } catch (Exception e) {
+            log.warn("JWT 검증 실패: {}", e.getMessage());
             return false;
         }
     }
@@ -61,5 +64,16 @@ public class JwtProvider {
                 .setExpiration(new Date(now + validity))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    public long getRemainingExpiration(String accessToken) {
+        Date expiration = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(accessToken)
+                .getBody()
+                .getExpiration();
+
+        return expiration.getTime() - System.currentTimeMillis();
     }
 }

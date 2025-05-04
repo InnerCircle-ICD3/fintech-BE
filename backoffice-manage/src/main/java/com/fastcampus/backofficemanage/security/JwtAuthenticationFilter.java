@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -15,9 +16,11 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
+    private final RedisTemplate<String, String> redisTemplate;
 
-    public JwtAuthenticationFilter(JwtProvider jwtProvider) {
+    public JwtAuthenticationFilter(JwtProvider jwtProvider, RedisTemplate<String, String> redisTemplate) {
         this.jwtProvider = jwtProvider;
+        this.redisTemplate = redisTemplate;
     }
 
     @Override
@@ -29,6 +32,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
+
+            // ✅ 로그아웃된 토큰 여부 확인
+            if (Boolean.TRUE.equals(redisTemplate.hasKey("BL:" + token))) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
+
+            // ✅ JWT 유효성 확인
             if (jwtProvider.validateToken(token)) {
                 String loginId = jwtProvider.getSubject(token);
                 UsernamePasswordAuthenticationToken authentication =

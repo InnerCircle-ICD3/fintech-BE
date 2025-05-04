@@ -9,6 +9,10 @@ import com.fastcampus.backofficemanage.dto.signup.response.MerchantSignUpRespons
 import com.fastcampus.backofficemanage.dto.update.request.MerchantUpdateRequest;
 import com.fastcampus.backofficemanage.service.AuthService;
 import com.fastcampus.backofficemanage.service.MerchantService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -35,24 +39,46 @@ public class MerchantController {
 
     @GetMapping("/info")
     public ResponseEntity<MerchantInfoResponse> getInfo() {
-        String loginId = getLoginId();
-        return ResponseEntity.ok(merchantService.getMyInfo(loginId));
+        return ResponseEntity.ok(merchantService.getMyInfo(getLoginId()));
     }
 
     @PutMapping("/modify")
     public ResponseEntity<CommonResponse> updateInfo(@RequestBody MerchantUpdateRequest request) {
-        String loginId = getLoginId();
-        return ResponseEntity.ok(merchantService.updateMyInfo(loginId, request));
+        return ResponseEntity.ok(merchantService.updateMyInfo(getLoginId(), request));
     }
 
     @DeleteMapping("/delete")
     public ResponseEntity<CommonResponse> delete() {
-        String loginId = getLoginId();
-        return ResponseEntity.ok(merchantService.deleteMyAccount(loginId));
+        return ResponseEntity.ok(merchantService.deleteMyAccount(getLoginId()));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<CommonResponse> logout(HttpServletRequest request) {
+        authService.logout(request);
+        return ResponseEntity.ok(CommonResponse.builder()
+                .success(true)
+                .message("로그아웃 완료")
+                .build());
+    }
+
+    @Operation(summary = "리프레시 토큰을 이용한 액세스 토큰 재발급")
+    @SecurityRequirement(name = "refreshAuth")
+    @PostMapping("/reissue")
+    public ResponseEntity<MerchantLoginResponse> reissue(
+            HttpServletRequest request,
+            @Parameter(hidden = true) @RequestHeader(value = "Refresh-Token", required = false) String ignored) {
+
+        String refreshToken = request.getHeader("Refresh-Token");
+        String newAccessToken = authService.reissue(refreshToken);
+
+        return ResponseEntity.ok(MerchantLoginResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(refreshToken)
+                .build());
     }
 
     private String getLoginId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication.getPrincipal().toString();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth.getPrincipal().toString();
     }
 }

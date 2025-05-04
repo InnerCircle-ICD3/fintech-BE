@@ -2,14 +2,14 @@ package com.fastcampus.backofficemanage.dto.signup.request;
 
 import com.fastcampus.backofficemanage.dto.signup.SignupRequest;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class MerchantSignUpRequest extends SignupRequest {
 
     private String name;
