@@ -23,8 +23,8 @@ public class GlobalExceptionHandler {
             IllegalArgumentException e, HttpServletRequest request) {
         log.warn("IllegalArgumentException at {}: {}", request.getRequestURI(), e.getMessage());
         return ResponseEntity
-                .status(ErrorCode.INVALID_REQUEST.getStatus())
-                .body(new ErrorResponse(ErrorCode.INVALID_REQUEST.name(), e.getMessage()));
+                .status(CommonErrorCode.INVALID_REQUEST.getStatus())
+                .body(new ErrorResponse(CommonErrorCode.INVALID_REQUEST.name(), e.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
             Exception e, HttpServletRequest request) {
         log.error("Unhandled exception at {}: {}", request.getRequestURI(), e.getMessage(), e);
         return ResponseEntity
-                .status(ErrorCode.INTERNAL_ERROR.getStatus())
-                .body(new ErrorResponse(ErrorCode.INTERNAL_ERROR.name(), ErrorCode.INTERNAL_ERROR.getMessage()));
+                .status(CommonErrorCode.INTERNAL_ERROR.getStatus())
+                .body(new ErrorResponse(CommonErrorCode.INTERNAL_ERROR.name(), CommonErrorCode.INTERNAL_ERROR.getMessage()));
     }
 }
