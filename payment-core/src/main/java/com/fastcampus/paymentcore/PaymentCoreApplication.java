@@ -8,6 +8,7 @@ public class PaymentCoreApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(PaymentCoreApplication.class, args);
+		System.out.println("args = " + args);
 	}
 
 }
