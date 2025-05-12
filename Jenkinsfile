@@ -1,30 +1,64 @@
 pipeline {
     agent any
     
-    environment {
-        GIT_BRANCH = "${env.BRANCH_NAME}"
-        DOCKER_REGISTRY = "your-registry-url"
-        KUBE_NAMESPACE = "${env.BRANCH_NAME == 'main' ? 'production' : 'development'}"
+    parameters {
+        choice(name: 'BUILD_MODE', choices: ['all', 'only_changed'], description: '모든 모듈을 빌드하려면 all, 변경된 모듈만 빌드하려면 only_changed를 선택하세요.')
+        choice(name: 'MODULE', choices: ['all', 'payment-api', 'backoffice-api', 'backoffice-manage'], description: 'only_changed를 선택한 경우 무시됩니다. all을 선택하면 모든 모듈이 빌드됩니다.')
     }
     
+    environment {
+        GIT_BRANCH = "${env.BRANCH_NAME}"
+        DOCKER_REGISTRY = "nullplusnull"
+        TIMESTAMP = sh(script: 'date +%Y%m%d-%H%M%S', returnStdout: true).trim()
+    }
+
+    // BUILD_MODE 파라미터로 'all' 또는 'only_changed' 선택 가능
+    
     stages {
-        stage('변경 감지') {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('DockerHub Login') {
+            steps {
+                withCredentials([string(credentialsId: 'dockerhub-password', variable: 'DOCKERHUB_PASS')]) {
+                    sh 'echo $DOCKERHUB_PASS | docker login -u nullplusnull --password-stdin'
+                }
+            }
+        }
+        
+        stage('모듈 결정') {
             steps {
                 script {
-                    // 변경된 모듈 감지
-                    def changedModules = sh(
-                        script: "git diff --name-only ${GIT_COMMIT}~1 ${GIT_COMMIT} | grep -E '^(payment-api|backoffice-api|backoffice-manage)/' | cut -d'/' -f1 | sort | uniq",
-                        returnStdout: true
-                    ).trim().split("\n")
-                    
-                    // 공통 모듈 변경 감지
-                    def commonChanged = sh(
-                        script: "git diff --name-only ${GIT_COMMIT}~1 ${GIT_COMMIT} | grep -E '^(common|payment-core|payment-infra)/'",
-                        returnStatus: true
-                    ) == 0
-                    
-                    env.CHANGED_MODULES = changedModules.join(',')
-                    env.COMMON_CHANGED = commonChanged.toString()
+                    if (params.BUILD_MODE == 'all') {
+                        if (params.MODULE == 'all') {
+                            env.MODULES_TO_BUILD = 'payment-api,backoffice-api,backoffice-manage'
+                        } else {
+                            env.MODULES_TO_BUILD = params.MODULE
+                        }
+                    } else {
+                        // 변경된 모듈 감지
+                        def changedModules = sh(
+                            script: "git diff --name-only ${GIT_COMMIT}~1 ${GIT_COMMIT} | grep -E '^(payment-api|backoffice-api|backoffice-manage)' | cut -d'/' -f1 | sort | uniq",
+                            returnStdout: true
+                        ).trim()
+                        
+                        // 공통 모듈 변경 감지
+                        def commonChanged = sh(
+                            script: "git diff --name-only ${GIT_COMMIT}~1 ${GIT_COMMIT} | grep -E '^(common|payment-core|payment-infra)'",
+                            returnStatus: true
+                        ) == 0
+                        
+                        if (commonChanged || changedModules == '') {
+                            env.MODULES_TO_BUILD = 'payment-api,backoffice-api,backoffice-manage'
+                            echo "공통 모듈 변경 또는 변경 감지 안됨 - 모든 모듈 빌드"
+                        } else {
+                            env.MODULES_TO_BUILD = changedModules.replaceAll('\n', ',')
+                            echo "변경된 모듈만 빌드: ${env.MODULES_TO_BUILD}"
+                        }
+                    }
                 }
             }
         }
@@ -32,42 +66,21 @@ pipeline {
         stage('모듈별 빌드 및 배포') {
             steps {
                 script {
-                    def modulesToBuild = []
+                    def moduleList = env.MODULES_TO_BUILD.split(',')
                     
-                    // 공통 모듈이 변경되었으면 모든 API 모듈 빌드
-                    if (env.COMMON_CHANGED == 'true') {
-                        modulesToBuild = ['payment-api', 'backoffice-api', 'backoffice-manage']
-                    } else {
-                        modulesToBuild = env.CHANGED_MODULES.split(',')
-                    }
-                    
-                    // 각 모듈 빌드 및 배포
-                    for (module in modulesToBuild) {
+                    for (module in moduleList) {
                         if (module?.trim()) {
                             stage("${module} 빌드") {
                                 sh "gradle clean ${module}:build -x test"
                             }
                             
                             stage("${module} 도커 이미지 빌드") {
-                                sh "docker build -t ${DOCKER_REGISTRY}/${module}:${GIT_COMMIT} --build-arg MODULE=${module} ."
-                                sh "docker push ${DOCKER_REGISTRY}/${module}:${GIT_COMMIT}"
-                                
-                                // 브랜치별 태그 추가
-                                if (env.GIT_BRANCH == 'main') {
-                                    sh "docker tag ${DOCKER_REGISTRY}/${module}:${GIT_COMMIT} ${DOCKER_REGISTRY}/${module}:production"
-                                    sh "docker push ${DOCKER_REGISTRY}/${module}:production"
-                                } else if (env.GIT_BRANCH == 'test') {
-                                    sh "docker tag ${DOCKER_REGISTRY}/${module}:${GIT_COMMIT} ${DOCKER_REGISTRY}/${module}:test"
-                                    sh "docker push ${DOCKER_REGISTRY}/${module}:test"
-                                }
+                                sh "docker build -t ${DOCKER_REGISTRY}/${module}:${TIMESTAMP} --build-arg MODULE=${module} ."
+                                sh "docker push ${DOCKER_REGISTRY}/${module}:${TIMESTAMP}"
                             }
                             
                             stage("${module} 쿠버네티스 배포") {
-                                // 해당 모듈의 k8s 배포 파일 업데이트
-                                sh "sed -i 's|image: ${DOCKER_REGISTRY}/${module}:.*|image: ${DOCKER_REGISTRY}/${module}:${GIT_COMMIT}|' k8s/${module}-deployment.yaml"
-                                
-                                // 쿠버네티스에 배포
-                                sh "kubectl apply -f k8s/${module}-deployment.yaml -n ${KUBE_NAMESPACE}"
+                                sh "kubectl set image deployment/${module} ${module}=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n default"
                             }
                         }
                     }
@@ -78,7 +91,7 @@ pipeline {
     
     post {
         success {
-            echo "빌드 및 배포 성공: ${env.CHANGED_MODULES}"
+            echo "빌드 및 배포 성공: ${env.MODULES_TO_BUILD}"
         }
         failure {
             echo "빌드 및 배포 실패"
