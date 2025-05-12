@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backoffice-api
+  labels:
+    app: backoffice-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backoffice-api
+  template:
+    metadata:
+      labels:
+        app: backoffice-api
+    spec:
+      containers:
+      - name: backoffice-api
+        image: your-registry-url/backoffice-api:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "prod"
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backoffice-api-service
+spec:
+  selector:
+    app: backoffice-api
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: ClusterIP 
