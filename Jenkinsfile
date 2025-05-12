@@ -71,8 +71,13 @@ pipeline {
                     for (module in moduleList) {
                         if (module?.trim()) {
                             stage("${module} 빌드 및 배포") {
-                                // 도커 빌드에서 gradle 빌드까지 수행
-                                sh "docker build -t ${DOCKER_REGISTRY}/${module}:${TIMESTAMP} --build-arg MODULE=${module} ."
+                                // Dockerfile에서 정확한 JAR 파일을 찾도록 스크립트로 실행
+                                sh """
+                                    docker build -t ${DOCKER_REGISTRY}/${module}:${TIMESTAMP} \\
+                                    --build-arg MODULE=${module} \\
+                                    --build-arg JAR_FILE=\$(find ${module}/build/libs/ -name '*.jar' | head -1) \\
+                                    .
+                                """
                                 sh "docker push ${DOCKER_REGISTRY}/${module}:${TIMESTAMP}"
                                 
                                 // 쿠버네티스 배포
