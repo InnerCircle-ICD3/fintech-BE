@@ -70,17 +70,12 @@ pipeline {
                     
                     for (module in moduleList) {
                         if (module?.trim()) {
-                            stage("${module} 빌드") {
-                                sh "chmod +x ./gradlew"
-                                sh "./gradlew clean ${module}:build -x test"
-                            }
-                            
-                            stage("${module} 도커 이미지 빌드") {
+                            stage("${module} 빌드 및 배포") {
+                                // 도커 빌드에서 gradle 빌드까지 수행
                                 sh "docker build -t ${DOCKER_REGISTRY}/${module}:${TIMESTAMP} --build-arg MODULE=${module} ."
                                 sh "docker push ${DOCKER_REGISTRY}/${module}:${TIMESTAMP}"
-                            }
-                            
-                            stage("${module} 쿠버네티스 배포") {
+                                
+                                // 쿠버네티스 배포
                                 sh "kubectl set image deployment/${module} ${module}=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n default"
                             }
                         }
