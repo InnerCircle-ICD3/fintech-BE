@@ -1,4 +1,4 @@
-package com.fastcampus.paymentapi.dto;
+package com.fastcampus.paymentapi.sdk.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

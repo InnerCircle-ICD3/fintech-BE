@@ -1,6 +1,6 @@
-package com.fastcampus.paymentapi.repository;
+package com.fastcampus.paymentapi.sdk.repository;
 
-import com.fastcampus.paymentapi.entity.SdkKey;
+import com.fastcampus.paymentapi.sdk.entity.SdkKey;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
