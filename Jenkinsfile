@@ -82,10 +82,20 @@ pipeline {
                                 
                                 // 쿠버네티스 배포
                                 stage("${module} 배포") {
-                                    // k8s 디렉토리에 있는 YAML 파일을 사용
-                                    //sh "kubectl apply -f k8s/${module}-deployment.yaml -n default"
-                                    // 이미지 업데이트
-                                    sh "kubectl set image deployment/${module} ${module}=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n default"
+                                    // 디플로이먼트 존재 여부 확인
+                                    def deploymentExists = sh(
+                                        script: "kubectl get deployment ${module} -n default 2>/dev/null || echo 'NOT_FOUND'",
+                                        returnStdout: true
+                                    ).trim()
+                                    
+                                    if (deploymentExists.contains('NOT_FOUND')) {
+                                        // 디플로이먼트가 없으면 생성
+                                        sh "kubectl create deployment ${module} --image=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n default"
+                                        sh "kubectl expose deployment ${module} --port=8080 --target-port=8080 --type=ClusterIP -n default || true"
+                                    } else {
+                                        // 있으면 이미지만 업데이트
+                                        sh "kubectl set image deployment/${module} ${module}=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n default"
+                                    }
                                 }
                             }
                         }
