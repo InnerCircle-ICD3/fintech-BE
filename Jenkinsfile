@@ -71,6 +71,7 @@ pipeline {
                     for (module in moduleList) {
                         if (module?.trim()) {
                             stage("${module} 빌드") {
+                                sh "chmod +x ./gradlew"
                                 sh "gradle clean ${module}:build -x test"
                             }
                             
