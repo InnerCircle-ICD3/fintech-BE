@@ -72,7 +72,7 @@ pipeline {
                         if (module?.trim()) {
                             stage("${module} 빌드") {
                                 sh "chmod +x ./gradlew"
-                                sh "gradle clean ${module}:build -x test"
+                                sh "./gradlew clean ${module}:build -x test"
                             }
                             
                             stage("${module} 도커 이미지 빌드") {
