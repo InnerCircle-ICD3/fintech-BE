@@ -16,7 +16,8 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 ARG MODULE=payment-api
-COPY --from=builder /app/${MODULE}/build/libs/*.jar /app/app.jar
+COPY --from=builder /app/${MODULE}/build/libs/*.jar /app/
+RUN mv /app/*.jar /app/app.jar
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
