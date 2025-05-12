@@ -83,9 +83,9 @@ pipeline {
                                 // 쿠버네티스 배포
                                 stage("${module} 배포") {
                                     // k8s 디렉토리에 있는 YAML 파일을 사용
-                                    sh "kubectl apply -f k8s/${module}-deployment.yaml -n default"
+                                    //sh "kubectl apply -f k8s/${module}-deployment.yaml -n default"
                                     // 이미지 업데이트
-                                    //sh "kubectl set image deployment/${module} ${module}=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n default"
+                                    sh "kubectl set image deployment/${module} ${module}=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n default"
                                 }
                             }
                         }
