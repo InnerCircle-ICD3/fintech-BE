@@ -2,9 +2,7 @@
 FROM gradle:8.5-jdk21-alpine as builder
 WORKDIR /app
 
-# 의존성 캐싱을 위해 빌드 스크립트만 먼저 복사
-COPY settings.gradle build.gradle ./
-# 소스 복사
+# 전체 소스 복사
 COPY . .
 
 # 모듈 지정하여 빌드
@@ -16,8 +14,8 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 ARG MODULE=payment-api
-COPY --from=builder /app/${MODULE}/build/libs/*.jar /app/
-RUN mv /app/*.jar /app/app.jar
+# 명확한 파일명 패턴 사용
+COPY --from=builder /app/${MODULE}/build/libs/${MODULE}-0.0.1-SNAPSHOT.jar /app/app.jar
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
