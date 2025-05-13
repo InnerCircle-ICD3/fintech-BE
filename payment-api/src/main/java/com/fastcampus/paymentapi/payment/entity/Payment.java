@@ -16,26 +16,29 @@ public class Payment {
     private Long id;
 
     private String sdkKey;
-
+    private LocalDateTime expiresAt;
     private Long merchantId;
     private Long merchantOrderId;
     private Long amount;
 
-    private String qrUrl;
+    @Column(unique = true, nullable = false)
+    private String qrToken;
 
     private LocalDateTime requestedAt;
 
     @Enumerated(EnumType.STRING)
     private PaymentStatus status;
 
-    public Payment(String sdkKey, Long merchantId, Long merchantOrderId, Long amount, String qrUrl) {
+    public Payment(String sdkKey, Long merchantId, Long merchantOrderId, Long amount,
+                   String qrToken, LocalDateTime expiresAt, LocalDateTime requestedAt) {
         this.sdkKey = sdkKey;
         this.merchantId = merchantId;
         this.merchantOrderId = merchantOrderId;
         this.amount = amount;
-        this.qrUrl = qrUrl;
-        this.requestedAt = LocalDateTime.now();
-        this.status = PaymentStatus.READY; // ✅ 초기 상태는 READY
+        this.qrToken = qrToken;
+        this.expiresAt = expiresAt;
+        this.requestedAt = requestedAt;
+        this.status = PaymentStatus.READY;
     }
 
     public void complete() {

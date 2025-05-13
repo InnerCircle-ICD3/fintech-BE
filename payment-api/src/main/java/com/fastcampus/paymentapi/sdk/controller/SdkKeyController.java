@@ -1,6 +1,6 @@
 package com.fastcampus.paymentapi.sdk.controller;
 
-import com.fastcampus.common.exception.BaseException;
+import com.fastcampus.common.exception.HttpException;
 import com.fastcampus.common.exception.SdkErrorCode;
 import com.fastcampus.paymentapi.sdk.dto.SdkCheckRequest;
 import com.fastcampus.paymentapi.sdk.dto.SdkCheckResponse;
@@ -34,7 +34,7 @@ public class SdkKeyController {
     @PostMapping("/check")
     public ResponseEntity<SdkCheckResponse> checkSdkKey(@RequestBody SdkCheckRequest request) {
         if (request.getSdkKey() == null || request.getSdkKey().isBlank()) {
-            throw new BaseException(SdkErrorCode.INVALID_SDK_KEY); // ❗ 400 Bad Request → 더 명확한 예외로 변경
+            throw new HttpException(SdkErrorCode.INVALID_SDK_KEY); // ❗ 400 Bad Request → 더 명확한 예외로 변경
         }
 
         SdkCheckResponse response = sdkKeyService.checkSdkKey(request.getSdkKey());

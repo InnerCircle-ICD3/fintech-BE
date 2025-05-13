@@ -9,10 +9,10 @@ import org.springframework.web.bind.annotation.*;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(BaseException.class)
-    public ResponseEntity<ErrorResponse> handleBaseException(
-            BaseException e, HttpServletRequest request) {
-        log.warn("BaseException at {}: {}", request.getRequestURI(), e.getMessage());
+    @ExceptionHandler(HttpException.class)
+    public ResponseEntity<ErrorResponse> handleHttpException(
+            HttpException e, HttpServletRequest request) {
+        log.warn("HttpException at {}: {}", request.getRequestURI(), e.getMessage());
         return ResponseEntity
                 .status(e.getErrorCode().getStatus())
                 .body(new ErrorResponse(e.getErrorCode().name(), e.getMessage()));

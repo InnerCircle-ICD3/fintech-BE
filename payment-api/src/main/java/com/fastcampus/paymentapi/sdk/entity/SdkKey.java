@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Getter
@@ -24,11 +23,11 @@ public class SdkKey {
     private LocalDateTime issuedAt;
     private LocalDateTime expiresAt;
 
-    public SdkKey(Long merchantId, String sdkKey, String secretKey, LocalDateTime expiresAt) {
+    public SdkKey(Long merchantId, String sdkKey, String secretKey, LocalDateTime issuedAt, LocalDateTime expiresAt) {
         this.merchantId = merchantId;
         this.sdkKey = sdkKey;
         this.secretKey = secretKey;
-        this.issuedAt = LocalDateTime.now();
+        this.issuedAt = issuedAt;
         this.expiresAt = expiresAt;
     }
 }

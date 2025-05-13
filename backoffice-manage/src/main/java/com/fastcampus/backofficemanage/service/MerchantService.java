@@ -5,15 +5,19 @@ import com.fastcampus.backofficemanage.dto.update.request.MerchantUpdateRequest;
 import com.fastcampus.backofficemanage.dto.common.CommonResponse;
 import com.fastcampus.backofficemanage.entity.Merchant;
 import com.fastcampus.backofficemanage.repository.MerchantRepository;
+import com.fastcampus.common.util.AppClock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
 public class MerchantService {
 
     private final MerchantRepository merchantRepository;
+    private final AppClock appClock;
 
     @Transactional(readOnly = true)
     public MerchantInfoResponse getMyInfo(String loginId) {
@@ -42,6 +46,7 @@ public class MerchantService {
                 request.getContactEmail(),
                 request.getContactPhone()
         );
+        merchant.setUpdatedAt(LocalDateTime.now(appClock.getClock()));
 
         return CommonResponse.builder()
                 .success(true)
@@ -55,6 +60,7 @@ public class MerchantService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 가맹점입니다."));
 
         merchant.setStatus("DELETED");
+        merchant.setUpdatedAt(LocalDateTime.now(appClock.getClock()));
 
         return CommonResponse.builder()
                 .success(true)
