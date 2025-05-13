@@ -17,13 +17,13 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
+//            .formLogin(form -> form.disable())  // 기본 로그인 페이지 비활성화
+//            .httpBasic(basic -> basic.disable())  // HTTP Basic 인증 비활성화
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/merchants/api-keys/**").permitAll()
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()  // 모든 요청 허용
             );
-        
+
         return http.build();
     }
 
@@ -31,4 +31,4 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-} 
+}

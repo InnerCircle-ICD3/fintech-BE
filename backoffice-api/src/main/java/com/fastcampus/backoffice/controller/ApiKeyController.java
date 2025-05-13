@@ -27,18 +27,9 @@ public class ApiKeyController {
     @Operation(summary = "Reissue API key for merchant")
     public ResponseEntity<ApiKeyDto> reissueApiKey(
         @PathVariable Long merchantId,
-        @RequestParam String oldKey
-    ) {
-        return ResponseEntity.ok(apiKeyService.reissueApiKey(merchantId, oldKey));
-    }
-
-    @PostMapping("/{merchantId}/renew")
-    @Operation(summary = "Renew API key expiration for merchant")
-    public ResponseEntity<ApiKeyDto> renewApiKey(
-        @PathVariable Long merchantId,
         @RequestParam String currentKey
     ) {
-        return ResponseEntity.ok(apiKeyService.renewApiKey(merchantId, currentKey));
+        return ResponseEntity.ok(apiKeyService.reissueApiKey(merchantId, currentKey));
     }
 
     @GetMapping("/{merchantId}")

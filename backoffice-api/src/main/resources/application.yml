@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/fintech_backoffice
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://localhost:5432/testdb
+    username: testuser
+    password: testpass
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:

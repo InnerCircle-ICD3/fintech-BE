@@ -8,18 +8,17 @@ import com.fastcampus.backoffice.repository.MerchantRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.Key;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,41 +28,27 @@ public class ApiKeyService {
     private final MerchantRepository merchantRepository;
 
     @Value("${jwt.secret}")
-    private String base64Secret;
+    private String jwtSecret;
 
-    private Key key;
-
-    @PostConstruct
-    public void init() {
-        this.key = Keys.hmacShaKeyFor(base64Secret.getBytes());
-    }
-
-    private static final long API_KEY_EXPIRATION_TIME = 365L * 24 * 60 * 60 * 1000; // 1 year in milliseconds
-
-    private String generateToken(String merchantId) {
-        Date now = new Date();
-        Date expiration = new Date(now.getTime() + API_KEY_EXPIRATION_TIME);
-
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("merchantId", merchantId);
-        claims.put("type", "API_KEY");
-
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(merchantId)
-                .setIssuedAt(now)
-                .setExpiration(expiration)
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
-    }
+    @Value("${jwt.expiration}")
+    private Long jwtExpiration;
 
     @Transactional
     public ApiKeyDto generateApiKey(Long merchantId) {
         Merchant merchant = merchantRepository.findById(merchantId)
             .orElseThrow(() -> new RuntimeException("Merchant not found"));
 
-        String token = generateToken(merchantId.toString());
+        // JWT 토큰 생성
+        SecretKey key = Keys.hmacShaKeyFor(Base64.getDecoder().decode(jwtSecret));
+        String token = Jwts.builder()
+            .setSubject(merchantId.toString())
+            .claim("merchantName", merchant.getName())
+            .setIssuedAt(new Date())
+            .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
+            .signWith(key)
+            .compact();
 
+        // API 키 저장
         ApiKey apiKey = new ApiKey();
         apiKey.setMerchant(merchant);
         apiKey.setKey(token);
@@ -93,33 +78,6 @@ public class ApiKeyService {
         return generateApiKey(merchantId);
     }
 
-    @Transactional
-    public ApiKeyDto renewApiKey(Long merchantId, String currentKey) {
-        // 현재 API 키 찾기
-        ApiKey currentApiKey = apiKeyRepository.findByKey(currentKey)
-            .orElseThrow(() -> new RuntimeException("API Key not found"));
-
-        // 가맹점 ID 검증
-        if (!currentApiKey.getMerchant().getId().equals(merchantId)) {
-            throw new RuntimeException("Invalid merchant ID for this API key");
-        }
-
-        // 현재 API 키가 활성 상태인지 확인
-        if (!currentApiKey.isActive()) {
-            throw new RuntimeException("API Key is not active");
-        }
-
-        // 새로운 JWT 토큰 생성
-        String newToken = generateToken(merchantId.toString());
-        
-        // API 키 업데이트
-        currentApiKey.setKey(newToken);
-        currentApiKey.setExpiredAt(LocalDateTime.now().plusYears(1));
-        ApiKey renewedApiKey = apiKeyRepository.save(currentApiKey);
-        
-        return convertToDto(renewedApiKey);
-    }
-
     @Transactional(readOnly = true)
     public List<ApiKeyDto> getApiKeys(Long merchantId) {
         return apiKeyRepository.findByMerchantId(merchantId).stream()
@@ -140,7 +98,6 @@ public class ApiKeyService {
         dto.setId(apiKey.getId());
         dto.setKey(apiKey.getKey());
         dto.setActive(apiKey.isActive());
-        dto.setCreatedAt(apiKey.getCreatedAt());
         dto.setExpiredAt(apiKey.getExpiredAt());
         return dto;
     }
