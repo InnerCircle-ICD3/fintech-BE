@@ -5,6 +5,6 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class QrImageResponse {
-    private String qrImage;
+public class QrUrlResponse {
+    private String qrUrl;
 }
