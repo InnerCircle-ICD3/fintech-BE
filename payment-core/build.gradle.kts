@@ -25,15 +25,13 @@ repositories {
 
 dependencies {
 	//
-	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-	implementation("org.springframework.boot:spring-boot-starter-web")
-
-	//
-	runtimeOnly("com.h2database:h2")	// TODO - DB 연결될 때까지만 사용
-
 	// lombok
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
+
+	// modules
+	implementation(project(":payment-infra"))
+	implementation(project(":common"))
 
 	// test
 	testImplementation("org.springframework.boot:spring-boot-starter-test")

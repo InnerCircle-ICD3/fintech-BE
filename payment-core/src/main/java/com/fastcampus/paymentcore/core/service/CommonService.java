@@ -1,4 +1,4 @@
 package com.fastcampus.paymentcore.core.service;
 
-public class CommonService {
+public interface CommonService {
 }
