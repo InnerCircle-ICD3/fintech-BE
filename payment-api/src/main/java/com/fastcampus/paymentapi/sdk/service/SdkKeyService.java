@@ -1,7 +1,7 @@
 package com.fastcampus.paymentapi.sdk.service;
 
 import com.fastcampus.common.exception.HttpException;
-import com.fastcampus.common.exception.SdkErrorCode;
+import com.fastcampus.common.exception.customerror.SdkErrorCode;
 import com.fastcampus.common.util.AppClock;
 import com.fastcampus.paymentapi.sdk.dto.SdkCheckResponse;
 import com.fastcampus.paymentapi.sdk.dto.SdkIssueResponse;

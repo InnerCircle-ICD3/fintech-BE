@@ -1,5 +1,7 @@
 package com.fastcampus.common.exception;
 
+import com.fastcampus.common.exception.customerror.CommonErrorCode;
+import com.fastcampus.common.exception.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

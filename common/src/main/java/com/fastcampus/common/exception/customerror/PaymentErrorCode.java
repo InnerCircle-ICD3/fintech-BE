@@ -1,5 +1,6 @@
-package com.fastcampus.common.exception;
+package com.fastcampus.common.exception.customerror;
 
+import com.fastcampus.common.exception.ErrorCode;
 import org.springframework.http.HttpStatus;
 
 public enum PaymentErrorCode implements ErrorCode {

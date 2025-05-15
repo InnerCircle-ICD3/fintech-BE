@@ -1,7 +1,7 @@
 package com.fastcampus.paymentapi.payment.service;
 
 import com.fastcampus.common.exception.HttpException;
-import com.fastcampus.common.exception.PaymentErrorCode;
+import com.fastcampus.common.exception.customerror.PaymentErrorCode;
 import com.fastcampus.paymentapi.payment.dto.PaymentRequest;
 import com.fastcampus.paymentapi.payment.dto.QrVerificationResponse;
 import com.fastcampus.paymentapi.payment.entity.Payment;

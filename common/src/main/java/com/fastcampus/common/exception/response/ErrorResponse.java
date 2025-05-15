@@ -1,4 +1,4 @@
-package com.fastcampus.common.exception;
+package com.fastcampus.common.exception.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -3,7 +3,7 @@ package com.fastcampus.backofficemanage;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@SpringBootApplication(scanBasePackages = "com.fastcampus")
+@SpringBootApplication
 public class BackofficeManageApplication {
 
     public static void main(String[] args) {

@@ -1,12 +1,14 @@
 package com.fastcampus.backofficemanage.service;
 
+import com.fastcampus.backofficemanage.dto.common.CommonResponse;
 import com.fastcampus.backofficemanage.dto.info.MerchantInfoResponse;
 import com.fastcampus.backofficemanage.dto.update.request.MerchantUpdateRequest;
-import com.fastcampus.backofficemanage.dto.common.CommonResponse;
 import com.fastcampus.backofficemanage.entity.Merchant;
 import com.fastcampus.backofficemanage.repository.MerchantRepository;
+import com.fastcampus.common.exception.customerror.MerchantDuplicateKeyException;
 import com.fastcampus.common.util.AppClock;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,7 +19,6 @@ import java.time.LocalDateTime;
 public class MerchantService {
 
     private final MerchantRepository merchantRepository;
-    private final AppClock appClock;
 
     @Transactional(readOnly = true)
     public MerchantInfoResponse getMyInfo(String loginId) {
@@ -46,7 +47,13 @@ public class MerchantService {
                 request.getContactEmail(),
                 request.getContactPhone()
         );
-        merchant.setUpdatedAt(LocalDateTime.now(appClock.getClock()));
+        merchant.setUpdatedAt(LocalDateTime.now(AppClock.CLOCK));
+
+        try {
+            merchantRepository.flush(); // unique 제약조건 위반 감지용
+        } catch (DataIntegrityViolationException e) {
+            throw MerchantDuplicateKeyException.forBusinessNumber(); // or forLoginId() 등 상황에 맞게
+        }
 
         return CommonResponse.builder()
                 .success(true)
@@ -60,7 +67,7 @@ public class MerchantService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 가맹점입니다."));
 
         merchant.setStatus("DELETED");
-        merchant.setUpdatedAt(LocalDateTime.now(appClock.getClock()));
+        merchant.setUpdatedAt(LocalDateTime.now(AppClock.CLOCK));
 
         return CommonResponse.builder()
                 .success(true)
