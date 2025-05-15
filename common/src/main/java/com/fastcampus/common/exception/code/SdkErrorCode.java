@@ -1,6 +1,6 @@
-package com.fastcampus.common.exception.customerror;
+package com.fastcampus.common.exception.code;
 
-import com.fastcampus.common.exception.ErrorCode;
+import com.fastcampus.common.exception.base.ErrorCode;
 import org.springframework.http.HttpStatus;
 
 public enum SdkErrorCode implements ErrorCode {

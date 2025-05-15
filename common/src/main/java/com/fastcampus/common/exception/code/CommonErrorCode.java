@@ -1,6 +1,6 @@
-package com.fastcampus.common.exception.customerror;
+package com.fastcampus.common.exception.code;
 
-import com.fastcampus.common.exception.ErrorCode;
+import com.fastcampus.common.exception.base.ErrorCode;
 import org.springframework.http.HttpStatus;
 
 public enum CommonErrorCode implements ErrorCode {
@@ -20,7 +20,10 @@ public enum CommonErrorCode implements ErrorCode {
 
     // ✅ 데이터 처리
     DATA_NOT_FOUND(HttpStatus.NOT_FOUND, "요청한 데이터를 찾을 수 없습니다."),
-    DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "이미 존재하는 리소스입니다.");
+    DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "이미 존재하는 리소스입니다."),
+
+    // ✅ 유효성 검사
+    VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "입력값이 유효하지 않습니다.");
 
     private final HttpStatus status;
     private final String message;

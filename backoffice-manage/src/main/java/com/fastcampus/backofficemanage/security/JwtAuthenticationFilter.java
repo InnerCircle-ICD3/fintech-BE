@@ -13,6 +13,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
+import static com.fastcampus.common.constant.RedisKeys.BLOCKLIST_PREFIX;
+
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
@@ -34,7 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = authHeader.substring(7);
 
             // ✅ 로그아웃된 토큰 여부 확인
-            if (Boolean.TRUE.equals(redisTemplate.hasKey("BL:" + token))) {
+            if (Boolean.TRUE.equals(redisTemplate.hasKey(BLOCKLIST_PREFIX + token))) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }

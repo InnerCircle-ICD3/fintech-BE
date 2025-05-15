@@ -8,6 +8,10 @@ import com.fastcampus.backofficemanage.entity.Keys;
 import com.fastcampus.backofficemanage.entity.Merchant;
 import com.fastcampus.backofficemanage.repository.MerchantRepository;
 import com.fastcampus.backofficemanage.security.JwtProvider;
+import com.fastcampus.common.exception.code.AuthErrorCode;
+import com.fastcampus.common.exception.exception.DuplicateKeyException;
+import com.fastcampus.common.exception.exception.NotFoundException;
+import com.fastcampus.common.exception.exception.UnauthorizedException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -17,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+
+import static com.fastcampus.common.constant.RedisKeys.BLOCKLIST_PREFIX;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +37,7 @@ public class AuthService {
     @Transactional
     public MerchantSignUpResponse signup(MerchantSignUpRequest request) {
         if (merchantRepository.existsByLoginId(request.getLoginId())) {
-            throw new IllegalArgumentException("이미 존재하는 로그인 ID입니다.");
+            throw DuplicateKeyException.of(AuthErrorCode.DUPLICATE_LOGIN_ID);
         }
 
         String encryptedPw = passwordEncoder.encode(request.getLoginPw());
@@ -67,10 +73,10 @@ public class AuthService {
     @Transactional(readOnly = true)
     public MerchantLoginResponse login(MerchantLoginRequest request) {
         Merchant merchant = merchantRepository.findByLoginId(request.getLoginId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 ID입니다."));
+                .orElseThrow(() -> new NotFoundException(AuthErrorCode.NOT_FOUND_ID));
 
         if (!passwordEncoder.matches(request.getLoginPw(), merchant.getLoginPw())) {
-            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+            throw new UnauthorizedException(AuthErrorCode.INVALID_PASSWORD);
         }
 
         String accessToken = jwtProvider.generateAccessToken(merchant.getLoginId());
@@ -86,7 +92,7 @@ public class AuthService {
     public void logout(HttpServletRequest request) {
         String token = resolveToken(request);
         long exp = jwtProvider.getRemainingExpiration(token);
-        redisTemplate.opsForValue().set("BL:" + token, "logout", exp, TimeUnit.MILLISECONDS);
+        redisTemplate.opsForValue().set(BLOCKLIST_PREFIX + token, "logout", exp, TimeUnit.MILLISECONDS);
     }
 
     private String resolveToken(HttpServletRequest request) {
@@ -94,19 +100,19 @@ public class AuthService {
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
         }
-        throw new IllegalArgumentException("Authorization header is missing or invalid");
+        throw new UnauthorizedException(AuthErrorCode.MISSING_ACCESS_TOKEN);
     }
 
     @Transactional(readOnly = true)
     public String reissue(String refreshToken) {
         if (refreshToken == null || refreshToken.isBlank()) {
-            throw new IllegalArgumentException("리프레시 토큰이 없습니다.");
+            throw new UnauthorizedException(AuthErrorCode.MISSING_REFRESH_TOKEN);
         }
         if (refreshToken.startsWith("Bearer ")) {
             refreshToken = refreshToken.substring(7);
         }
         if (!jwtProvider.validateToken(refreshToken)) {
-            throw new IllegalArgumentException("유효하지 않은 리프레시 토큰입니다.");
+            throw new UnauthorizedException(AuthErrorCode.INVALID_REFRESH_TOKEN);
         }
         String loginId = jwtProvider.getSubject(refreshToken);
         return jwtProvider.generateAccessToken(loginId);

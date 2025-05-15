@@ -1,4 +1,4 @@
-package com.fastcampus.paymentapi.payment.entity;
+package com.fastcampus.paymentapi.initqr.entity;
 
 public enum QrStatus {
     VALID,

@@ -1,4 +1,4 @@
-package com.fastcampus.common.exception;
+package com.fastcampus.common.exception.base;
 
 import org.springframework.http.HttpStatus;
 

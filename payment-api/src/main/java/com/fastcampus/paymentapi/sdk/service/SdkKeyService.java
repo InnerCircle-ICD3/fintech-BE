@@ -1,8 +1,7 @@
 package com.fastcampus.paymentapi.sdk.service;
 
-import com.fastcampus.common.exception.HttpException;
-import com.fastcampus.common.exception.customerror.SdkErrorCode;
-import com.fastcampus.common.util.AppClock;
+import com.fastcampus.common.exception.base.HttpException;
+import com.fastcampus.common.exception.code.SdkErrorCode;
 import com.fastcampus.paymentapi.sdk.dto.SdkCheckResponse;
 import com.fastcampus.paymentapi.sdk.dto.SdkIssueResponse;
 import com.fastcampus.paymentapi.sdk.entity.SdkKey;
@@ -18,13 +17,15 @@ import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
 
+import static com.fastcampus.common.constant.RedisKeys.SDK_KEY_PREFIX;
+import static com.fastcampus.common.util.AppClock.CLOCK;
+
 @Service
 @RequiredArgsConstructor
 public class SdkKeyService {
 
     private final SdkKeyRepository sdkKeyRepository;
     private final RedisTemplate<String, String> redisTemplate;
-    private final AppClock appClock;
 
     @Value("${sdk.ttl-days}")
     private long sdkTtlDays;
@@ -35,14 +36,14 @@ public class SdkKeyService {
         }
 
         try {
-            String sdkKey = "sdk_" + UUID.randomUUID();
+            String sdkKey = SDK_KEY_PREFIX + UUID.randomUUID();
             String secretKey = Base64.getEncoder().encodeToString(UUID.randomUUID().toString().getBytes());
-            LocalDateTime issuedAt = LocalDateTime.now(appClock.getClock());
+            LocalDateTime issuedAt = LocalDateTime.now(CLOCK);
             LocalDateTime expiresAt = issuedAt.plusDays(sdkTtlDays);
 
             SdkKey saved = sdkKeyRepository.save(new SdkKey(merchantId, sdkKey, secretKey, issuedAt, expiresAt));
 
-            String redisKey = "sdk:key:" + sdkKey;
+            String redisKey = SDK_KEY_PREFIX + sdkKey;
             redisTemplate.opsForValue().set(
                     redisKey,
                     merchantId.toString(),
@@ -54,12 +55,12 @@ public class SdkKeyService {
         } catch (DataIntegrityViolationException e) {
             throw new HttpException(SdkErrorCode.MERCHANT_SDK_ALREADY_EXISTS);
         } catch (Exception e) {
-            throw new HttpException(SdkErrorCode.SDK_ISSUE_FAILED);
+            throw new HttpException(SdkErrorCode.SDK_ISSUE_FAILED, e);
         }
     }
 
     public SdkCheckResponse checkSdkKey(String sdkKey) {
-        String redisKey = "sdk:key:" + sdkKey;
+        String redisKey = SDK_KEY_PREFIX + sdkKey;
 
         String cached = redisTemplate.opsForValue().get(redisKey);
         if (cached != null) {
@@ -79,7 +80,7 @@ public class SdkKeyService {
     }
 
     public boolean verifyKeyOwnership(String sdkKey, Long merchantId) {
-        String redisKey = "sdk:key:" + sdkKey;
+        String redisKey = SDK_KEY_PREFIX + sdkKey;
         String cachedValue = redisTemplate.opsForValue().get(redisKey);
 
         if (cachedValue != null) {
@@ -117,7 +118,7 @@ public class SdkKeyService {
         }
 
         SdkKey sdkKeyEntity = optional.get();
-        if (sdkKeyEntity.getExpiresAt().isBefore(LocalDateTime.now(appClock.getClock()))) {
+        if (sdkKeyEntity.getExpiresAt().isBefore(LocalDateTime.now(CLOCK))) {
             throw new HttpException(SdkErrorCode.EXPIRED_SDK_KEY);
         }
 

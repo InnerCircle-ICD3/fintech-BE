@@ -1,6 +1,6 @@
-package com.fastcampus.paymentapi.payment.repository;
+package com.fastcampus.paymentapi.initqr.repository;
 
-import com.fastcampus.paymentapi.payment.entity.Payment;
+import com.fastcampus.paymentapi.initqr.entity.Payment;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

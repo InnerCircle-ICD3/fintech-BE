@@ -1,4 +1,4 @@
-package com.fastcampus.paymentapi.payment.entity;
+package com.fastcampus.paymentapi.initqr.entity;
 
 public enum PaymentStatus {
     READY,       // QR 생성됨 (결제 대기 중)

@@ -1,4 +1,4 @@
-package com.fastcampus.common.exception;
+package com.fastcampus.common.exception.base;
 
 import lombok.Getter;
 
@@ -9,6 +9,11 @@ public class HttpException extends RuntimeException {
 
     public HttpException(ErrorCode errorCode) {
         super(errorCode.getMessage());
+        this.errorCode = errorCode;
+    }
+
+    public HttpException(ErrorCode errorCode, Throwable cause) {
+        super(errorCode.getMessage(), cause);
         this.errorCode = errorCode;
     }
 }
