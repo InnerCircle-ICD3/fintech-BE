@@ -1,14 +1,13 @@
-package com.fastcampus.paymentcore;
+package com.fastcampus.common;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class PaymentCoreApplication {
+public class CommonApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(PaymentCoreApplication.class, args);
-		System.out.println("args = " + args);
+		SpringApplication.run(CommonApplication.class, args);
 	}
 
 }
