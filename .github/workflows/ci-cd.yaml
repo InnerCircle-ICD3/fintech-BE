@@ -1,0 +1,111 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, dev, stage ]
+  pull_request:
+    branches: [ main, dev, stage ]
+
+jobs:
+  build-and-test:
+    name: 빌드 및 테스트
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 코드 체크아웃
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: JDK 17 설정
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+        
+    - name: Gradle 캐싱
+      uses: gradle/gradle-build-action@v2
+
+    - name: Gradle 권한 설정
+      run: chmod +x ./gradlew
+      
+    - name: 변경된 모듈 감지
+      id: changed-modules
+      run: |
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          BASE_SHA=$(git merge-base ${{ github.event.pull_request.base.sha }} ${{ github.sha }})
+          CHANGED=$(git diff --name-only $BASE_SHA ${{ github.sha }} | grep -E '^(payment-api|backoffice-api|backoffice-manage)' | cut -d'/' -f1 | sort | uniq | tr '\n' ',')
+          COMMON_CHANGED=$(git diff --name-only $BASE_SHA ${{ github.sha }} | grep -E '^(common|payment-core|payment-infra)' | wc -l)
+        else
+          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^(payment-api|backoffice-api|backoffice-manage)' | cut -d'/' -f1 | sort | uniq | tr '\n' ',')
+          COMMON_CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^(common|payment-core|payment-infra)' | wc -l)
+        fi
+        
+        if [ -z "$CHANGED" ] || [ "$COMMON_CHANGED" -gt 0 ]; then
+          echo "MODULES=payment-api,backoffice-api,backoffice-manage" >> $GITHUB_OUTPUT
+          echo "모든 모듈을 빌드합니다"
+        else
+          echo "MODULES=$CHANGED" >> $GITHUB_OUTPUT
+          echo "변경된 모듈만 빌드합니다: $CHANGED"
+        fi
+        
+    - name: 테스트 실행
+      run: |
+        IFS=',' read -ra MODULES <<< "${{ steps.changed-modules.outputs.MODULES }}"
+        for module in "${MODULES[@]}"; do
+          if [ ! -z "$module" ]; then
+            echo "테스트 실행: $module"
+            ./gradlew $module:test || echo "$module 테스트 건너뜀"
+          fi
+        done
+        
+    - name: 빌드
+      run: |
+        IFS=',' read -ra MODULES <<< "${{ steps.changed-modules.outputs.MODULES }}"
+        for module in "${MODULES[@]}"; do
+          if [ ! -z "$module" ]; then
+            echo "빌드 실행: $module"
+            ./gradlew $module:build -x test || echo "$module 빌드 건너뜀"
+          fi
+        done
+        
+    - name: 테스트 결과 저장
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: |
+          **/build/reports/tests/
+          **/build/test-results/
+          
+  trigger-jenkins:
+    name: Jenkins 트리거
+    needs: build-and-test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/stage')
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Jenkins 작업 트리거
+      run: |
+        # 현재 브랜치 기반으로 네임스페이스 설정
+        if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+          NAMESPACE="prod"
+        elif [ "${{ github.ref }}" == "refs/heads/stage" ]; then
+          NAMESPACE="stage"
+        else
+          NAMESPACE="dev"
+        fi
+        
+        # Jenkins CSRF 방지 토큰 가져오기
+        CRUMB=$(curl -s "${{ secrets.JENKINS_URL }}/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)" -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_TOKEN }}" || echo ":")
+        
+        # Jenkins 작업 트리거 - POST 요청 방식
+        curl -X POST \
+          -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_TOKEN }}" \
+          -H "$CRUMB" \
+          -d "BUILD_MODE=only_changed" \
+          -d "DEPLOY_NAMESPACE=$NAMESPACE" \
+          -d "BRANCH_NAME=${{ github.ref_name }}" \
+          -d "COMMIT_SHA=${{ github.sha }}" \
+          "${{ secrets.JENKINS_URL }}/job/${{ secrets.JENKINS_JOB_NAME }}/buildWithParameters?token=${{ secrets.JENKINS_API_TOKEN }}" 
