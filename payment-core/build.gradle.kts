@@ -24,7 +24,9 @@ repositories {
 }
 
 dependencies {
-	//
+	// spring
+	implementation("org.springframework.boot:spring-boot-starter-aop")
+
 	// lombok
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
