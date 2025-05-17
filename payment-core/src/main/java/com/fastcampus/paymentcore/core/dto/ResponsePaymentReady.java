@@ -1,0 +1,15 @@
+package com.fastcampus.paymentcore.core.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.ToString;
+
+import java.time.LocalDateTime;
+
+@Getter
+@AllArgsConstructor
+@ToString
+public class ResponsePaymentReady {
+    private final String transactionToken;
+    private final LocalDateTime expiresAt;
+}

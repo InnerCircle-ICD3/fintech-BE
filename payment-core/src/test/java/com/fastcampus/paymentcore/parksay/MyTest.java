@@ -2,7 +2,9 @@ package com.fastcampus.paymentcore.parksay;
 
 
 import com.fastcampus.paymentcore.PaymentCoreApplication;
+import com.fastcampus.paymentcore.core.common.util.SystemParameterUtil;
 import com.fastcampus.paymentcore.core.dto.PaymentProgressDto;
+import com.fastcampus.paymentcore.core.dto.ResponsePaymentReady;
 import com.fastcampus.paymentcore.core.service.PaymentProgressService;
 import com.fastcampus.paymentcore.core.service.PaymentReadyService;
 import org.junit.jupiter.api.Test;
@@ -23,6 +25,9 @@ public class MyTest {
     @Autowired
     PaymentProgressService progressService;
 
+    @Autowired
+    SystemParameterUtil systemParameter;
+
     @Test
     public void myTest1() {
         logger.info("hello world!");
@@ -32,10 +37,13 @@ public class MyTest {
     public void readyPayment() {
         //
         Map<String, Object> paramMap = new HashMap<>();
-        paramMap.put("hello", "world");
-        String qrToken = readyService.readyPayment(paramMap);
+        paramMap.put("merchantId", "1");
+        paramMap.put("merchantOrderId", "1");
+        paramMap.put("amount", "1");
+
+        ResponsePaymentReady response = readyService.readyPayment(paramMap);
         //
-        logger.info(qrToken);
+        logger.info(response.toString());
     }
 
     @Test
@@ -47,4 +55,10 @@ public class MyTest {
         logger.info(paymentProgressDto.toString());
     }
 
+    @Test
+    public void systemParameterUtilTest() {
+        String result = systemParameter.getProperty("hello");
+        logger.info("===============================================");
+        logger.info(result);
+    }
 }
