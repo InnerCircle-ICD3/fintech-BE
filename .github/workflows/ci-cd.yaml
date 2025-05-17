@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, dev, stage ]
+    branches: [ main, dev, test ]
   pull_request:
-    branches: [ main, dev, stage ]
+    branches: [ main, dev, test ]
 
 jobs:
   build-and-test:
@@ -82,7 +82,7 @@ jobs:
   trigger-jenkins:
     name: Jenkins 트리거
     needs: build-and-test
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/stage')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/test')
     runs-on: ubuntu-latest
     
     steps:
@@ -91,8 +91,8 @@ jobs:
         # 현재 브랜치 기반으로 네임스페이스 설정
         if [ "${{ github.ref }}" == "refs/heads/main" ]; then
           NAMESPACE="prod"
-        elif [ "${{ github.ref }}" == "refs/heads/stage" ]; then
-          NAMESPACE="stage"
+        elif [ "${{ github.ref }}" == "refs/heads/test" ]; then
+          NAMESPACE="test"
         else
           NAMESPACE="dev"
         fi
