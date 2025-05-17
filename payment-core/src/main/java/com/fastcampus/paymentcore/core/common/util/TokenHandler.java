@@ -4,7 +4,7 @@ public class TokenHandler {
 
 
     public String encodeQrToken(int transactionId) {
-        return null;
+        return "hello world";
     }
 
     public int decodeQrToken(String qrToken) {
