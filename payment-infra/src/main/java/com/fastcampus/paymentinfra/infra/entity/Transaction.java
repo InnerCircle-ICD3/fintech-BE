@@ -14,6 +14,8 @@ public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long transactionId;
+    @Column(nullable = false, unique = true)
+    private String transactionToken; // 외부 요청용
 
     private Long merchantId;
     private String merchantOrderId;
