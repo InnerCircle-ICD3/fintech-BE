@@ -26,6 +26,7 @@ repositories {
 dependencies {
 	// spring
 	implementation("org.springframework.boot:spring-boot-starter-aop")
+	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
 	// lombok
 	compileOnly("org.projectlombok:lombok")
