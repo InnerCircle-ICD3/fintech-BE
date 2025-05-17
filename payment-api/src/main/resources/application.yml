@@ -16,6 +16,10 @@ spring:
 server:
   port: 8080
 
+sdk:
+  ttl-days: 180
+  ttl-qr: 3
+
 springdoc:
   api-docs:
     path: /v3/api-docs
