@@ -9,5 +9,4 @@ public class BackofficeManageApplication {
     public static void main(String[] args) {
         SpringApplication.run(BackofficeManageApplication.class, args);
     }
-
 }

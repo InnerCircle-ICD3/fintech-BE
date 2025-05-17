@@ -1,13 +1,20 @@
 package com.fastcampus.backofficemanage.service;
 
+import com.fastcampus.backofficemanage.dto.common.CommonResponse;
 import com.fastcampus.backofficemanage.dto.info.MerchantInfoResponse;
 import com.fastcampus.backofficemanage.dto.update.request.MerchantUpdateRequest;
-import com.fastcampus.backofficemanage.dto.common.CommonResponse;
 import com.fastcampus.backofficemanage.entity.Merchant;
 import com.fastcampus.backofficemanage.repository.MerchantRepository;
+import com.fastcampus.common.exception.code.MerchantErrorCode;
+import com.fastcampus.common.exception.exception.DuplicateKeyException;
+import com.fastcampus.common.exception.exception.NotFoundException;
+import com.fastcampus.common.util.AppClock;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -18,7 +25,7 @@ public class MerchantService {
     @Transactional(readOnly = true)
     public MerchantInfoResponse getMyInfo(String loginId) {
         Merchant merchant = merchantRepository.findByLoginId(loginId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 가맹점입니다."));
+                .orElseThrow(() -> new NotFoundException(MerchantErrorCode.NOT_FOUND));
 
         return MerchantInfoResponse.builder()
                 .name(merchant.getName())
@@ -33,7 +40,7 @@ public class MerchantService {
     @Transactional
     public CommonResponse updateMyInfo(String loginId, MerchantUpdateRequest request) {
         Merchant merchant = merchantRepository.findByLoginId(loginId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 가맹점입니다."));
+                .orElseThrow(() -> new NotFoundException(MerchantErrorCode.NOT_FOUND));
 
         merchant.updateInfo(
                 request.getName(),
@@ -42,6 +49,13 @@ public class MerchantService {
                 request.getContactEmail(),
                 request.getContactPhone()
         );
+        merchant.setUpdatedAt(LocalDateTime.now(AppClock.CLOCK));
+
+        try {
+            merchantRepository.flush(); // unique 제약조건 위반 감지용
+        } catch (DataIntegrityViolationException e) {
+            throw DuplicateKeyException.of(MerchantErrorCode.DUPLICATE_BUSINESS_NUMBER);
+        }
 
         return CommonResponse.builder()
                 .success(true)
@@ -52,9 +66,10 @@ public class MerchantService {
     @Transactional
     public CommonResponse deleteMyAccount(String loginId) {
         Merchant merchant = merchantRepository.findByLoginId(loginId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 가맹점입니다."));
+                .orElseThrow(() -> new NotFoundException(MerchantErrorCode.NOT_FOUND));
 
         merchant.setStatus("DELETED");
+        merchant.setUpdatedAt(LocalDateTime.now(AppClock.CLOCK));
 
         return CommonResponse.builder()
                 .success(true)

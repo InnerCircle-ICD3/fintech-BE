@@ -38,22 +38,12 @@ public class Merchant {
     private String status;  // 예: ACTIVE, INACTIVE, DELETED 등
 
     private LocalDateTime createdAt;
+    @Setter
     private LocalDateTime updatedAt;
 
     @Setter
     @OneToOne(mappedBy = "merchant", cascade = CascadeType.ALL, orphanRemoval = true)
     private Keys keys;
-
-    @PrePersist
-    public void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = this.createdAt;
-    }
-
-    @PreUpdate
-    public void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 
     public void updateInfo(String name, String businessNumber, String contactName,
                            String contactEmail, String contactPhone) {
