@@ -1,15 +1,18 @@
-package com.fastcampus.paymentcore.core.impl;
+package com.fastcampus.paymentcore.core.service;
 
+import com.fastcampus.paymentcore.core.common.idem.Idempotent;
 import com.fastcampus.paymentcore.core.common.util.TokenHandler;
 import com.fastcampus.paymentcore.core.dto.PaymentProgressDto;
 import com.fastcampus.paymentcore.core.dummy.TransactionEntityDummy;
 import com.fastcampus.paymentcore.core.dummy.TransactionRepositoryDummy;
-import com.fastcampus.paymentcore.core.service.PaymentProgessService;
+import org.springframework.stereotype.Service;
 
-public class PaymentProgressServiceImpl implements PaymentProgessService {
+@Service
+public class PaymentProgressService {
 
-    @Override
+    @Idempotent
     public PaymentProgressDto progressPayment(String token) {
+        //
         TokenHandler tokenHandler = new TokenHandler();
         int transactionId = tokenHandler.decodeQrToken(token);
         TransactionRepositoryDummy transactionRepository = new TransactionRepositoryDummy();

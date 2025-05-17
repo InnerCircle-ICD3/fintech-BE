@@ -1,7 +1,2 @@
 rootProject.name = 'payment-core'
 
-include ':payment-infra'
-include ':common'
-
-project(":payment-infra").projectDir = file("../payment-infra")
-project(":common").projectDir = file("../common")

@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: payment-core
+
+jwt:
+  secret: dYVzdC1zZWNyZXQta2V5LXlvdS2jYW4tY2hhbmdlPXRoaXM=
+
+hello: world
+
+lifetime:
+  qr: 180
+
+time:
+  zoneId: Asia/Seoul
