@@ -1,7 +1,6 @@
 package com.fastcampus.paymentcore.core.common.idem;
 
 import com.fastcampus.paymentcore.core.dto.IdempotencyDto;
-import com.fastcampus.paymentcore.core.impl.IdempotencyServiceImpl;
 import com.fastcampus.paymentcore.core.service.IdempotencyService;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -31,8 +30,10 @@ public class IdempotencyAspect {
         // 이미 동일한 요청이 처리된 경우, 기존 결과 반환
         Optional<IdempotencyDto> idempotencyOptional = idempotencyService.checkIdempotency(idemkey);
         if (idempotencyOptional.isPresent()) {
+            logger.info(" =========== IdempotencyService > response already exists: ", joinPoint.getSignature().getName());
             return idempotencyOptional.get().getResponseData();
         }
+        logger.info(" =========== IdempotencyService > request passed :", joinPoint.getSignature().getName());
 
         // 실제 메서드 실행 및 결과 저장
         Object result = joinPoint.proceed();    // @Idempotent 어노테이션이 붙은 method 를 실행하고 result 를 받아옴

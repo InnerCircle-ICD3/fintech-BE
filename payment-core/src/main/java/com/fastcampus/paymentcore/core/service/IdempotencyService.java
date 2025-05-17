@@ -20,6 +20,6 @@ public class IdempotencyService {
 
     public int saveIdempotency(IdempotencyDto idempotencyDto) {
         Optional<IdempotencyDto> result = idempotentRepository.save(idempotencyDto);
-        return result.get().getId();
+        return result.isPresent() ?  result.get().getId() : 0;
     }
 }
