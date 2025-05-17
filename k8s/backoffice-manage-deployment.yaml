@@ -14,6 +14,7 @@ spec:
       labels:
         app: backoffice-manage
     spec:
+      terminationGracePeriodSeconds: 15
       containers:
       - name: backoffice-manage
         image: your-registry-url/backoffice-manage:latest
