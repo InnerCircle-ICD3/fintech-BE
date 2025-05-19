@@ -87,28 +87,22 @@ pipeline {
                 script {
                     // Docker 로그인
                     withCredentials([usernamePassword(credentialsId: 'docker-registry-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
-                        sh "echo $DOCKER_PASSWORD | docker login -u $DOCKER_USER --password-stdin"
+                        sh "docker login -u ${DOCKER_USER} --password-stdin <<< \\"${DOCKER_PASSWORD}\\""
                         
                         // payment-api 이미지 빌드 및 푸시
-                        sh """
-                        docker build -t ${DOCKER_REGISTRY}/payment-api:${BUILD_VERSION} -t ${DOCKER_REGISTRY}/payment-api:${IMAGE_TAG} --build-arg MODULE=payment-api .
-                        docker push ${DOCKER_REGISTRY}/payment-api:${BUILD_VERSION}
-                        docker push ${DOCKER_REGISTRY}/payment-api:${IMAGE_TAG}
-                        """
+                        sh "docker build -t ${DOCKER_USER}/payment-api:${env.BUILD_NUMBER}-${env.BRANCH_NAME} -t ${DOCKER_USER}/payment-api:${env.BRANCH_NAME} --build-arg MODULE=payment-api ."
+                        sh "docker push ${DOCKER_USER}/payment-api:${env.BUILD_NUMBER}-${env.BRANCH_NAME}"
+                        sh "docker push ${DOCKER_USER}/payment-api:${env.BRANCH_NAME}"
                         
                         // backoffice-api 이미지 빌드 및 푸시
-                        sh """
-                        docker build -t ${DOCKER_REGISTRY}/backoffice-api:${BUILD_VERSION} -t ${DOCKER_REGISTRY}/backoffice-api:${IMAGE_TAG} --build-arg MODULE=backoffice-api .
-                        docker push ${DOCKER_REGISTRY}/backoffice-api:${BUILD_VERSION}
-                        docker push ${DOCKER_REGISTRY}/backoffice-api:${IMAGE_TAG}
-                        """
+                        sh "docker build -t ${DOCKER_USER}/backoffice-api:${env.BUILD_NUMBER}-${env.BRANCH_NAME} -t ${DOCKER_USER}/backoffice-api:${env.BRANCH_NAME} --build-arg MODULE=backoffice-api ."
+                        sh "docker push ${DOCKER_USER}/backoffice-api:${env.BUILD_NUMBER}-${env.BRANCH_NAME}"
+                        sh "docker push ${DOCKER_USER}/backoffice-api:${env.BRANCH_NAME}"
                         
                         // backoffice-manage 이미지 빌드 및 푸시
-                        sh """
-                        docker build -t ${DOCKER_REGISTRY}/backoffice-manage:${BUILD_VERSION} -t ${DOCKER_REGISTRY}/backoffice-manage:${IMAGE_TAG} --build-arg MODULE=backoffice-manage .
-                        docker push ${DOCKER_REGISTRY}/backoffice-manage:${BUILD_VERSION}
-                        docker push ${DOCKER_REGISTRY}/backoffice-manage:${IMAGE_TAG}
-                        """
+                        sh "docker build -t ${DOCKER_USER}/backoffice-manage:${env.BUILD_NUMBER}-${env.BRANCH_NAME} -t ${DOCKER_USER}/backoffice-manage:${env.BRANCH_NAME} --build-arg MODULE=backoffice-manage ."
+                        sh "docker push ${DOCKER_USER}/backoffice-manage:${env.BUILD_NUMBER}-${env.BRANCH_NAME}"
+                        sh "docker push ${DOCKER_USER}/backoffice-manage:${env.BRANCH_NAME}"
                     }
                 }
             }
