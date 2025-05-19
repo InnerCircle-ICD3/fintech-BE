@@ -1,6 +1,5 @@
 spring:
   datasource:
-    #url: jdbc:postgresql://localhost:5432/testdb
     url: jdbc:postgresql://postgres-service.db.svc.cluster.local:5432/testdb
     username: testuser
     password: testpass
