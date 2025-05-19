@@ -12,6 +12,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   data:
     redis:
@@ -38,3 +39,23 @@ management:
       show-details: always
   security:
     enabled: false # actuator 보안 비활성화
+
+---
+spring:
+  config:
+    activate:
+      on-profile: testing # 'testing' 프로파일 전용 설정 시작
+  datasource:
+    url: jdbc:postgresql://postgres-service.db.svc.cluster.local:5432/testdb # testing 프로파일용 DB URL
+    driver-class-name: org.postgresql.Driver
+    username: testuser # 필요시 testing 환경에 맞는 사용자 이름/비밀번호
+    password: testpass
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect # testing 프로파일용 Dialect 명시
+    # hibernate.ddl-auto, show-sql 등도 testing 환경에 맞게 필요시 여기에 재정의 가능
+  # data.redis 설정도 testing 환경에 맞게 필요시 여기에 추가/재정의
+
+# jwt, springdoc, management 등의 설정은 최상위에 있으므로 모든 프로파일에 기본 적용됩니다.
+# 만약 testing 프로파일에서 이들 설정을 다르게 하고 싶다면, 위 testing 블록 내에 재정의합니다.
