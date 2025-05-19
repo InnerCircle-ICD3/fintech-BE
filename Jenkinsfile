@@ -3,8 +3,7 @@ pipeline {
     
     environment {
         // 환경 변수 설정
-        JAVA_HOME = tool 'JDK21'
-        PATH = "${JAVA_HOME}/bin:${env.PATH}"
+        // 서버에 설치된 Java 사용
         K8S_NAMESPACE = "fintech-be"  // 네임스페이스 환경변수 추가
     }
     
@@ -12,6 +11,12 @@ pipeline {
         stage('소스 체크아웃') {
             steps {
                 checkout scm
+            }
+        }
+        
+        stage('Java 버전 확인') {
+            steps {
+                sh 'java -version'
             }
         }
         
