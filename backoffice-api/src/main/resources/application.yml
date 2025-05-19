@@ -1,6 +1,7 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/testdb
+    #url: jdbc:postgresql://localhost:5432/testdb
+    url: jdbc:postgresql://postgres.db.svc.cluster.local:5432/testdb
     username: testuser
     password: testpass
     driver-class-name: org.postgresql.Driver
