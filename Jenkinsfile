@@ -7,6 +7,7 @@ pipeline {
         JAVA_HOME = "/usr"
         PATH = "/usr/bin:${env.PATH}"
         K8S_NAMESPACE = "fintech-be"  // 네임스페이스 환경변수 추가
+        DOCKER_REGISTRY = "nullplusnull"  // DockerHub 사용자 이름
     }
     
     stages {
@@ -34,6 +35,13 @@ pipeline {
                     env.BRANCH_NAME = env.BRANCH_NAME.replaceAll('origin/', '')
                     
                     echo "사용할 브랜치 이름: ${env.BRANCH_NAME}"
+                    
+                    // 이미지 태그 설정
+                    env.IMAGE_TAG = env.BRANCH_NAME.toLowerCase() == "main" ? "latest" : env.BRANCH_NAME.toLowerCase()
+                    env.BUILD_VERSION = "${env.BUILD_NUMBER}-${env.IMAGE_TAG}"
+                    
+                    echo "이미지 태그: ${env.IMAGE_TAG}"
+                    echo "빌드 버전: ${env.BUILD_VERSION}"
                 }
             }
         }
@@ -74,6 +82,38 @@ pipeline {
             }
         }
         
+        stage('Docker 이미지 빌드 및 푸시') {
+            steps {
+                script {
+                    // Docker 로그인
+                    withCredentials([usernamePassword(credentialsId: 'docker-registry-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh "echo $DOCKER_PASSWORD | docker login -u $DOCKER_USER --password-stdin"
+                        
+                        // payment-api 이미지 빌드 및 푸시
+                        sh """
+                        docker build -t ${DOCKER_REGISTRY}/payment-api:${BUILD_VERSION} -t ${DOCKER_REGISTRY}/payment-api:${IMAGE_TAG} -f payment-api/Dockerfile payment-api --build-arg JAR_FILE=build/libs/payment-api-0.0.1-SNAPSHOT.jar
+                        docker push ${DOCKER_REGISTRY}/payment-api:${BUILD_VERSION}
+                        docker push ${DOCKER_REGISTRY}/payment-api:${IMAGE_TAG}
+                        """
+                        
+                        // backoffice-api 이미지 빌드 및 푸시
+                        sh """
+                        docker build -t ${DOCKER_REGISTRY}/backoffice-api:${BUILD_VERSION} -t ${DOCKER_REGISTRY}/backoffice-api:${IMAGE_TAG} -f backoffice-api/Dockerfile backoffice-api --build-arg JAR_FILE=build/libs/backoffice-api-0.0.1-SNAPSHOT.jar
+                        docker push ${DOCKER_REGISTRY}/backoffice-api:${BUILD_VERSION}
+                        docker push ${DOCKER_REGISTRY}/backoffice-api:${IMAGE_TAG}
+                        """
+                        
+                        // backoffice-manage 이미지 빌드 및 푸시
+                        sh """
+                        docker build -t ${DOCKER_REGISTRY}/backoffice-manage:${BUILD_VERSION} -t ${DOCKER_REGISTRY}/backoffice-manage:${IMAGE_TAG} -f backoffice-manage/Dockerfile backoffice-manage --build-arg JAR_FILE=build/libs/backoffice-manage-0.0.1-SNAPSHOT.jar
+                        docker push ${DOCKER_REGISTRY}/backoffice-manage:${BUILD_VERSION}
+                        docker push ${DOCKER_REGISTRY}/backoffice-manage:${IMAGE_TAG}
+                        """
+                    }
+                }
+            }
+        }
+        
         stage('배포') {
             when {
                 expression { 
@@ -100,36 +140,182 @@ pipeline {
                     echo "배포 환경: ${deployEnv}"
                     echo "네임스페이스: ${K8S_NAMESPACE}"
                     
-                    // 네임스페이스 생성 (존재하지 않는 경우에만)
-                    sh "kubectl create namespace ${K8S_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -"
-                    
-                    // 쿠버네티스 배포
-                    try {
-                        sh "kubectl config use-context ${deployEnv}"
-                    } catch (Exception e) {
-                        echo "kubectl context 설정 실패, 기본 컨텍스트 사용: ${e.message}"
-                    }
-                    
-                    try {
-                        sh "ls -la k8s/${deployEnv} || mkdir -p k8s/${deployEnv}"
+                    // 쿠버네티스 배포 - 자격 증명 사용
+                    withCredentials([file(credentialsId: 'kubernetes-config', variable: 'KUBECONFIG')]) {
+                        // 네임스페이스 생성 (존재하지 않는 경우에만)
+                        sh "kubectl --kubeconfig=${KUBECONFIG} create namespace ${K8S_NAMESPACE} --dry-run=client -o yaml | kubectl --kubeconfig=${KUBECONFIG} apply -f -"
                         
-                        // k8s 디렉토리가 비어있는 경우
-                        def filesExist = sh(script: "find k8s/${deployEnv} -type f | wc -l", returnStdout: true).trim()
+                        // 이미지 이름과 태그를 포함한 매니페스트 생성
+                        sh """
+                        mkdir -p k8s-deploy
                         
-                        if (filesExist == "0") {
-                            echo "k8s/${deployEnv} 디렉토리에 파일이 없습니다. 기본 매니페스트 사용"
-                            sh "kubectl apply -f k8s || true"
-                        } else {
-                            sh "kubectl apply -f k8s/${deployEnv} -n ${K8S_NAMESPACE}"
-                        }
+                        # payment-api 매니페스트 생성
+                        cat <<EOF > k8s-deploy/payment-api.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-api
+  namespace: ${K8S_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-api
+  template:
+    metadata:
+      labels:
+        app: payment-api
+    spec:
+      containers:
+      - name: payment-api
+        image: ${DOCKER_REGISTRY}/payment-api:${IMAGE_TAG}
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "${deployEnv}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-api
+  namespace: ${K8S_NAMESPACE}
+spec:
+  selector:
+    app: payment-api
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP
+EOF
+
+                        # backoffice-api 매니페스트 생성
+                        cat <<EOF > k8s-deploy/backoffice-api.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backoffice-api
+  namespace: ${K8S_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backoffice-api
+  template:
+    metadata:
+      labels:
+        app: backoffice-api
+    spec:
+      containers:
+      - name: backoffice-api
+        image: ${DOCKER_REGISTRY}/backoffice-api:${IMAGE_TAG}
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "${deployEnv}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backoffice-api
+  namespace: ${K8S_NAMESPACE}
+spec:
+  selector:
+    app: backoffice-api
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP
+EOF
+
+                        # backoffice-manage 매니페스트 생성
+                        cat <<EOF > k8s-deploy/backoffice-manage.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backoffice-manage
+  namespace: ${K8S_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backoffice-manage
+  template:
+    metadata:
+      labels:
+        app: backoffice-manage
+    spec:
+      containers:
+      - name: backoffice-manage
+        image: ${DOCKER_REGISTRY}/backoffice-manage:${IMAGE_TAG}
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "${deployEnv}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backoffice-manage
+  namespace: ${K8S_NAMESPACE}
+spec:
+  selector:
+    app: backoffice-manage
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP
+EOF
+                        """
+                        
+                        // 생성된 매니페스트로 배포
+                        sh "kubectl --kubeconfig=${KUBECONFIG} apply -f k8s-deploy/"
                         
                         // 배포 상태 확인
-                        sh "kubectl rollout status deployment/payment-api -n ${K8S_NAMESPACE} || true"
-                        sh "kubectl rollout status deployment/backoffice-api -n ${K8S_NAMESPACE} || true"
-                    } catch (Exception e) {
-                        echo "쿠버네티스 배포 중 오류 발생: ${e.message}"
-                        echo "기본 배포 시도..."
-                        sh "kubectl apply -f k8s -n ${K8S_NAMESPACE} || true"
+                        sh "kubectl --kubeconfig=${KUBECONFIG} rollout status deployment/payment-api -n ${K8S_NAMESPACE} || true"
+                        sh "kubectl --kubeconfig=${KUBECONFIG} rollout status deployment/backoffice-api -n ${K8S_NAMESPACE} || true"
+                        sh "kubectl --kubeconfig=${KUBECONFIG} rollout status deployment/backoffice-manage -n ${K8S_NAMESPACE} || true"
                     }
                 }
             }
