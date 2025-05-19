@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backoffice-api
+  namespace: ${NAMESPACE}
   labels:
     app: backoffice-api
 spec:
@@ -19,7 +20,7 @@ spec:
     spec:
       containers:
       - name: backoffice-api
-        image: ${DOCKER_REGISTRY}/backoffice-api:${VERSION}
+        image: ${DOCKER_REGISTRY}/backoffice-api:${IMAGE_TAG}
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -48,6 +49,6 @@ spec:
           failureThreshold: 5
         env:
         - name: SPRING_PROFILES_ACTIVE
-          value: "prod"
+          value: "${SPRING_PROFILE}"
         - name: JAVA_OPTS
           value: "-Xms256m -Xmx512m" 
