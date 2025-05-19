@@ -19,6 +19,8 @@ spring:
     redis:
       host: redis-service.db.svc.cluster.local
       port: 6379
+  application:
+    name: backoffice-manage
 
 jwt:
   secret: dYVzdC1zZWNyZXQta2V5LXlvdS2jYW4tY2hhbmdlPXRoaXM=
@@ -61,6 +63,8 @@ spring:
     redis:
       host: localhost
       port: 6379
+  application:
+    name: backoffice-manage
 
 # jwt, springdoc, management 등의 설정은 최상위에 있으므로 모든 프로파일에 기본 적용됩니다.
 # 만약 testing 프로파일에서 이들 설정을 다르게 하고 싶다면, 위 testing 블록 내에 재정의합니다.

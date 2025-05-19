@@ -27,7 +27,7 @@ server:
 
 springdoc:
   api-docs:
-    path: /v3/api-docs
+    path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
 
@@ -47,6 +47,7 @@ management:
   security:
     enabled: false
 
+---
 # 기본 프로파일 설정
 spring:
   datasource:
@@ -66,21 +67,5 @@ spring:
     redis:
       host: localhost
       port: 6379
-
-jwt:
-  secret: dYVzdC1zZWNyZXQta2V5LXlvdS2jYW4tY2hhbmdlPXRoaXM=
-
-springdoc:
-  api-docs:
-    path: /api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-  endpoint:
-    health:
-      show-details: always 
+  application:
+    name: backoffice-api 

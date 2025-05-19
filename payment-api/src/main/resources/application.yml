@@ -15,6 +15,8 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  application:
+    name: payment-api
   h2:
     console:
       enabled: true
@@ -42,3 +44,29 @@ management:
   endpoint:
     health:
       show-details: always
+
+---
+# 기본 프로파일 설정 (H2 인메모리 DB 사용)
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  application:
+    name: payment-api
+
+server:
+  port: 8080
+
+sdk:
+  ttl-days: 180
+  ttl-qr: 3
