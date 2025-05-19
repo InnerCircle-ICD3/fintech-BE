@@ -91,21 +91,21 @@ pipeline {
                         
                         // payment-api 이미지 빌드 및 푸시
                         sh """
-                        docker build -t ${DOCKER_REGISTRY}/payment-api:${BUILD_VERSION} -t ${DOCKER_REGISTRY}/payment-api:${IMAGE_TAG} -f payment-api/Dockerfile payment-api --build-arg JAR_FILE=build/libs/payment-api-0.0.1-SNAPSHOT.jar
+                        docker build -t ${DOCKER_REGISTRY}/payment-api:${BUILD_VERSION} -t ${DOCKER_REGISTRY}/payment-api:${IMAGE_TAG} --build-arg MODULE=payment-api .
                         docker push ${DOCKER_REGISTRY}/payment-api:${BUILD_VERSION}
                         docker push ${DOCKER_REGISTRY}/payment-api:${IMAGE_TAG}
                         """
                         
                         // backoffice-api 이미지 빌드 및 푸시
                         sh """
-                        docker build -t ${DOCKER_REGISTRY}/backoffice-api:${BUILD_VERSION} -t ${DOCKER_REGISTRY}/backoffice-api:${IMAGE_TAG} -f backoffice-api/Dockerfile backoffice-api --build-arg JAR_FILE=build/libs/backoffice-api-0.0.1-SNAPSHOT.jar
+                        docker build -t ${DOCKER_REGISTRY}/backoffice-api:${BUILD_VERSION} -t ${DOCKER_REGISTRY}/backoffice-api:${IMAGE_TAG} --build-arg MODULE=backoffice-api .
                         docker push ${DOCKER_REGISTRY}/backoffice-api:${BUILD_VERSION}
                         docker push ${DOCKER_REGISTRY}/backoffice-api:${IMAGE_TAG}
                         """
                         
                         // backoffice-manage 이미지 빌드 및 푸시
                         sh """
-                        docker build -t ${DOCKER_REGISTRY}/backoffice-manage:${BUILD_VERSION} -t ${DOCKER_REGISTRY}/backoffice-manage:${IMAGE_TAG} -f backoffice-manage/Dockerfile backoffice-manage --build-arg JAR_FILE=build/libs/backoffice-manage-0.0.1-SNAPSHOT.jar
+                        docker build -t ${DOCKER_REGISTRY}/backoffice-manage:${BUILD_VERSION} -t ${DOCKER_REGISTRY}/backoffice-manage:${IMAGE_TAG} --build-arg MODULE=backoffice-manage .
                         docker push ${DOCKER_REGISTRY}/backoffice-manage:${BUILD_VERSION}
                         docker push ${DOCKER_REGISTRY}/backoffice-manage:${IMAGE_TAG}
                         """
