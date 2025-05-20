@@ -15,10 +15,11 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        System.out.println(">>>>> SecurityConfig loaded");
         http
             .csrf(csrf -> csrf.disable())
 //            .formLogin(form -> form.disable())  // 기본 로그인 페이지 비활성화
-//            .httpBasic(basic -> basic.disable())  // HTTP Basic 인증 비활성화
+            .httpBasic(basic -> basic.disable())  // HTTP Basic 인증 비활성화
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().permitAll()  // 모든 요청 허용

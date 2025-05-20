@@ -1,10 +1,10 @@
-package com.fastcampus.backofficeapi;
+package com.fastcampus.backoffice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class BackofficeApiApplicationTests {
+class BackofficeApplicationTests {
 
     @Test
     void contextLoads() {
