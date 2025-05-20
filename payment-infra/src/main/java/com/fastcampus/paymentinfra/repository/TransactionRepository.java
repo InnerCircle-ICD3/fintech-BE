@@ -9,5 +9,7 @@ import java.util.List;
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
     Optional<Transaction> findByMerchantOrderId(String merchantOrderId);
 
+    Optional<Transaction> findByTransactionToken(String transactionToken);
+
     List<Transaction> findByMerchantId(Long merchantId);
 }

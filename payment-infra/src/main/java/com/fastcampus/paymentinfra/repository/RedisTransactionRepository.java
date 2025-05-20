@@ -48,11 +48,26 @@ public class RedisTransactionRepository {
     }
 
     /**
+     * 거래 토큰으로 조회 - Transaction 객체 반환
+     */
+    public Optional<Transaction> findByToken(String transactionToken) {
+        return find(transactionToken).map(obj -> (Transaction)obj);
+    }
+
+    /**
      * 거래 캐시 갱신(기본 TTL: 180초)
      */
     public void update(String transactionToken, Object value) {
        save(transactionToken, value, 180);
     }
+
+    /**
+     * Transaction 객체로 캐시 갱신
+     */
+    public void update(Transaction transaction) {
+        update(transaction.getTransactionToken(), transaction);
+    }
+    
     /**
      * 거래 캐시 삭제
      */

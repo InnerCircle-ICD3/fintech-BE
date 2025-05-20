@@ -17,6 +17,8 @@ public class Transaction {
 
     private Long merchantId;
     private String merchantOrderId;
+    private String transactionToken;
+    private String cardToken;
     private Long amount;
     private String status;
 
