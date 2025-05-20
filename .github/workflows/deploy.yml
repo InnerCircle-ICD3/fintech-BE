@@ -1,0 +1,54 @@
+name: Deploy to Production Server
+
+on:
+  push:
+    branches:
+      - main
+      - temp
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          
+      - name: Build with Gradle
+        run: ./gradlew build -x test
+        
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            # 배포 디렉토리로 이동
+            cd ${{ secrets.DEPLOY_DIR }}
+            
+            # 깃 저장소 업데이트
+            git fetch
+            git checkout ${{ github.ref_name }}
+            git pull origin ${{ github.ref_name }}
+            
+            # 애플리케이션 빌드
+            ./gradlew build -x test
+            
+            # 애플리케이션 재시작
+            # 기존 프로세스 중지
+            if [ -f app.pid ]; then
+              kill $(cat app.pid) || true
+              rm app.pid
+            fi
+            
+            # 새로운 프로세스 시작 (백그라운드에서 실행하고 PID 저장)
+            nohup java -jar payment-api/build/libs/payment-api-*.jar > app.log 2>&1 & echo $! > app.pid
+            
+            echo "배포 및 재시작 완료" 
