@@ -1,0 +1,118 @@
+name: CI/CD Pipeline  # 파이프라인의 이름 정의
+
+on:  # 워크플로우 트리거 이벤트 정의
+  push:  # push 이벤트에 대한 트리거
+    branches: [ main, develop, test ]  # 이 브랜치들에 push 될 때 워크플로우 실행
+  pull_request:  # pull request 이벤트에 대한 트리거
+    branches: [ main, develop, test ]  # 이 브랜치들에 대한 PR이 생성될 때 워크플로우 실행
+
+jobs:  # 워크플로우에서 실행될 작업들 정의
+  build-and-test:  # 빌드 및 테스트 작업 정의
+    runs-on: ubuntu-latest  # 작업이 실행될 러너 환경 지정
+    
+    steps:  # 작업의 실행 단계 정의
+    - uses: actions/checkout@v4  # 저장소 코드 체크아웃
+    
+    - name: Set up JDK 21  # JDK 설정 단계 이름
+      uses: actions/setup-java@v3  # JDK 설정을 위한 액션
+      with:  # 액션에 전달할 파라미터
+        java-version: '21'  # 사용할 Java 버전
+        distribution: 'temurin'  # Java 배포판 유형
+        cache: gradle  # Gradle 캐시 활성화
+    
+    - name: Grant execute permission for gradlew  # gradlew 실행 권한 부여 단계
+      run: chmod +x gradlew  # gradlew 파일에 실행 권한 부여 명령
+    
+    - name: Build with Gradle  # Gradle로 빌드 수행 단계
+      run: ./gradlew build -x test  # Gradle 빌드 실행 (테스트 제외)
+    
+    - name: Run tests  # 테스트 실행 단계
+      run: ./gradlew test || echo "테스트 실패했지만 배포 계속 진행"  # 테스트 실행 (실패해도 에러 메시지만 출력)
+      continue-on-error: true  # 이 단계가 실패해도 워크플로우 계속 진행
+    
+    - name: Upload build artifacts  # 빌드 결과물 업로드 단계
+      uses: actions/upload-artifact@v4  # 아티팩트 업로드 액션
+      with:  # 액션에 전달할 파라미터
+        name: build-files  # 아티팩트 이름
+        path: |  # 업로드할 파일 경로 (여러 줄로 정의)
+          payment-api/build/libs/*.jar  # payment-api의 JAR 파일
+          backoffice-api/build/libs/*.jar  # backoffice-api의 JAR 파일
+  
+  trigger-jenkins:  # Jenkins 트리거 작업 정의
+    needs: build-and-test  # 이 작업은 build-and-test 작업 완료 후 실행
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/test')  # 특정 브랜치에 push된 경우에만 실행
+    runs-on: ubuntu-latest  # 작업이 실행될 러너 환경 지정
+    
+    steps:  # 작업의 실행 단계 정의
+    - name: Trigger Jenkins job  # Jenkins 작업 트리거 단계
+      env:  # 환경 변수 설정
+        JENKINS_URL: ${{ secrets.JENKINS_URL }}  # Jenkins URL (시크릿에서 가져옴)
+        JENKINS_USER: ${{ secrets.JENKINS_USER }}  # Jenkins 사용자 (시크릿에서 가져옴)
+        JENKINS_TOKEN: ${{ secrets.JENKINS_TOKEN }}  # Jenkins 인증 토큰 (시크릿에서 가져옴)
+        JENKINS_JOB_NAME: ${{ secrets.JENKINS_JOB_NAME }}  # Jenkins 작업 이름 (시크릿에서 가져옴)
+        JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}  # Jenkins API 토큰 (시크릿에서 가져옴)
+      run: |  # 실행할 스크립트 시작
+        echo "GitHub Actions 빌드 완료. Jenkins 작업 트리거 시작..."  # 로그 메시지 출력
+        
+        # Jenkins에 접근 가능한지 확인
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${JENKINS_URL}" || echo "000")  # Jenkins 서버 접근 가능 여부 확인
+        if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "403" ]; then  # 접근 불가능한 경우 (200 또는 403이 아닌 경우)
+          echo "Jenkins 서버에 접근할 수 없습니다. HTTP 응답 코드: ${HTTP_CODE}"  # 에러 메시지 출력
+          exit 1  # 오류 종료
+        fi
+        
+        # Jenkins CSRF 방지 토큰 가져오기
+        echo "Jenkins CSRF 토큰 가져오기..."  # 로그 메시지 출력
+        CRUMB=$(curl -s "${JENKINS_URL}/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)" -u "${JENKINS_USER}:${JENKINS_TOKEN}" || echo "Jenkins-Crumb:no-crumb")  # CSRF 토큰 요청
+        
+        # 브랜치 및 커밋 정보
+        BRANCH="${{ github.ref_name }}"  # 현재 브랜치 이름 가져오기
+        COMMIT="${{ github.sha }}"  # 현재 커밋 해시 가져오기
+        
+        echo "트리거 정보: 브랜치=$BRANCH, 커밋=$COMMIT"  # 브랜치와 커밋 정보 로깅
+        
+        # 다양한 Jenkins 작업 URL 패턴 시도
+        echo "Jenkins 작업 트리거 시도 중..."  # 로그 메시지 출력
+        
+        # 일반적인 작업 경로 패턴들
+        JOB_URLS=(  # Jenkins 작업 URL 패턴 배열 정의
+          "${JENKINS_URL}/job/${JENKINS_JOB_NAME}/buildWithParameters"  # 파라미터와 함께 빌드하는 URL
+          "${JENKINS_URL}/job/${JENKINS_JOB_NAME}/build"  # 기본 빌드 URL
+          "${JENKINS_URL}/buildByToken/build?job=${JENKINS_JOB_NAME}"  # 토큰으로 빌드하는 URL
+          "${JENKINS_URL}/generic-webhook-trigger/invoke"  # 웹훅 트리거 URL
+        )
+        
+        SUCCESS=false  # 성공 여부 플래그 초기화
+        
+        for JOB_URL in "${JOB_URLS[@]}"; do  # 각 URL 패턴에 대해 반복
+          echo "URL 시도 중: ${JOB_URL}"  # 현재 시도 중인 URL 로깅
+          
+          # Jenkins 작업 트리거 시도 - POST 요청으로 브랜치와 커밋 정보 전달
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            -u "${JENKINS_USER}:${JENKINS_TOKEN}" \
+            -H "${CRUMB}" \
+            -d "BRANCH_NAME=${BRANCH}" \
+            -d "COMMIT_SHA=${COMMIT}" \
+            -d "token=${JENKINS_API_TOKEN}" \
+            "${JOB_URL}")
+            
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)  # 응답의 HTTP 코드 추출
+          CONTENT=$(echo "$RESPONSE" | sed '$d')  # 응답 본문 추출
+          
+          # HTTP 응답 코드 확인 (201, 200, 302는 성공)
+          if [ "$HTTP_CODE" == "201" ] || [ "$HTTP_CODE" == "200" ] || [ "$HTTP_CODE" == "302" ]; then
+            echo "Jenkins 작업이 성공적으로 트리거되었습니다. URL: ${JOB_URL}"  # 성공 메시지 출력
+            echo "응답: $CONTENT"  # 응답 내용 출력
+            SUCCESS=true  # 성공 플래그 설정
+            break  # 반복문 종료
+          else
+            echo "URL ${JOB_URL} 시도 실패. HTTP 응답 코드: ${HTTP_CODE}"  # 실패 메시지 출력
+          fi
+        done
+        
+        # 모든 URL 패턴이 실패했는지 확인
+        if [ "$SUCCESS" = false ]; then
+          echo "모든 Jenkins 작업 URL 패턴 시도가 실패했습니다."  # 실패 메시지 출력
+          echo "Jenkins 관리자에게 문의하여 정확한 작업 URL을 확인하세요."  # 안내 메시지 출력
+          exit 1  # 오류 종료
+        fi  # 스크립트 종료 

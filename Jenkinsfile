@@ -2,6 +2,8 @@ pipeline {
     agent any
     
     parameters {
+        string(name: 'BRANCH_NAME', defaultValue: 'develop', description: 'GitHub에서 트리거된 브랜치 이름')
+        string(name: 'COMMIT_SHA', defaultValue: '', description: 'GitHub에서 트리거된 커밋 해시')
         choice(name: 'BUILD_MODE', choices: ['all', 'only_changed'], description: '모든 모듈을 빌드하려면 all, 변경된 모듈만 빌드하려면 only_changed를 선택하세요.')
         choice(name: 'MODULE', choices: ['all', 'payment-api', 'backoffice-api', 'backoffice-manage'], description: 'only_changed를 선택한 경우 무시됩니다. all을 선택하면 모든 모듈이 빌드됩니다.')
     }
