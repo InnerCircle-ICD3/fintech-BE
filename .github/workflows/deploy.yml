@@ -40,20 +40,23 @@ jobs:
               kill $(cat payment-api.pid) || true
               rm payment-api.pid
             fi
-            nohup java -jar payment-api/build/libs/payment-api-*.jar > payment-api.log 2>&1 & echo $! > payment-api.pid
+            # -plain.jar가 아닌 일반 jar 파일을 실행
+            nohup java -jar payment-api/build/libs/payment-api-[0-9].[0-9].[0-9]*.jar > payment-api.log 2>&1 & echo $! > payment-api.pid
             
             # backoffice-api 애플리케이션 재시작
             if [ -f backoffice-api.pid ]; then
               kill $(cat backoffice-api.pid) || true
               rm backoffice-api.pid
             fi
-            nohup java -jar backoffice-api/build/libs/backoffice-api-*.jar > backoffice-api.log 2>&1 & echo $! > backoffice-api.pid
+            # -plain.jar가 아닌 일반 jar 파일을 실행
+            nohup java -jar backoffice-api/build/libs/backoffice-api-[0-9].[0-9].[0-9]*.jar > backoffice-api.log 2>&1 & echo $! > backoffice-api.pid
             
             # backoffice-manage 애플리케이션 재시작
             if [ -f backoffice-manage.pid ]; then
               kill $(cat backoffice-manage.pid) || true
               rm backoffice-manage.pid
             fi
-            nohup java -jar backoffice-manage/build/libs/backoffice-manage-*.jar > backoffice-manage.log 2>&1 & echo $! > backoffice-manage.pid
+            # -plain.jar가 아닌 일반 jar 파일을 실행
+            nohup java -jar backoffice-manage/build/libs/backoffice-manage-[0-9].[0-9].[0-9]*.jar > backoffice-manage.log 2>&1 & echo $! > backoffice-manage.pid
             
             echo "모든 모듈 배포 및 재시작 완료" 
