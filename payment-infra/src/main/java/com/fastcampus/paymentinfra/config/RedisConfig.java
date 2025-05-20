@@ -1,7 +1,7 @@
-package com.fastcampus.paymentinfra.infra.config;
+package com.fastcampus.paymentinfra.config;
 
 
-import com.fastcampus.paymentinfra.infra.redis.RedisTransationRepositroy;
+import com.fastcampus.paymentinfra.redis.RedisTransactionRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;

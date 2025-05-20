@@ -1,4 +1,4 @@
 package com.fastcampus.paymentinfra.redis;
 
-public class RedisTransationRepositroy {
+public class RedisTransactionRepository {
 }
