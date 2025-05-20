@@ -56,6 +56,10 @@ tasks.withType<Test> {
     useJUnitPlatform()
 }
 
+tasks.bootRun {
+    mainClass.set("com.fastcampus.backoffice.BackofficeApplication")
+}
+
 springBoot {
-    mainClass.set("com.fastcampus.backofficeapi.BackofficeApiApplication")
+    mainClass.set("com.fastcampus.backoffice.BackofficeApplication")
 } 
