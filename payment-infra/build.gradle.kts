@@ -29,6 +29,8 @@ dependencies {
     // ✅ PostgreSQL JDBC 드라이버
     runtimeOnly("org.postgresql:postgresql:42.7.3")
 
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
 
