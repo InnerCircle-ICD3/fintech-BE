@@ -1,4 +1,4 @@
-package com.fastcampus.paymentinfra.infra.entity;
+package com.fastcampus.paymentinfra.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -19,6 +19,8 @@ public class Transaction {
     private String merchantOrderId;
     private Long amount;
     private String status;
+    private String transactionToken;
+    private String cardToken;
 
     @CreationTimestamp
     @Column(columnDefinition = "TIMESTAMP")

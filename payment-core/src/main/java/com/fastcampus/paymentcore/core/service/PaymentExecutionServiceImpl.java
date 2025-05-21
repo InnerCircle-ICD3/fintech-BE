@@ -2,8 +2,6 @@ package com.fastcampus.paymentcore.core.service;
 
 import com.fastcampus.paymentcore.core.dto.PaymentProgressRequest;
 import com.fastcampus.paymentcore.core.dto.PaymentProgressResponse;
-import com.fastcampus.paymentcore.core.dummy.TransactionEntityDummy;
-import com.fastcampus.paymentcore.core.dummy.TransactionRepositoryDummy;
 import com.fastcampus.paymentinfra.entity.Transaction;
 import com.fastcampus.paymentinfra.redis.RedisTransactionRepository;
 import com.fastcampus.paymentinfra.repository.TransactionRepository;

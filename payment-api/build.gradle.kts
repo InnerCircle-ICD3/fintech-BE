@@ -19,10 +19,7 @@ repositories {
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
-
-    // DB
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    runtimeOnly("com.h2database:h2")
 
     // ✅ SpringDoc OpenAPI
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
@@ -38,13 +35,6 @@ dependencies {
     // 테스트
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-
-    // Redis
-    implementation("org.springframework.boot:spring-boot-starter-data-redis")
-
-    // QR
-    implementation("com.google.zxing:core:3.5.2")
-    implementation("com.google.zxing:javase:3.5.2")
 }
 
 tasks.test {
