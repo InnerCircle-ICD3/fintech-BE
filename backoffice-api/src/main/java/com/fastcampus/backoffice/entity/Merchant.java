@@ -9,13 +9,14 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "merchants")
+@Table(name = "merchant")
 @Getter
 @Setter
 public class Merchant {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "merchant_id")
+    private Long merchantId;
 
     @Column(nullable = false, unique = true)
     private String loginId;
