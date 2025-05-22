@@ -9,8 +9,6 @@ import com.fastcampus.paymentcore.core.dto.ResponsePaymentReady;
 import com.fastcampus.paymentinfra.entity.Transaction;
 import com.fastcampus.paymentinfra.entity.TransactionStatus;
 import com.fastcampus.paymentinfra.repository.TransactionRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -24,8 +22,6 @@ import java.util.Optional;
 
 @Service
 public class PaymentReadyService {
-
-    private static final Logger logger = LoggerFactory.getLogger(PaymentReadyService.class);
 
     @Autowired
     private TransactionRepository transactionRepository;
@@ -46,11 +42,8 @@ public class PaymentReadyService {
     public ResponsePaymentReady readyPayment(Map<String, Object> paramMap) {
         nullCheckReadyPayment(paramMap);
         checkPaymentStatus(paramMap);
-
-        String token = tokenHandler.generateTokenPaymentReady();
-        paramMap.put("transactionToken", token);
         Long transactionId = saveTransaction(paramMap);
-
+        String token = tokenHandler.generateTokenWithTransactionId(transactionId);
         LocalDateTime expiresAt = generateExpiresAt();
         return new ResponsePaymentReady(token, expiresAt);
     }
@@ -65,6 +58,8 @@ public class PaymentReadyService {
     }
 
     private void checkPaymentStatus(Map<String, Object> paramMap) {
+        if (!paramMap.containsKey("transactionToken")) return;
+
         Optional<Transaction> transactionOps = transactionRepository.findByTransactionToken((String) paramMap.get("transactionToken"));
         if (transactionOps.isPresent()) {
             Transaction transaction = transactionOps.get();
@@ -81,12 +76,12 @@ public class PaymentReadyService {
 
     private Long saveTransaction(Map<String, Object> paramMap) {
         Transaction transaction = new Transaction();
-        transaction.setTransactionToken((String) paramMap.get("transactionToken"));
         transaction.setAmount(Long.parseLong(paramMap.get("amount").toString()));
         transaction.setMerchantId(Long.parseLong(paramMap.get("merchantId").toString()));
         transaction.setMerchantOrderId(paramMap.get("merchantOrderId").toString());
         transaction.setStatus(TransactionStatus.REQUESTED);
         transaction.setCreatedAt(LocalDateTime.now(Clock.system(ZoneId.of(zoneId))));
+        transaction.setExpireAt(generateExpiresAt());
 
         Transaction result = transactionRepository.save(transaction);
         return result.getTransactionId();
