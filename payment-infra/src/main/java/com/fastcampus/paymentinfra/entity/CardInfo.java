@@ -25,6 +25,7 @@ public class CardInfo {
     @Column(columnDefinition = "TIMESTAMP")
     private LocalDateTime createdAt;
 
+
     @UpdateTimestamp
     @Column(columnDefinition = "TIMESTAMP")
     private LocalDateTime updatedAt;

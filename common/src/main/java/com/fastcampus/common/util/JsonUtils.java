@@ -3,11 +3,14 @@ package com.fastcampus.common.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.objenesis.Objenesis;
 import org.springframework.stereotype.Component;
 
 public class JsonUtils {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    public static final ObjectMapper mapper = new ObjectMapper();
 
     public static String toJson(Object object) {
         try {
