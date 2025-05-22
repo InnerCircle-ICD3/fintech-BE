@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        
+
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@master
         with:
@@ -23,40 +23,46 @@ jobs:
           script: |
             # 배포 디렉토리로 이동
             cd ${{ secrets.DEPLOY_DIR }}
-            
+
             # 깃 저장소 업데이트
             git fetch
-            git checkout ${{ github.ref_name }}
+            git checkout -f ${{ github.ref_name }}
             git pull origin ${{ github.ref_name }}
-            
+
             # gradlew에 실행 권한 부여
             chmod +x ./gradlew
-            
+
             # 애플리케이션 빌드
-            ./gradlew build -x test -x compileJava
-            
+            ./gradlew build -x test
+
             # payment-api 애플리케이션 재시작
             if [ -f payment-api.pid ]; then
               kill $(cat payment-api.pid) || true
               rm payment-api.pid
             fi
-            PAYMENT_JAR=$(find payment-api/build/libs -name "payment-api-*.jar" ! -name "*plain.jar" | head -1)
+            rm -f payment-api/build/libs/*.jar
+            ./gradlew :payment-api:build -x test
+            PAYMENT_JAR=$(find payment-api/build/libs -name "payment-api-*.jar" ! -name "*plain.jar" | sort | tail -1)
             nohup java -jar $PAYMENT_JAR > payment-api.log 2>&1 & echo $! > payment-api.pid
-            
+
             # backoffice-api 애플리케이션 재시작
             if [ -f backoffice-api.pid ]; then
               kill $(cat backoffice-api.pid) || true
               rm backoffice-api.pid
             fi
-            BACKOFFICE_API_JAR=$(find backoffice-api/build/libs -name "backoffice-api-*.jar" ! -name "*plain.jar" | head -1)
+            rm -f backoffice-api/build/libs/*.jar
+            ./gradlew :backoffice-api:build -x test
+            BACKOFFICE_API_JAR=$(find backoffice-api/build/libs -name "backoffice-api-*.jar" ! -name "*plain.jar" | sort | tail -1)
             nohup java -jar $BACKOFFICE_API_JAR > backoffice-api.log 2>&1 & echo $! > backoffice-api.pid
-            
+
             # backoffice-manage 애플리케이션 재시작
             if [ -f backoffice-manage.pid ]; then
               kill $(cat backoffice-manage.pid) || true
               rm backoffice-manage.pid
             fi
-            BACKOFFICE_MANAGE_JAR=$(find backoffice-manage/build/libs -name "backoffice-manage-*.jar" ! -name "*plain.jar" | head -1)
+            rm -f backoffice-manage/build/libs/*.jar
+            ./gradlew :backoffice-manage:build -x test
+            BACKOFFICE_MANAGE_JAR=$(find backoffice-manage/build/libs -name "backoffice-manage-*.jar" ! -name "*plain.jar" | sort | tail -1)
             nohup java -jar $BACKOFFICE_MANAGE_JAR > backoffice-manage.log 2>&1 & echo $! > backoffice-manage.pid
-            
-            echo "모든 모듈 배포 및 재시작 완료" 
+
+            echo "모든 모듈 배포 및 재시작 완료"
