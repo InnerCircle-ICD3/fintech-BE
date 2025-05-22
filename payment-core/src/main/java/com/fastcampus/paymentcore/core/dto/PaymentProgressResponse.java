@@ -1,5 +1,6 @@
 package com.fastcampus.paymentcore.core.dto;
 
+import com.fastcampus.paymentinfra.entity.TransactionStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -12,6 +13,6 @@ public class PaymentProgressResponse {
      * 결제 상태를 반환함
      */
     private String transactionToken; // 외부 공개용 거래 식별자
-    private String status; //COMPLETED, FAILED, PENDING등
+    private TransactionStatus status; //COMPLETED, FAILED, PENDING등
 
 }

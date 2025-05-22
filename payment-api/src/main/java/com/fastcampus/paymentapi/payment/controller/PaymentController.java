@@ -30,7 +30,7 @@ public class PaymentController {
      * - transaction_token으로 거래 상태 확인
      */
     @GetMapping("/transactions/{token}")
-    public PaymentProgressDto getTransactionProgress(@PathVariable String token) {
+    public PaymentProgressDto getTransactionProgress(@PathVariable("token") String token) {
         return paymentProgressService.progressPayment(token);
     }
 

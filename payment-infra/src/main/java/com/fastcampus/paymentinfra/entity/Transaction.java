@@ -18,7 +18,8 @@ public class Transaction {
     private Long merchantId;
     private String merchantOrderId;
     private Long amount;
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private TransactionStatus status;
     private String transactionToken;
     private String cardToken;
 

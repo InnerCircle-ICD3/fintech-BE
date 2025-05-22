@@ -1,5 +1,7 @@
 package com.fastcampus.paymentcore.core.common.util;
 
+import com.fastcampus.paymentinfra.repository.TransactionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
@@ -9,22 +11,17 @@ import java.util.UUID;
 public class TokenHandler {
 
 
+    @Autowired
+    TransactionRepository transactionRepository;
 
     public String generateTokenPaymentReady() {
-        String token = UUID.randomUUID().toString().replace("-", "");
-        return token;
-//      TODO -발급한 token 이 이미 발급한 적이 있는지 중복 체크하는 로직인데... token db에 저장할지 redis 에 저장할지 결정되면 추후 구현
-//        int maxRetry = 5;
-//        for (int i = 0; i < maxRetry; i++) {
-//            String redisKey = RedisKeys.QR_KEY_PREFIX + token;
-//
-//            if (!Boolean.TRUE.equals(redisTemplate.hasKey(redisKey))) {
-//                return token;
-//            }
-//        }
-//        throw new HttpException(PaymentErrorCode.QR_GENERATION_FAILED);
-    }
+        String token;
+        do {
+            token = UUID.randomUUID().toString().replace("-", "");
+        } while (transactionRepository.findByTransactionToken(token).isPresent());  // 중복되는 값이 있다면 true 라면 반복
 
+        return token;
+    }
 
     public int decodeQrToken(String qrToken) {
         return 0;
