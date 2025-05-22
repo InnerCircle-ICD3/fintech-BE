@@ -7,7 +7,9 @@ import com.fastcampus.paymentcore.core.common.util.SystemParameterUtil;
 import com.fastcampus.paymentcore.core.common.util.TokenHandler;
 import com.fastcampus.paymentcore.core.dto.ResponsePaymentReady;
 import com.fastcampus.paymentcore.core.dummy.TransactionEntityDummy;
-import com.fastcampus.paymentcore.core.dummy.TransactionRepositoryDummy;
+import com.fastcampus.paymentinfra.entity.Transaction;
+import com.fastcampus.paymentinfra.entity.TransactionStatus;
+import com.fastcampus.paymentinfra.repository.TransactionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +19,9 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 @Service
@@ -26,7 +30,7 @@ public class PaymentReadyService {
     Logger logger = LoggerFactory.getLogger(PaymentReadyService.class);
 
     @Autowired
-    TransactionRepositoryDummy transactionRepository;    //TODO - TransactionRepositoryDummy -> TransactionRepository from infro
+    TransactionRepository transactionRepository;
     @Autowired
     TokenHandler tokenHandler;
     @Autowired
@@ -47,20 +51,16 @@ public class PaymentReadyService {
     public ResponsePaymentReady readyPayment(Map<String, Object> paramMap) {
         // TODO - sdk key 검증하는 로직은 공통이라 aop 로 하든지 filter 로 하든지 해야 할 듯.
         // 그래서 endpoint 에 /api/* 이렇게 시작하나 보다 키 검증 대상 url 들 지정하려고.
-        // merchant id / order id / not null check
-        if(!nullCheckReadyPayment(paramMap)) {
-            // throws bad request
-            throw new HttpException(PaymentErrorCode.INVALID_PAYMENT_REQUEST);
-        }
+        // 필수 parameter null check
+        nullCheckReadyPayment(paramMap);
         // 이미 결제가 완료된 거래인지 status check
-        if(checkPaymentStatus(paramMap)) {
-            // throws already done
-        }
+        checkPaymentStatus(paramMap);
         // token 생성
         String token = tokenHandler.generateTokenPaymentReady();
         // TODO - token + payment db 저장
-        // 근데 이거 어느 테이블에 저장을 하지...?? transaction 에 저장하는 게 맞나 이거? db 새로 따야 하나
-        int transactionId = saveTransaction(paramMap);
+        // 근데 이거 어느 테이블에 저장을 하지...?? transaction 에 저장하는 게 맞나 이거? db 새로 따야 하나 > 일단 transaction 에 저장
+        paramMap.put("transactionToken", token);
+        Long transactionId = saveTransaction(paramMap);
         // expired at 생성
         LocalDateTime expiresAt = generateExpiresAt();
         // response dto 생성
@@ -69,14 +69,25 @@ public class PaymentReadyService {
     }
 
     private boolean nullCheckReadyPayment(Map<String, Object> paramMap) {
-        if (paramMap.get("merchantId") == null || paramMap.get("merchantOrderId") == null || paramMap.get("amount") == null) {
-            return false;
+        // 필수 key 들 null check
+        List<String> targetKeys = List.of("merchantId", "merchantOrderId", "amount");
+        for (String key : targetKeys) {
+            if(!(paramMap.containsKey(key) && paramMap.get(key) != null)) {
+                throw new HttpException(PaymentErrorCode.INVALID_PAYMENT_REQUEST);
+            }
         }
         return true;
     }
 
     private boolean checkPaymentStatus(Map<String, Object> paramMap) {
-        // TODO - 해당 payment 가 이미 결제 완료된 상태인지 status 를 체크 - db 조회 가능해지면 로직 구현하기
+        // 해당 payment 가 이미 결제 완료된 상태인지 status 를 체크
+        Optional<Transaction> transactionOps = transactionRepository.findByTransactionToken((String)paramMap.get("transactionToken"));
+        if(transactionOps.isPresent()) {
+            Transaction transaction = transactionOps.get();
+            if( !(TransactionStatus.REQUESTED.equals(transaction.getStatus())) ) {
+                throw new HttpException(PaymentErrorCode.DUPLICATE_ORDER);
+            }
+        }
         return true;
     }
 
@@ -88,10 +99,17 @@ public class PaymentReadyService {
         return expiresAt;
     }
 
-    private int saveTransaction(Map<String, Object> paramMap) {
-        TransactionEntityDummy transactionEntity = new TransactionEntityDummy();    // //TODO - TransactionEntityDummy -> TransactionEntity from infro
-        int transactionid = transactionRepository.save(transactionEntity);
-        return transactionid;
+    private Long saveTransaction(Map<String, Object> paramMap) {
+        // create entity
+        Transaction transactionEntity = new Transaction();
+        transactionEntity.setTransactionToken((String)paramMap.get("transactionToken"));
+        transactionEntity.setAmount(Long.valueOf((String)paramMap.get("amount")));
+        transactionEntity.setMerchantId(Long.valueOf((String)paramMap.get("merchantId")));
+        transactionEntity.setMerchantOrderId((String)paramMap.get("merchantOrderId"));
+        transactionEntity.setStatus(TransactionStatus.REQUESTED);
+
+        Transaction result = transactionRepository.save(transactionEntity);
+        return result.getTransactionId();
     }
 
 }

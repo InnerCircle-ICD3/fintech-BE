@@ -1,6 +1,7 @@
 package com.fastcampus.paymentcore.ranyoung;
 
 import com.fastcampus.paymentinfra.entity.Transaction;
+import com.fastcampus.paymentinfra.entity.TransactionStatus;
 import com.fastcampus.paymentinfra.redis.RedisTransactionRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +29,7 @@ public class RanYoungApplicationTests {
 	private ObjectMapper objectMapper;
 
 	@Autowired
-	private RedisTemplate<String, Object> redisTemplate;
+	private RedisTemplate<String, Transaction> redisTemplate;
 
 	private RedisTransactionRepository redisTransactionRepository;
 
@@ -51,7 +52,7 @@ public class RanYoungApplicationTests {
 		tx.setMerchantId(1L);
 		tx.setMerchantOrderId("ORD001");
 		tx.setAmount(10000L);
-		tx.setStatus("READY");
+		tx.setStatus(TransactionStatus.REQUESTED);
 		tx.setExpireAt(LocalDateTime.now().plusMinutes(3));
 
 		// when

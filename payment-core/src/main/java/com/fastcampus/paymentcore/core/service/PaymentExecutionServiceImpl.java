@@ -3,6 +3,7 @@ package com.fastcampus.paymentcore.core.service;
 import com.fastcampus.paymentcore.core.dto.PaymentProgressRequest;
 import com.fastcampus.paymentcore.core.dto.PaymentProgressResponse;
 import com.fastcampus.paymentinfra.entity.Transaction;
+import com.fastcampus.paymentinfra.entity.TransactionStatus;
 import com.fastcampus.paymentinfra.redis.RedisTransactionRepository;
 import com.fastcampus.paymentinfra.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +39,7 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
         boolean approved = simulateCardApproval(request.getCardToken());
 
         //3. 상태 결정 및 업데이트
-        String status = approved ? "COMPLETED" : "FAILED";
+        TransactionStatus status = approved ? TransactionStatus.COMPLETED : TransactionStatus.FAILED;
         tx.setStatus(status);
         tx.setCardToken(request.getCardToken());
 
