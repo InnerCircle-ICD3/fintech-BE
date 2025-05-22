@@ -26,7 +26,6 @@ repositories {
 dependencies {
 	// spring
 	implementation("org.springframework.boot:spring-boot-starter-aop")
-	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("androidx.compose.foundation:foundation-android:1.8.1")
 	implementation("com.google.firebase:firebase-crashlytics-buildtools:3.0.3")
 	implementation ("org.springframework.boot:spring-boot-starter-web")

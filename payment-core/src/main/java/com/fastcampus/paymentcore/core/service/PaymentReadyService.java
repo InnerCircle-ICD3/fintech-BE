@@ -7,6 +7,7 @@ import com.fastcampus.paymentcore.core.common.util.SystemParameterUtil;
 import com.fastcampus.paymentcore.core.common.util.TokenHandler;
 import com.fastcampus.paymentcore.core.dto.ResponsePaymentReady;
 import com.fastcampus.paymentinfra.entity.Transaction;
+import com.fastcampus.paymentinfra.entity.TransactionStatus;
 import com.fastcampus.paymentinfra.repository.TransactionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +18,9 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class PaymentReadyService {
@@ -41,30 +44,34 @@ public class PaymentReadyService {
 
     @Idempotent
     public ResponsePaymentReady readyPayment(Map<String, Object> paramMap) {
-        if (!nullCheckReadyPayment(paramMap)) {
-            throw new HttpException(PaymentErrorCode.INVALID_PAYMENT_REQUEST);
-        }
-
-        if (checkPaymentStatus(paramMap)) {
-            // TODO: 결제 완료 상태 처리 필요 시 구현
-        }
+        nullCheckReadyPayment(paramMap);
+        checkPaymentStatus(paramMap);
 
         String token = tokenHandler.generateTokenPaymentReady();
-        saveTransaction(paramMap, token);
-        LocalDateTime expiresAt = generateExpiresAt();
+        paramMap.put("transactionToken", token);
+        Long transactionId = saveTransaction(paramMap);
 
+        LocalDateTime expiresAt = generateExpiresAt();
         return new ResponsePaymentReady(token, expiresAt);
     }
 
-    private boolean nullCheckReadyPayment(Map<String, Object> paramMap) {
-        return paramMap.get("merchantId") != null &&
-                paramMap.get("merchantOrderId") != null &&
-                paramMap.get("amount") != null;
+    private void nullCheckReadyPayment(Map<String, Object> paramMap) {
+        List<String> targetKeys = List.of("merchantId", "merchantOrderId", "amount");
+        for (String key : targetKeys) {
+            if (!(paramMap.containsKey(key) && paramMap.get(key) != null)) {
+                throw new HttpException(PaymentErrorCode.INVALID_PAYMENT_REQUEST);
+            }
+        }
     }
 
-    private boolean checkPaymentStatus(Map<String, Object> paramMap) {
-        // TODO - 결제 상태 확인 로직 구현 필요
-        return false;
+    private void checkPaymentStatus(Map<String, Object> paramMap) {
+        Optional<Transaction> transactionOps = transactionRepository.findByTransactionToken((String) paramMap.get("transactionToken"));
+        if (transactionOps.isPresent()) {
+            Transaction transaction = transactionOps.get();
+            if (!TransactionStatus.REQUESTED.equals(transaction.getStatus())) {
+                throw new HttpException(PaymentErrorCode.DUPLICATE_ORDER);
+            }
+        }
     }
 
     private LocalDateTime generateExpiresAt() {
@@ -72,15 +79,16 @@ public class PaymentReadyService {
         return LocalDateTime.now(clock).plusSeconds(Integer.parseInt(ttlQr));
     }
 
-    private void saveTransaction(Map<String, Object> paramMap, String token) {
+    private Long saveTransaction(Map<String, Object> paramMap) {
         Transaction transaction = new Transaction();
+        transaction.setTransactionToken((String) paramMap.get("transactionToken"));
+        transaction.setAmount(Long.parseLong(paramMap.get("amount").toString()));
         transaction.setMerchantId(Long.parseLong(paramMap.get("merchantId").toString()));
         transaction.setMerchantOrderId(paramMap.get("merchantOrderId").toString());
-        transaction.setAmount(Long.parseLong(paramMap.get("amount").toString()));
-        transaction.setTransactionToken(token);
-        transaction.setStatus("READY");
+        transaction.setStatus(TransactionStatus.REQUESTED);
         transaction.setCreatedAt(LocalDateTime.now(Clock.system(ZoneId.of(zoneId))));
 
-        transactionRepository.save(transaction);
+        Transaction result = transactionRepository.save(transaction);
+        return result.getTransactionId();
     }
 }
