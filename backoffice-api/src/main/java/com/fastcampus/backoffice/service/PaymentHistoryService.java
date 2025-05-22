@@ -22,7 +22,7 @@ public class PaymentHistoryService {
 
     @Transactional(readOnly = true)
     public Page<PaymentHistoryDto> getPaymentHistories(Long merchantId, Pageable pageable) {
-        return paymentHistoryRepository.findByMerchantId(merchantId, pageable)
+        return paymentHistoryRepository.findByMerchant_MerchantId(merchantId, pageable)
             .map(this::convertToDto);
     }
 
@@ -56,7 +56,7 @@ public class PaymentHistoryService {
         Pageable pageable
     ) {
         return paymentHistoryRepository
-            .findByMerchantIdAndPaymentStatusAndApprovedAtBetween(
+            .findByMerchant_MerchantIdAndPaymentStatusAndApprovedAtBetween(
                 merchantId,
                 PaymentHistory.PaymentStatus.COMPLETED,
                 startDate,
@@ -78,7 +78,7 @@ public class PaymentHistoryService {
 
         // 전체 결제 내역 조회
         Page<PaymentHistory> allPayments = paymentHistoryRepository
-            .findByMerchantIdAndApprovedAtBetween(merchantId, startDate, endDate, Pageable.unpaged());
+            .findByMerchant_MerchantIdAndApprovedAtBetween(merchantId, startDate, endDate, Pageable.unpaged());
 
         // 상태별 통계 계산
         allPayments.forEach(payment -> {

@@ -11,17 +11,17 @@ import java.util.Optional;
 
 @Repository
 public interface PaymentHistoryRepository extends JpaRepository<PaymentHistory, Long> {
-    Page<PaymentHistory> findByMerchantId(Long merchantId, Pageable pageable);
+    Page<PaymentHistory> findByMerchant_MerchantId(Long merchantId, Pageable pageable);
     Optional<PaymentHistory> findByPaymentId(String paymentId);
     Optional<PaymentHistory> findByTransactionId(String transactionId);
-    Page<PaymentHistory> findByMerchantIdAndPaymentStatusAndApprovedAtBetween(
+    Page<PaymentHistory> findByMerchant_MerchantIdAndPaymentStatusAndApprovedAtBetween(
         Long merchantId, 
         PaymentHistory.PaymentStatus status,
         LocalDateTime startDate,
         LocalDateTime endDate,
         Pageable pageable
     );
-    Page<PaymentHistory> findByMerchantIdAndApprovedAtBetween(
+    Page<PaymentHistory> findByMerchant_MerchantIdAndApprovedAtBetween(
         Long merchantId,
         LocalDateTime startDate,
         LocalDateTime endDate,
