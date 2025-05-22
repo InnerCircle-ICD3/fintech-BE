@@ -51,8 +51,6 @@ public class Merchant {
 
     public enum MerchantStatus {
         ACTIVE,
-        INACTIVE,
-        SUSPENDED,
-        DELETED
+        INACTIVE
     }
 } 

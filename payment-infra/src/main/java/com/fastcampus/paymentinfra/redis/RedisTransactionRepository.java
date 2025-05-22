@@ -8,16 +8,16 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-@Repository
 @RequiredArgsConstructor
+@Repository
 public class RedisTransactionRepository {
 
-    private final RedisTemplate<String, Transaction> redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
     private static final String PREFIX = "transaction:";
 
     public Optional<Transaction> findByToken(String token) {
-        Transaction transaction = redisTemplate.opsForValue().get(PREFIX + token);
-        return Optional.ofNullable(transaction);
+        Object result = redisTemplate.opsForValue().get(PREFIX + token);
+        return Optional.ofNullable((Transaction) result);
     }
 
     public void save(Transaction transaction, long ttlSeconds) {
@@ -25,13 +25,11 @@ public class RedisTransactionRepository {
     }
 
     public void update(Transaction transaction) {
-        // TTL 유지하면서 덮어쓰기
         String key = PREFIX + transaction.getTransactionToken();
         Long ttl = redisTemplate.getExpire(key, TimeUnit.SECONDS);
         if (ttl != null && ttl > 0) {
             redisTemplate.opsForValue().set(key, transaction, ttl, TimeUnit.SECONDS);
         } else {
-            // TTL 없으면 기본 600초 설정
             redisTemplate.opsForValue().set(key, transaction, 600, TimeUnit.SECONDS);
         }
     }

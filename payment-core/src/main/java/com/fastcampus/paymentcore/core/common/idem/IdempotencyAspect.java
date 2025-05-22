@@ -17,49 +17,51 @@ import java.util.Optional;
 @Component
 public class IdempotencyAspect {
 
-    private static Logger logger = LoggerFactory.getLogger(IdempotencyAspect.class);
+    private static final Logger logger = LoggerFactory.getLogger(IdempotencyAspect.class);
 
     @Autowired
     private IdempotencyService idempotencyService;
 
-    // @Around 에다가 어떤 method 들을 대상으로 aspect 를 적용할지 지정할 수 있음. 특정 annotation 이 붙은 method 들, 또는 이름이 어떤 패턴인 method 들 등등
     @Around("@annotation(com.fastcampus.paymentcore.core.common.idem.Idempotent)")
     public Object aspectIdempotency(ProceedingJoinPoint joinPoint) throws Throwable {
-        int idemkey = extractIdemKey(joinPoint);
+        String idemKey = extractIdemKey(joinPoint);
 
-        // 이미 동일한 요청이 처리된 경우, 기존 결과 반환
-        Optional<IdempotencyDto> idempotencyOptional = idempotencyService.checkIdempotency(idemkey);
+        if (idemKey == null || idemKey.isEmpty()) {
+            logger.warn("Idempotency key not found in method arguments: {}", joinPoint.getSignature().getName());
+            return joinPoint.proceed();  // 키가 없으면 그냥 실행
+        }
+
+        Optional<IdempotencyDto> idempotencyOptional = idempotencyService.checkIdempotency(idemKey);
         if (idempotencyOptional.isPresent()) {
-            logger.info(" =========== IdempotencyService > response already exists: ", joinPoint.getSignature().getName());
+            logger.info("Idempotent response returned for key: {}", idemKey);
             return idempotencyOptional.get().getResponseData();
         }
-        logger.info(" =========== IdempotencyService > request passed :", joinPoint.getSignature().getName());
 
-        // 실제 메서드 실행 및 결과 저장
-        Object result = joinPoint.proceed();    // @Idempotent 어노테이션이 붙은 method 를 실행하고 result 를 받아옴
-        IdempotencyDto idempotencyResult = new IdempotencyDto();
-        String responseData = "";
-        if(result != null) {
-            responseData = result.toString();   // TODO - data format 어떻게 저장할지 - null 일 경우 / null 아닐 경우 모두 넣기
-        }
-        idempotencyResult.setResponseData(responseData);
-        idempotencyService.saveIdempotency(idempotencyResult);
+        logger.info("Proceeding with method execution: {}", joinPoint.getSignature().getName());
+
+        Object result = joinPoint.proceed(); // 실제 비즈니스 로직 실행
+        String responseData = result != null ? result.toString() : "";
+
+        IdempotencyDto idempotencyDto = new IdempotencyDto();
+        idempotencyDto.setIdempotencyKey(idemKey);
+        idempotencyDto.setResponseData(responseData);
+        idempotencyService.saveIdempotency(idempotencyDto);
 
         return result;
     }
 
-    private int extractIdemKey(ProceedingJoinPoint joinPoint) {
+    private String extractIdemKey(ProceedingJoinPoint joinPoint) {
         Object[] args = joinPoint.getArgs();
 
         for (Object arg : args) {
-            if (arg instanceof Map<?, ?>) { // 인자가 Map 타입인지 확인
-                Map<?, ?> paramMap = (Map<?, ?>) arg;
-                if (paramMap.containsKey("idemKey")) {
-                    return Integer.valueOf((String)paramMap.get("idemKey")); // "idenKey" 값 반환
+            if (arg instanceof Map<?, ?> map) {
+                Object key = map.get("idemKey");
+                if (key != null) {
+                    return key.toString();
                 }
             }
         }
 
-        return 0; // 해당 키가 없으면 null 반환
+        return null;
     }
 }
