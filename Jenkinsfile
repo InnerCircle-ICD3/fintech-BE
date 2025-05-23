@@ -70,6 +70,23 @@ pipeline {
             }
         }
         
+        stage('Gradle 빌드') {
+            steps {
+                script {
+                    def moduleList = env.MODULES_TO_BUILD.split(',')
+                    
+                    sh 'chmod +x ./gradlew'
+                    
+                    for (module in moduleList) {
+                        if (module?.trim()) {
+                            echo "${module} 모듈 빌드 중..."
+                            sh "./gradlew :${module}:build -x test"
+                        }
+                    }
+                }
+            }
+        }
+        
         stage('모듈별 빌드 및 배포') {
             steps {
                 script {
