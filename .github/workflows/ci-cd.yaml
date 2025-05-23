@@ -23,9 +23,8 @@ jobs:  # 워크플로우에서 실행될 작업들 정의
     - name: Grant execute permission for gradlew  # gradlew 실행 권한 부여 단계
       run: chmod +x gradlew  # gradlew 파일에 실행 권한 부여 명령
     
-    - name: Build with Gradle  # Gradle로 빌드 수행 단계
-      # run: ./gradlew build -x test  # Gradle 빌드 실행 (테스트 제외)
-      run: ./gradlew build -x test -PexcludeAndroid=true  # Android 의존성 제외하고 빌드 
+    - name: Build payment-api only
+      run: ./gradlew :payment-api:build -x test  # payment-api만 빌드
     
     - name: Run tests  # 테스트 실행 단계
       run: ./gradlew test || echo "테스트 실패했지만 배포 계속 진행"  # 테스트 실행 (실패해도 에러 메시지만 출력)
