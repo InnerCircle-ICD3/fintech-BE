@@ -44,6 +44,7 @@ dependencies {
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	testImplementation("it.ozimov:embedded-redis:0.7.2")
 	implementation ("org.springframework.boot:spring-boot-starter-data-redis")
+	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 }
 
 tasks.named<Test>("test") {
