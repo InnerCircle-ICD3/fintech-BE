@@ -18,7 +18,7 @@ spec:
       - name: payment-api
         image: your-registry-url/payment-api:latest
         ports:
-        - containerPort: 8080
+        - containerPort: 8081
         resources:
           limits:
             cpu: "500m"
@@ -32,7 +32,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /actuator/health
-            port: 8080
+            port: 8081
           initialDelaySeconds: 30
           periodSeconds: 10
 ---
@@ -45,5 +45,5 @@ spec:
     app: payment-api
   ports:
   - port: 80
-    targetPort: 8080
+    targetPort: 8081
   type: ClusterIP 
