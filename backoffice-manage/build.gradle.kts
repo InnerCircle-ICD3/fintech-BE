@@ -26,10 +26,10 @@ repositories {
 dependencies {
     // SECURITY
     implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
 
     // DB
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    runtimeOnly("com.h2database:h2") // 개발용 인메모리 DB
     runtimeOnly("org.postgresql:postgresql:42.7.3")
 
     // 공용 모듈

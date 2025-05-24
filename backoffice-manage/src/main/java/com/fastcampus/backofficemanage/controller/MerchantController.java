@@ -10,6 +10,9 @@ import com.fastcampus.backofficemanage.dto.signup.response.MerchantSignUpRespons
 import com.fastcampus.backofficemanage.dto.update.request.MerchantUpdateRequest;
 import com.fastcampus.backofficemanage.service.AuthService;
 import com.fastcampus.backofficemanage.service.MerchantService;
+import com.fastcampus.common.util.SwaggerDocs.StandardResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,37 +25,50 @@ public class MerchantController {
     private final MerchantService merchantService;
     private final AuthService authService;
 
+    @Operation(summary = "가맹점 회원가입")
+    @StandardResponses
     @PostMapping("/register")
-    public ResponseEntity<MerchantSignUpResponse> register(@RequestBody MerchantSignUpRequest request) {
+    public ResponseEntity<MerchantSignUpResponse> register(@RequestBody @Valid MerchantSignUpRequest request) {
         return ResponseEntity.ok(authService.signup(request));
     }
 
+    @Operation(summary = "가맹점 로그인")
+    @StandardResponses
     @PostMapping("/login")
-    public ResponseEntity<MerchantLoginResponse> login(@RequestBody MerchantLoginRequest request) {
+    public ResponseEntity<MerchantLoginResponse> login(@RequestBody @Valid MerchantLoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
 
+    @Operation(summary = "가맹점 정보 조회")
+    @StandardResponses
     @GetMapping("/info")
     public ResponseEntity<MerchantInfoResponse> getInfo(@CurrentLoginId String loginId) {
         return ResponseEntity.ok(merchantService.getMyInfo(loginId));
     }
 
+    @Operation(summary = "가맹점 정보 수정")
+    @StandardResponses
     @PutMapping("/modify")
-    public ResponseEntity<CommonResponse> updateInfo(@CurrentLoginId String loginId,
-                                                     @RequestBody MerchantUpdateRequest request) {
-        return ResponseEntity.ok(merchantService.updateMyInfo(loginId, request));
+    public ResponseEntity<CommonResponse> updateInfo(@RequestBody @Valid MerchantUpdateRequest request) {
+        return ResponseEntity.ok(merchantService.updateMyInfo(request));
     }
 
+    @Operation(summary = "가맹점 삭제")
+    @StandardResponses
     @DeleteMapping("/delete")
     public ResponseEntity<CommonResponse> delete(@CurrentLoginId String loginId) {
         return ResponseEntity.ok(merchantService.deleteMyAccount(loginId));
     }
 
+    @Operation(summary = "가맹점 로그아웃")
+    @StandardResponses
     @PostMapping("/logout")
     public ResponseEntity<CommonResponse> logout(@RequestHeader("Authorization") String token) {
         return authService.logout(token);
     }
 
+    @Operation(summary = "AccessToken 재발급")
+    @StandardResponses
     @PostMapping("/reissue")
     public ResponseEntity<MerchantLoginResponse> reissue(@RequestHeader("Refresh-Token") String refreshToken) {
         return authService.reissue(refreshToken);

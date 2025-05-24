@@ -1,31 +1,69 @@
 package com.fastcampus.paymentcore.core.common.util;
 
-import com.fastcampus.paymentinfra.repository.TransactionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
-
+import java.security.Key;
+import java.util.Date;
 
 @Component
 public class TokenHandler {
 
+    @Value("${jwt.secret}")
+    private String secret;
 
-    @Autowired
-    TransactionRepository transactionRepository;
+    @Value("${lifetime.qr}")
+    private String ttlQr; // 단위: 초
 
-    public String generateTokenPaymentReady() {
-        String token;
-        do {
-            token = UUID.randomUUID().toString().replace("-", "");
-        } while (transactionRepository.findByTransactionToken(token).isPresent());  // 중복되는 값이 있다면 true 라면 반복
+    private Key signingKey;
 
-        return token;
+    @PostConstruct
+    public void init() {
+        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    public int decodeQrToken(String qrToken) {
-        return 0;
+    /**
+     * 거래 ID 기반 JWT QR 토큰 생성
+     */
+    public String generateTokenWithTransactionId(Long transactionId) {
+        long now = System.currentTimeMillis();
+        long exp = now + Long.parseLong(ttlQr) * 1000;
+
+        return Jwts.builder()
+                .setSubject("qr_token")
+                .claim("transactionId", transactionId)
+                .setIssuedAt(new Date(now))
+                .setExpiration(new Date(exp))
+                .signWith(signingKey, SignatureAlgorithm.HS256)
+                .compact();
     }
 
+    /**
+     * JWT QR 토큰에서 거래 ID 추출
+     */
+    public Long decodeQrToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(signingKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
 
+        return claims.get("transactionId", Long.class);
+    }
+
+    /**
+     * JWT QR 토큰에서 전체 Claims 반환
+     */
+    public Claims decodeQrTokenToClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(signingKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
 }

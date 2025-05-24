@@ -5,33 +5,31 @@ import com.fastcampus.common.exception.code.PaymentErrorCode;
 import com.fastcampus.paymentcore.core.common.idem.Idempotent;
 import com.fastcampus.paymentcore.core.common.util.TokenHandler;
 import com.fastcampus.paymentcore.core.dto.PaymentProgressDto;
-import com.fastcampus.paymentcore.core.dummy.TransactionEntityDummy;
-import com.fastcampus.paymentcore.core.dummy.TransactionRepositoryDummy;
 import com.fastcampus.paymentinfra.entity.Transaction;
 import com.fastcampus.paymentinfra.repository.TransactionRepository;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-
 @Service
+@RequiredArgsConstructor
 public class PaymentProgressService {
 
-    Logger logger = LoggerFactory.getLogger(PaymentProgressService.class);
+    private static final Logger logger = LoggerFactory.getLogger(PaymentProgressService.class);
 
-    @Autowired
-    TransactionRepository transactionRepository;
+    private final TransactionRepository transactionRepository;
+    private final TokenHandler tokenHandler;
+
     @Idempotent
     public PaymentProgressDto progressPayment(String token) {
-        //
-        Optional<Transaction> transactionOpt = transactionRepository.findByTransactionToken(token);
-        if(transactionOpt.isEmpty()) {
-            throw new HttpException(PaymentErrorCode.PAYMENT_NOT_FOUND);
-        }
-        Transaction transaction = transactionOpt.get();
-        PaymentProgressDto paymentProgressDto = new PaymentProgressDto(transaction);
-        return paymentProgressDto;
+        // QR 토큰에서 거래 ID 디코딩
+        Long transactionId = tokenHandler.decodeQrToken(token);
+
+        // 거래 조회
+        Transaction transaction = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new HttpException(PaymentErrorCode.PAYMENT_NOT_FOUND));
+
+        return new PaymentProgressDto(transaction);
     }
 }

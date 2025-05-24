@@ -29,7 +29,9 @@ dependencies {
     // ✅ PostgreSQL JDBC 드라이버
     runtimeOnly("org.postgresql:postgresql:42.7.3")
 
+    // Redis(jackson은 Localdatetime땜에)
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")

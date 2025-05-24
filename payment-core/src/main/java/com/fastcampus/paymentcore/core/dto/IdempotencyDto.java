@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class IdempotencyDto {
-    public String responseData;
-    public int id;
+    private int id;
+    private String idempotencyKey;
+    private String responseData;
 }

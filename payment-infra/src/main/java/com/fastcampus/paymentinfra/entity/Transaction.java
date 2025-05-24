@@ -18,12 +18,15 @@ public class Transaction {
     private Long merchantId;
     private String merchantOrderId;
     private Long amount;
+
     @Enumerated(EnumType.STRING)
     private TransactionStatus status;
+
+    @Column(nullable = true)
     private String transactionToken;
+
     private String cardToken;
 
-    @CreationTimestamp
     @Column(columnDefinition = "TIMESTAMP")
     private LocalDateTime expireAt;
 

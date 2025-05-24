@@ -5,6 +5,8 @@ import com.fastcampus.backoffice.entity.ApiKey;
 import com.fastcampus.backoffice.entity.Merchant;
 import com.fastcampus.backoffice.repository.ApiKeyRepository;
 import com.fastcampus.backoffice.repository.MerchantRepository;
+import com.fastcampus.common.exception.code.MerchantErrorCode;
+import com.fastcampus.common.exception.exception.DuplicateKeyException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -38,6 +40,10 @@ public class ApiKeyService {
     public ApiKeyDto generateApiKey(Long merchantId) {
         Merchant merchant = merchantRepository.findById(merchantId)
             .orElseThrow(() -> new RuntimeException("Merchant not found"));
+
+        if (apiKeyRepository.existsByMerchant_MerchantIdAndActiveTrue(merchantId)) {
+            throw DuplicateKeyException.of(MerchantErrorCode.DUPLICATE_API_KEY);
+        }
 
         // JWT 토큰 생성
         SecretKey key = Keys.hmacShaKeyFor(Base64.getDecoder().decode(jwtSecret));
