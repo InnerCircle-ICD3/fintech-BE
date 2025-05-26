@@ -1,9 +1,10 @@
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/testdb
+    driver-class-name: org.postgresql.Driver
     username: testuser
     password: testpass
-    driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -13,7 +14,7 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
   application:
-    name: backoffice-api
+    name: backoffice
 
 server:
   port: 8080
@@ -26,4 +27,10 @@ springdoc:
 
 jwt:
   secret: dYVzdC1zZWNyZXQta2V5LXlvdS2jYW4tY2hhbmdlPXRoaXM=
-  expiration: 86400000 # 24 hours in milliseconds 
+  expiration: 86400000 # 24 hours in milliseconds
+
+logging:
+  level:
+    org.springframework.web: TRACE
+    com.fastcampus.backoffice: TRACE
+    org.springframework.security: TRACE 

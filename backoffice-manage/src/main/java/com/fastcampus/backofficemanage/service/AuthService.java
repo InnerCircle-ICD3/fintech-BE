@@ -8,13 +8,14 @@ import com.fastcampus.backofficemanage.entity.Keys;
 import com.fastcampus.backofficemanage.entity.Merchant;
 import com.fastcampus.backofficemanage.repository.MerchantRepository;
 import com.fastcampus.backofficemanage.security.JwtProvider;
+import com.fastcampus.backofficemanage.dto.common.CommonResponse;
 import com.fastcampus.common.exception.code.AuthErrorCode;
 import com.fastcampus.common.exception.exception.DuplicateKeyException;
 import com.fastcampus.common.exception.exception.NotFoundException;
 import com.fastcampus.common.exception.exception.UnauthorizedException;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,17 +33,82 @@ public class AuthService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final RedisTemplate<String, String> redisTemplate;
-    private final HttpServletRequest request;
 
+    // 회원가입
     @Transactional
     public MerchantSignUpResponse signup(MerchantSignUpRequest request) {
-        if (merchantRepository.existsByLoginId(request.getLoginId())) {
-            throw DuplicateKeyException.of(AuthErrorCode.DUPLICATE_LOGIN_ID);
-        }
+        validateDuplicateLoginId(request.getLoginId());
 
         String encryptedPw = passwordEncoder.encode(request.getLoginPw());
+        Merchant merchant = createMerchantFromRequest(request, encryptedPw);
 
-        Merchant merchant = Merchant.builder()
+        Keys keys = Keys.builder()
+                .encryptedKey(UUID.randomUUID().toString())
+                .merchant(merchant)
+                .build();
+        merchant.setKeys(keys);
+
+        Merchant saved = merchantRepository.save(merchant);
+        return toSignupResponse(saved);
+    }
+
+    // 로그인
+    @Transactional(readOnly = true)
+    public MerchantLoginResponse login(MerchantLoginRequest request) {
+        Merchant merchant = findMerchantByLoginId(request.getLoginId());
+
+        if (!passwordEncoder.matches(request.getLoginPw(), merchant.getLoginPw())) {
+            throw new UnauthorizedException(AuthErrorCode.INVALID_PASSWORD);
+        }
+
+        return generateLoginTokens(merchant.getLoginId());
+    }
+
+    // 로그아웃
+    @Transactional
+    public ResponseEntity<CommonResponse> logout(String authorizationHeader) {
+        String token = resolveBearerToken(authorizationHeader, AuthErrorCode.MISSING_ACCESS_TOKEN);
+        long exp = jwtProvider.getRemainingExpiration(token);
+
+        redisTemplate.opsForValue().set(BLOCKLIST_PREFIX + token, "logout", exp, TimeUnit.MILLISECONDS);
+        return ResponseEntity.ok(CommonResponse.success("로그아웃 완료"));
+    }
+
+    // 리프레시 토큰 재발급
+    @Transactional(readOnly = true)
+    public ResponseEntity<MerchantLoginResponse> reissue(String refreshTokenHeader) {
+        String refreshToken = resolveBearerToken(refreshTokenHeader, AuthErrorCode.MISSING_REFRESH_TOKEN);
+
+        if (!jwtProvider.validateToken(refreshToken)) {
+            throw new UnauthorizedException(AuthErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        String loginId = jwtProvider.getSubject(refreshToken);
+        String newAccessToken = jwtProvider.generateAccessToken(loginId);
+
+        return ResponseEntity.ok(
+                MerchantLoginResponse.builder()
+                        .accessToken(newAccessToken)
+                        .refreshToken(refreshToken)
+                        .build()
+        );
+    }
+
+    // Private 메서드
+
+    private void validateDuplicateLoginId(String loginId) {
+        if (merchantRepository.existsByLoginId(loginId)) {
+            throw DuplicateKeyException.of(AuthErrorCode.DUPLICATE_LOGIN_ID);
+        }
+    }
+
+    private Merchant findMerchantByLoginId(String loginId) {
+        return merchantRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new NotFoundException(AuthErrorCode.NOT_FOUND_ID));
+    }
+
+    private Merchant createMerchantFromRequest(MerchantSignUpRequest request, String encryptedPw) {
+        return Merchant.builder()
                 .loginId(request.getLoginId())
                 .loginPw(encryptedPw)
                 .name(request.getName())
@@ -52,69 +118,31 @@ public class AuthService {
                 .contactPhone(request.getContactPhone())
                 .status("ACTIVE")
                 .build();
+    }
 
-        Keys keys = Keys.builder()
-                .encryptedKey(UUID.randomUUID().toString())
-                .merchant(merchant)
-                .build();
-
-        merchant.setKeys(keys);
-
-        Merchant saved = merchantRepository.save(merchant);
-
+    private MerchantSignUpResponse toSignupResponse(Merchant merchant) {
         return MerchantSignUpResponse.builder()
-                .merchantId(saved.getMerchantId())
-                .loginId(saved.getLoginId())
-                .name(saved.getName())
-                .status(saved.getStatus())
+                .merchantId(merchant.getMerchantId())
+                .loginId(merchant.getLoginId())
+                .name(merchant.getName())
+                .status(merchant.getStatus())
                 .build();
     }
 
-    @Transactional(readOnly = true)
-    public MerchantLoginResponse login(MerchantLoginRequest request) {
-        Merchant merchant = merchantRepository.findByLoginId(request.getLoginId())
-                .orElseThrow(() -> new NotFoundException(AuthErrorCode.NOT_FOUND_ID));
-
-        if (!passwordEncoder.matches(request.getLoginPw(), merchant.getLoginPw())) {
-            throw new UnauthorizedException(AuthErrorCode.INVALID_PASSWORD);
-        }
-
-        String accessToken = jwtProvider.generateAccessToken(merchant.getLoginId());
-        String refreshToken = jwtProvider.generateRefreshToken(merchant.getLoginId());
-
+    private MerchantLoginResponse generateLoginTokens(String loginId) {
         return MerchantLoginResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
+                .accessToken(jwtProvider.generateAccessToken(loginId))
+                .refreshToken(jwtProvider.generateRefreshToken(loginId))
                 .build();
     }
 
-    @Transactional
-    public void logout(HttpServletRequest request) {
-        String token = resolveToken(request);
-        long exp = jwtProvider.getRemainingExpiration(token);
-        redisTemplate.opsForValue().set(BLOCKLIST_PREFIX + token, "logout", exp, TimeUnit.MILLISECONDS);
-    }
+    private String resolveBearerToken(String header, AuthErrorCode missingTokenError) {
+        if (header == null || header.isBlank()) {
+            throw new UnauthorizedException(missingTokenError);
+        }
 
-    private String resolveToken(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        }
-        throw new UnauthorizedException(AuthErrorCode.MISSING_ACCESS_TOKEN);
-    }
-
-    @Transactional(readOnly = true)
-    public String reissue(String refreshToken) {
-        if (refreshToken == null || refreshToken.isBlank()) {
-            throw new UnauthorizedException(AuthErrorCode.MISSING_REFRESH_TOKEN);
-        }
-        if (refreshToken.startsWith("Bearer ")) {
-            refreshToken = refreshToken.substring(7);
-        }
-        if (!jwtProvider.validateToken(refreshToken)) {
-            throw new UnauthorizedException(AuthErrorCode.INVALID_REFRESH_TOKEN);
-        }
-        String loginId = jwtProvider.getSubject(refreshToken);
-        return jwtProvider.generateAccessToken(loginId);
+        return header.startsWith("Bearer ")
+                ? header.substring(7)
+                : header;
     }
 }

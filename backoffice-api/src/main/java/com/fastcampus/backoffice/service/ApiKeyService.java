@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -51,7 +52,7 @@ public class ApiKeyService {
         // API 키 저장
         ApiKey apiKey = new ApiKey();
         apiKey.setMerchant(merchant);
-        apiKey.setKey(token);
+        apiKey.setEncryptedKey(token);
         apiKey.setActive(true);
         apiKey.setExpiredAt(LocalDateTime.now().plusYears(1));
 
@@ -62,17 +63,20 @@ public class ApiKeyService {
     @Transactional
     public ApiKeyDto reissueApiKey(Long merchantId, String oldKey) {
         // 기존 API 키 찾기
-        ApiKey oldApiKey = apiKeyRepository.findByKey(oldKey)
+        ApiKey oldApiKey = apiKeyRepository.findByEncryptedKey(oldKey)
             .orElseThrow(() -> new RuntimeException("API Key not found"));
-
+        System.out.println("oldApiKey = " + oldApiKey);
+        System.out.println("merchantId = " + oldApiKey.getMerchant().getMerchantId());
         // 가맹점 ID 검증
-        if (!oldApiKey.getMerchant().getId().equals(merchantId)) {
+        if (!oldApiKey.getMerchant().getMerchantId().equals(merchantId)) {
             throw new RuntimeException("Invalid merchant ID for this API key");
         }
 
         // 기존 API 키 비활성화
-        oldApiKey.setActive(false);
-        apiKeyRepository.save(oldApiKey);
+        System.out.println("ActivityBefore = " + oldApiKey.getActive());
+        apiKeyRepository.deactivateActiveKeyByMerchantId(merchantId);
+        System.out.println("ActivityAfter = " + oldApiKey.getActive());
+
 
         // 새로운 API 키 발급
         return generateApiKey(merchantId);
@@ -80,14 +84,14 @@ public class ApiKeyService {
 
     @Transactional(readOnly = true)
     public List<ApiKeyDto> getApiKeys(Long merchantId) {
-        return apiKeyRepository.findByMerchantId(merchantId).stream()
+        return apiKeyRepository.findByMerchant_MerchantId(merchantId).stream()
             .map(this::convertToDto)
             .collect(Collectors.toList());
     }
 
     @Transactional
     public void deactivateApiKey(String key) {
-        ApiKey apiKey = apiKeyRepository.findByKey(key)
+        ApiKey apiKey = apiKeyRepository.findByEncryptedKey(key)
             .orElseThrow(() -> new RuntimeException("API Key not found"));
         apiKey.setActive(false);
         apiKeyRepository.save(apiKey);
@@ -95,9 +99,9 @@ public class ApiKeyService {
 
     private ApiKeyDto convertToDto(ApiKey apiKey) {
         ApiKeyDto dto = new ApiKeyDto();
-        dto.setId(apiKey.getId());
-        dto.setKey(apiKey.getKey());
-        dto.setActive(apiKey.isActive());
+        dto.setId(apiKey.getKeysId());
+        dto.setKey(apiKey.getEncryptedKey());
+        dto.setActive(apiKey.getActive());
         dto.setExpiredAt(apiKey.getExpiredAt());
         return dto;
     }

@@ -8,12 +8,12 @@ import com.fastcampus.backofficemanage.repository.MerchantRepository;
 import com.fastcampus.common.exception.code.MerchantErrorCode;
 import com.fastcampus.common.exception.exception.DuplicateKeyException;
 import com.fastcampus.common.exception.exception.NotFoundException;
-import com.fastcampus.common.util.AppClock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 
 @Service
@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 public class MerchantService {
 
     private final MerchantRepository merchantRepository;
+    private final Clock clock;
 
     @Transactional(readOnly = true)
     public MerchantInfoResponse getMyInfo(String loginId) {
@@ -49,7 +50,7 @@ public class MerchantService {
                 request.getContactEmail(),
                 request.getContactPhone()
         );
-        merchant.setUpdatedAt(LocalDateTime.now(AppClock.CLOCK));
+        merchant.setUpdatedAt(LocalDateTime.now(clock));
 
         try {
             merchantRepository.flush(); // unique 제약조건 위반 감지용
@@ -69,7 +70,7 @@ public class MerchantService {
                 .orElseThrow(() -> new NotFoundException(MerchantErrorCode.NOT_FOUND));
 
         merchant.setStatus("DELETED");
-        merchant.setUpdatedAt(LocalDateTime.now(AppClock.CLOCK));
+        merchant.setUpdatedAt(LocalDateTime.now(clock));
 
         return CommonResponse.builder()
                 .success(true)

@@ -9,26 +9,23 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "api_keys")
+@Table(name = "keys")
 @Getter
 @Setter
 public class ApiKey {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long keysId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "merchant_id", nullable = false)
     private Merchant merchant;
 
     @Column(nullable = false, unique = true)
-    private String key;
+    private String encryptedKey;
 
-    @Column(nullable = false)
-    private String secret;
-
-    @Column(nullable = false)
-    private boolean active = true;
+    @Column(name = "active")
+    private Boolean active = true;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

@@ -23,6 +23,8 @@ public class Transaction {
     private String merchantOrderId;
     private Long amount;
     private String status;
+    private String transactionToken;
+    private String cardToken;
 
     @CreationTimestamp
     @Column(columnDefinition = "TIMESTAMP")

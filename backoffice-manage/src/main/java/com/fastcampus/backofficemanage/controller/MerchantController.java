@@ -1,5 +1,6 @@
 package com.fastcampus.backofficemanage.controller;
 
+import com.fastcampus.backofficemanage.aspect.CurrentLoginId;
 import com.fastcampus.backofficemanage.dto.common.CommonResponse;
 import com.fastcampus.backofficemanage.dto.info.MerchantInfoResponse;
 import com.fastcampus.backofficemanage.dto.login.request.MerchantLoginRequest;
@@ -9,14 +10,8 @@ import com.fastcampus.backofficemanage.dto.signup.response.MerchantSignUpRespons
 import com.fastcampus.backofficemanage.dto.update.request.MerchantUpdateRequest;
 import com.fastcampus.backofficemanage.service.AuthService;
 import com.fastcampus.backofficemanage.service.MerchantService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -38,47 +33,28 @@ public class MerchantController {
     }
 
     @GetMapping("/info")
-    public ResponseEntity<MerchantInfoResponse> getInfo() {
-        return ResponseEntity.ok(merchantService.getMyInfo(getLoginId()));
+    public ResponseEntity<MerchantInfoResponse> getInfo(@CurrentLoginId String loginId) {
+        return ResponseEntity.ok(merchantService.getMyInfo(loginId));
     }
 
     @PutMapping("/modify")
-    public ResponseEntity<CommonResponse> updateInfo(@RequestBody MerchantUpdateRequest request) {
-        return ResponseEntity.ok(merchantService.updateMyInfo(getLoginId(), request));
+    public ResponseEntity<CommonResponse> updateInfo(@CurrentLoginId String loginId,
+                                                     @RequestBody MerchantUpdateRequest request) {
+        return ResponseEntity.ok(merchantService.updateMyInfo(loginId, request));
     }
 
     @DeleteMapping("/delete")
-    public ResponseEntity<CommonResponse> delete() {
-        return ResponseEntity.ok(merchantService.deleteMyAccount(getLoginId()));
+    public ResponseEntity<CommonResponse> delete(@CurrentLoginId String loginId) {
+        return ResponseEntity.ok(merchantService.deleteMyAccount(loginId));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<CommonResponse> logout(HttpServletRequest request) {
-        authService.logout(request);
-        return ResponseEntity.ok(CommonResponse.builder()
-                .success(true)
-                .message("로그아웃 완료")
-                .build());
+    public ResponseEntity<CommonResponse> logout(@RequestHeader("Authorization") String token) {
+        return authService.logout(token);
     }
 
-    @Operation(summary = "리프레시 토큰을 이용한 액세스 토큰 재발급")
-    @SecurityRequirement(name = "refreshAuth")
     @PostMapping("/reissue")
-    public ResponseEntity<MerchantLoginResponse> reissue(
-            HttpServletRequest request,
-            @Parameter(hidden = true) @RequestHeader(value = "Refresh-Token", required = false) String ignored) {
-
-        String refreshToken = request.getHeader("Refresh-Token");
-        String newAccessToken = authService.reissue(refreshToken);
-
-        return ResponseEntity.ok(MerchantLoginResponse.builder()
-                .accessToken(newAccessToken)
-                .refreshToken(refreshToken)
-                .build());
-    }
-
-    private String getLoginId() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return auth.getPrincipal().toString();
+    public ResponseEntity<MerchantLoginResponse> reissue(@RequestHeader("Refresh-Token") String refreshToken) {
+        return authService.reissue(refreshToken);
     }
 }

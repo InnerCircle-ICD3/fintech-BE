@@ -1,3 +1,6 @@
+server:
+  port: 8082
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/testdb
@@ -20,6 +23,9 @@ spring:
 
 jwt:
   secret: dYVzdC1zZWNyZXQta2V5LXlvdS2jYW4tY2hhbmdlPXRoaXM=
+
+app:
+  timezone: Asia/Seoul
 
 springdoc:
   api-docs:

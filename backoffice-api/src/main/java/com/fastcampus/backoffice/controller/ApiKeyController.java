@@ -26,15 +26,15 @@ public class ApiKeyController {
     @PostMapping("/{merchantId}/reissue")
     @Operation(summary = "Reissue API key for merchant")
     public ResponseEntity<ApiKeyDto> reissueApiKey(
-        @PathVariable Long merchantId,
-        @RequestParam String currentKey
+        @PathVariable("merchantId") Long merchantId,
+        @RequestParam("currentKey ") String currentKey
     ) {
         return ResponseEntity.ok(apiKeyService.reissueApiKey(merchantId, currentKey));
     }
 
     @GetMapping("/{merchantId}")
     @Operation(summary = "Get all API keys for merchant")
-    public ResponseEntity<List<ApiKeyDto>> getApiKeys(@PathVariable Long merchantId) {
+    public ResponseEntity<List<ApiKeyDto>> getApiKeys(@PathVariable("merchantId") Long merchantId) {
         return ResponseEntity.ok(apiKeyService.getApiKeys(merchantId));
     }
 
