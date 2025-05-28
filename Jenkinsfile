@@ -123,9 +123,19 @@ pipeline {
                         if (module?.trim()) {
                             stage("${module} 빌드 및 배포") {
                                 // Docker 이미지 빌드
+                                def modulePort = 8080 // 기본 포트
+                                if (module == 'payment-api') {
+                                    modulePort = 8081
+                                } else if (module == 'backoffice-api') {
+                                    modulePort = 8080
+                                } else if (module == 'backoffice-manage') {
+                                    modulePort = 8082
+                                }
+                                
                                 sh """
                                     docker build -t ${DOCKER_REGISTRY}/${module}:${TIMESTAMP} \\
                                     --build-arg MODULE=${module} \\
+                                    --build-arg SERVER_PORT=${modulePort} \\
                                     --build-arg JAR_FILE=\$(find ${module}/build/libs/ -name '*.jar' | head -1) \\
                                     .
                                 """
@@ -142,15 +152,6 @@ pipeline {
                                         returnStdout: true
                                     ).trim()
 
-                                    def modulePort = 8081 // 기본 포트
-                                    if (module == 'payment-api') {
-                                        modulePort = 8081
-                                    } else if (module == 'backoffice-api') {
-                                        modulePort = 8080
-                                    } else if (module == 'backoffice-manage') {
-                                        modulePort = 8082
-                                    }
-                                    
                                     if (deploymentExists.contains('NOT_FOUND')) {
                                         // 디플로이먼트가 없으면 생성
                                         sh "kubectl create deployment ${module} --image=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n ${env.K8S_NAMESPACE}"
