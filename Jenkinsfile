@@ -6,7 +6,6 @@ pipeline {
         string(name: 'COMMIT_SHA', defaultValue: '', description: 'GitHub에서 트리거된 커밋 해시')
         choice(name: 'BUILD_MODE', choices: ['all', 'only_changed'], description: '모든 모듈을 빌드하려면 all, 변경된 모듈만 빌드하려면 only_changed를 선택하세요.')
         choice(name: 'MODULE', choices: ['all', 'payment-api'], description: 'only_changed를 선택한 경우 무시됩니다. all을 선택하면 모든 모듈이 빌드됩니다.')
-        //choice(name: 'MODULE', choices: ['all', 'payment-api', 'backoffice-api', 'backoffice-manage'], description: 'only_changed를 선택한 경우 무시됩니다. all을 선택하면 모든 모듈이 빌드됩니다.')
     }
     
     environment {
@@ -14,13 +13,45 @@ pipeline {
         DOCKER_REGISTRY = "nullplusnull"
         TIMESTAMP = sh(script: 'date +%Y%m%d-%H%M%S', returnStdout: true).trim()
     }
-
-    // BUILD_MODE 파라미터로 'all' 또는 'only_changed' 선택 가능
     
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
+            }
+        }
+        
+        stage('환경 설정') {
+            steps {
+                script {
+                    // 브랜치별 프로파일 설정
+                    def springProfile = 'local'  // 기본값
+                    def kubernetesNamespace = 'default'
+                    
+                    if (env.GIT_BRANCH == 'test' || env.GIT_BRANCH.startsWith('feature/')) {
+                        springProfile = 'local'
+                        kubernetesNamespace = 'test'
+                        echo "테스트 환경 설정: profile=${springProfile}, namespace=${kubernetesNamespace}"
+                    } else if (env.GIT_BRANCH == 'develop') {
+                        springProfile = 'dev'
+                        kubernetesNamespace = 'default'
+                        echo "개발 환경 설정: profile=${springProfile}, namespace=${kubernetesNamespace}"
+                    } else if (env.GIT_BRANCH == 'main' || env.GIT_BRANCH == 'master') {
+                        springProfile = 'prod'
+                        kubernetesNamespace = 'production'
+                        echo "운영 환경 설정: profile=${springProfile}, namespace=${kubernetesNamespace}"
+                    } else {
+                        springProfile = 'dev'  // 기타 브랜치는 개발 환경으로
+                        kubernetesNamespace = 'default'
+                        echo "기타 브랜치 - 개발 환경으로 설정: profile=${springProfile}, namespace=${kubernetesNamespace}"
+                    }
+                    
+                    env.SPRING_PROFILE = springProfile
+                    env.K8S_NAMESPACE = kubernetesNamespace
+                    
+                    echo "설정된 Spring Profile: ${env.SPRING_PROFILE}"
+                    echo "설정된 Kubernetes Namespace: ${env.K8S_NAMESPACE}"
+                }
             }
         }
         
@@ -38,28 +69,24 @@ pipeline {
                     if (params.BUILD_MODE == 'all') {
                         if (params.MODULE == 'all') {
                             env.MODULES_TO_BUILD = 'payment-api'
-                            //env.MODULES_TO_BUILD = 'payment-api,backoffice-api,backoffice-manage'
                         } else {
                             env.MODULES_TO_BUILD = params.MODULE
                         }
                     } else {
                         // 변경된 모듈 감지
                         def changedModules = sh(
-                            //script: "git diff --name-only ${GIT_COMMIT}~1 ${GIT_COMMIT} | grep -E '^(payment-api|backoffice-api|backoffice-manage)' | cut -d'/' -f1 | sort | uniq",
                             script: "git diff --name-only ${GIT_COMMIT}~1 ${GIT_COMMIT} | grep -E '^(payment-api)' | cut -d'/' -f1 | sort | uniq",
                             returnStdout: true
                         ).trim()
                         
                         // 공통 모듈 변경 감지
                         def commonChanged = sh(
-                            //script: "git diff --name-only ${GIT_COMMIT}~1 ${GIT_COMMIT} | grep -E '^(common|payment-core|payment-infra)'",
                             script: "git diff --name-only ${GIT_COMMIT}~1 ${GIT_COMMIT} | grep -E '^(payment-core)'",
                             returnStatus: true
                         ) == 0
                         
                         if (commonChanged || changedModules == '') {
                             env.MODULES_TO_BUILD = 'payment-api'
-                            //env.MODULES_TO_BUILD = 'payment-api,backoffice-api,backoffice-manage'
                             echo "공통 모듈 변경 또는 변경 감지 안됨 - 모든 모듈 빌드"
                         } else {
                             env.MODULES_TO_BUILD = changedModules.replaceAll('\n', ',')
@@ -95,7 +122,7 @@ pipeline {
                     for (module in moduleList) {
                         if (module?.trim()) {
                             stage("${module} 빌드 및 배포") {
-                                // Dockerfile에서 정확한 JAR 파일을 찾도록 스크립트로 실행
+                                // Docker 이미지 빌드
                                 sh """
                                     docker build -t ${DOCKER_REGISTRY}/${module}:${TIMESTAMP} \\
                                     --build-arg MODULE=${module} \\
@@ -106,9 +133,12 @@ pipeline {
                                 
                                 // 쿠버네티스 배포
                                 stage("${module} 배포") {
+                                    // 네임스페이스 생성 (존재하지 않는 경우)
+                                    sh "kubectl create namespace ${env.K8S_NAMESPACE} || true"
+                                    
                                     // 디플로이먼트 존재 여부 확인
                                     def deploymentExists = sh(
-                                        script: "kubectl get deployment ${module} -n default 2>/dev/null || echo 'NOT_FOUND'",
+                                        script: "kubectl get deployment ${module} -n ${env.K8S_NAMESPACE} 2>/dev/null || echo 'NOT_FOUND'",
                                         returnStdout: true
                                     ).trim()
 
@@ -123,21 +153,31 @@ pipeline {
                                     
                                     if (deploymentExists.contains('NOT_FOUND')) {
                                         // 디플로이먼트가 없으면 생성
-                                        sh "kubectl create deployment ${module} --image=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n default"
-                                        // 중요: 컨테이너에 SERVER_PORT 환경 변수 설정
-                                        sh "kubectl set env deployment/${module} SERVER_PORT=${modulePort} -n default"
-                                        sh "kubectl expose deployment ${module} --port=${modulePort} --target-port=${modulePort} --type=ClusterIP -n default || true"
+                                        sh "kubectl create deployment ${module} --image=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n ${env.K8S_NAMESPACE}"
+                                        
+                                        // 환경 변수 설정 (프로파일 포함)
+                                        sh """
+                                            kubectl set env deployment/${module} \\
+                                            SERVER_PORT=${modulePort} \\
+                                            SPRING_PROFILES_ACTIVE=${env.SPRING_PROFILE} \\
+                                            -n ${env.K8S_NAMESPACE}
+                                        """
+                                        
+                                        sh "kubectl expose deployment ${module} --port=${modulePort} --target-port=${modulePort} --type=ClusterIP -n ${env.K8S_NAMESPACE} || true"
                                     } else {
                                         // 있으면 이미지만 업데이트
-                                        sh "kubectl set image deployment/${module} ${module}=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n default"
-                                        // 중요: 이미지 업데이트 후에도 SERVER_PORT 환경 변수 설정 (또는 확인)
-                                        sh "kubectl set env deployment/${module} SERVER_PORT=${modulePort} -n default --overwrite" // --overwrite 옵션으로 기존 값 덮어쓰기
-                                        // 기존 서비스의 포트도 업데이트가 필요하다면 다음 명령어를 추가하거나, 서비스를 삭제 후 재생성해야 합니다.
-                                        // 현재 로직에서는 이미지가 업데이트될 때 서비스 포트는 변경하지 않습니다.
-                                        // 만약 서비스 포트 변경이 필요하다면, 아래 주석 처리된 명령어처럼 서비스를 삭제하고 다시 생성하는 것을 고려할 수 있습니다.
-                                        // sh "kubectl delete service ${module} -n default || true"
-                                        // sh "kubectl expose deployment ${module} --port=${modulePort} --target-port=${modulePort} --type=ClusterIP -n default || true"
+                                        sh "kubectl set image deployment/${module} ${module}=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n ${env.K8S_NAMESPACE}"
+                                        
+                                        // 환경 변수 설정 (프로파일 포함)
+                                        sh """
+                                            kubectl set env deployment/${module} \\
+                                            SERVER_PORT=${modulePort} \\
+                                            SPRING_PROFILES_ACTIVE=${env.SPRING_PROFILE} \\
+                                            -n ${env.K8S_NAMESPACE} --overwrite
+                                        """
                                     }
+                                    
+                                    echo "배포 완료: ${module} (Profile: ${env.SPRING_PROFILE}, Namespace: ${env.K8S_NAMESPACE})"
                                 }
                             }
                         }
@@ -149,7 +189,7 @@ pipeline {
     
     post {
         success {
-            echo "빌드 및 배포 성공: ${env.MODULES_TO_BUILD}"
+            echo "빌드 및 배포 성공: ${env.MODULES_TO_BUILD} (Profile: ${env.SPRING_PROFILE})"
         }
         failure {
             echo "빌드 및 배포 실패"

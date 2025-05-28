@@ -1,0 +1,12 @@
+# 운영 환경 설정 (향후 사용)
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres-service.db.svc.cluster.local:5432/proddb
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME:produser}
+    password: ${DB_PASSWORD:prodpass}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false 

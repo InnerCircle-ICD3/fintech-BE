@@ -2,6 +2,8 @@ server:
   port: 8081
 
 spring:
+  profiles:
+    active: local  # 기본값은 local
   datasource:
     url: jdbc:postgresql://localhost:5432/testdb
     driver-class-name: org.postgresql.Driver
