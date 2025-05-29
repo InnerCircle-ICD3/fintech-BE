@@ -54,14 +54,9 @@ metadata:
   name: payment-api-ingress
   namespace: default
   annotations:
-    kubernetes.io/ingress.class: nginx
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
-  tls:
-  - hosts:
-    - test.passion-pay.com
-    secretName: payment-test-tls
   rules:
   - host: test.passion-pay.com
     http:
