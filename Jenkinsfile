@@ -146,27 +146,11 @@ pipeline {
                                     // 네임스페이스 생성 (존재하지 않는 경우)
                                     sh "kubectl create namespace ${env.K8S_NAMESPACE} || true"
                                     
-                                    // 디플로이먼트 존재 여부 확인
-                                    def deploymentExists = sh(
-                                        script: "kubectl get deployment ${module} -n ${env.K8S_NAMESPACE} 2>/dev/null || echo 'NOT_FOUND'",
-                                        returnStdout: true
-                                    ).trim()
-
-                                    if (deploymentExists.contains('NOT_FOUND')) {
-                                        // 디플로이먼트가 없으면 생성
-                                        sh "kubectl create deployment ${module} --image=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n ${env.K8S_NAMESPACE}"
+                                    // k8s YAML 파일 적용 (Deployment, Service, Ingress 모두 포함)
+                                    if (fileExists("k8s/${module}-deployment.yaml")) {
+                                        sh "kubectl apply -f k8s/${module}-deployment.yaml -n ${env.K8S_NAMESPACE}"
                                         
-                                        // 환경 변수 설정 (프로파일 포함)
-                                        sh """
-                                            kubectl set env deployment/${module} \\
-                                            SERVER_PORT=${modulePort} \\
-                                            SPRING_PROFILES_ACTIVE=${env.SPRING_PROFILE} \\
-                                            -n ${env.K8S_NAMESPACE}
-                                        """
-                                        
-                                        sh "kubectl expose deployment ${module} --port=${modulePort} --target-port=${modulePort} --type=ClusterIP -n ${env.K8S_NAMESPACE} || true"
-                                    } else {
-                                        // 있으면 이미지만 업데이트
+                                        // 이미지 업데이트
                                         sh "kubectl set image deployment/${module} ${module}=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n ${env.K8S_NAMESPACE}"
                                         
                                         // 환경 변수 설정 (프로파일 포함)
@@ -176,14 +160,45 @@ pipeline {
                                             SPRING_PROFILES_ACTIVE=${env.SPRING_PROFILE} \\
                                             -n ${env.K8S_NAMESPACE} --overwrite
                                         """
-                                    }
-                                    
-                                    // Ingress 생성/업데이트
-                                    def ingressPath = module.replace('-api', '')
-                                    def hostName = env.K8S_NAMESPACE == 'production' ? 'passion-pay.com' : 'test.passion-pay.com'
-                                    
-                                    sh """
-                                        kubectl apply -f - <<EOF
+                                    } else {
+                                        // YAML 파일이 없으면 기존 방식 사용
+                                        def deploymentExists = sh(
+                                            script: "kubectl get deployment ${module} -n ${env.K8S_NAMESPACE} 2>/dev/null || echo 'NOT_FOUND'",
+                                            returnStdout: true
+                                        ).trim()
+
+                                        if (deploymentExists.contains('NOT_FOUND')) {
+                                            // 디플로이먼트가 없으면 생성
+                                            sh "kubectl create deployment ${module} --image=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n ${env.K8S_NAMESPACE}"
+                                            
+                                            // 환경 변수 설정 (프로파일 포함)
+                                            sh """
+                                                kubectl set env deployment/${module} \\
+                                                SERVER_PORT=${modulePort} \\
+                                                SPRING_PROFILES_ACTIVE=${env.SPRING_PROFILE} \\
+                                                -n ${env.K8S_NAMESPACE}
+                                            """
+                                            
+                                            sh "kubectl expose deployment ${module} --port=${modulePort} --target-port=${modulePort} --type=ClusterIP -n ${env.K8S_NAMESPACE} || true"
+                                        } else {
+                                            // 있으면 이미지만 업데이트
+                                            sh "kubectl set image deployment/${module} ${module}=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n ${env.K8S_NAMESPACE}"
+                                            
+                                            // 환경 변수 설정 (프로파일 포함)
+                                            sh """
+                                                kubectl set env deployment/${module} \\
+                                                SERVER_PORT=${modulePort} \\
+                                                SPRING_PROFILES_ACTIVE=${env.SPRING_PROFILE} \\
+                                                -n ${env.K8S_NAMESPACE} --overwrite
+                                            """
+                                        }
+                                        
+                                        // Ingress 생성/업데이트 (YAML 파일이 없는 경우만)
+                                        def ingressPath = module.replace('-api', '')
+                                        def hostName = env.K8S_NAMESPACE == 'production' ? 'passion-pay.com' : 'test.passion-pay.com'
+                                        
+                                        sh """
+                                            kubectl apply -f - <<EOF
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -210,7 +225,11 @@ spec:
             port:
               number: ${modulePort}
 EOF
-                                    """
+                                        """
+                                    }
+                                    
+                                    def ingressPath = module.replace('-api', '')
+                                    def hostName = env.K8S_NAMESPACE == 'production' ? 'passion-pay.com' : 'test.passion-pay.com'
                                     
                                     echo "배포 완료: ${module} (Profile: ${env.SPRING_PROFILE}, Namespace: ${env.K8S_NAMESPACE})"
                                     echo "접근 URL: https://${hostName}/${ingressPath}/swagger-ui/index.html"
