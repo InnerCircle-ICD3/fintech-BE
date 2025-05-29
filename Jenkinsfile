@@ -164,7 +164,7 @@ pipeline {
                                             -n ${env.K8S_NAMESPACE}
                                         """
                                         
-                                        sh "kubectl expose deployment ${module} --port=${modulePort} --target-port=${modulePort} --type=ClusterIP -n ${env.K8S_NAMESPACE} || true"
+                                        sh "kubectl expose deployment ${module} --port=${modulePort} --target-port=${modulePort} --type=NodePort -n ${env.K8S_NAMESPACE} || true"
                                     } else {
                                         // 있으면 이미지만 업데이트
                                         sh "kubectl set image deployment/${module} ${module}=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n ${env.K8S_NAMESPACE}"
