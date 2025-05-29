@@ -164,7 +164,7 @@ pipeline {
                                             -n ${env.K8S_NAMESPACE}
                                         """
                                         
-                                        sh "kubectl expose deployment ${module} --port=${modulePort} --target-port=${modulePort} --type=NodePort -n ${env.K8S_NAMESPACE} || true"
+                                        sh "kubectl expose deployment ${module} --port=${modulePort} --target-port=${modulePort} --type=ClusterIP -n ${env.K8S_NAMESPACE} || true"
                                     } else {
                                         // 있으면 이미지만 업데이트
                                         sh "kubectl set image deployment/${module} ${module}=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n ${env.K8S_NAMESPACE}"
@@ -178,7 +178,42 @@ pipeline {
                                         """
                                     }
                                     
+                                    // Ingress 생성/업데이트
+                                    def ingressPath = module.replace('-api', '')
+                                    def hostName = env.K8S_NAMESPACE == 'production' ? 'passion-pay.com' : 'test.passion-pay.com'
+                                    
+                                    sh """
+                                        kubectl apply -f - <<EOF
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ${module}-ingress
+  namespace: ${env.K8S_NAMESPACE}
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  tls:
+  - hosts:
+    - ${hostName}
+    secretName: ${module}-tls
+  rules:
+  - host: ${hostName}
+    http:
+      paths:
+      - path: /${ingressPath}
+        pathType: Prefix
+        backend:
+          service:
+            name: ${module}
+            port:
+              number: ${modulePort}
+EOF
+                                    """
+                                    
                                     echo "배포 완료: ${module} (Profile: ${env.SPRING_PROFILE}, Namespace: ${env.K8S_NAMESPACE})"
+                                    echo "접근 URL: https://${hostName}/${ingressPath}/swagger-ui/index.html"
                                 }
                             }
                         }
