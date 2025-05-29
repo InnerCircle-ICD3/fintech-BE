@@ -28,7 +28,7 @@ spec:
             memory: "256Mi"
         env:
         - name: SPRING_PROFILES_ACTIVE
-          value: "prod"
+          value: "dev"
         readinessProbe:
           httpGet:
             path: /actuator/health
@@ -62,7 +62,7 @@ spec:
     - passion-pay.com
     secretName: payment-tls
   rules:
-  - host: passion-pay.com
+  - host: test.passion-pay.com
     http:
       paths:
       - path: /payment
