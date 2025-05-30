@@ -16,6 +16,7 @@ spec:
     spec:
       containers:
       - name: payment-api
+        image: ${DOCKER_REGISTRY}/payment-api:${IMAGE_TAG}
         ports:
         - containerPort: 8081
         resources:

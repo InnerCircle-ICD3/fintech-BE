@@ -145,29 +145,15 @@ pipeline {
                                 stage("${module} 배포") {
                                     // 네임스페이스 생성 (존재하지 않는 경우)
                                     sh "kubectl create namespace ${env.K8S_NAMESPACE} || true"
-                                    sh "kubectl create namespace fintech || true"  // Ingress용 네임스페이스
                                     
-                                    // k8s YAML 파일 적용 (Deployment, Service만 포함)
+                                    // k8s YAML 파일 적용 (환경변수 치환)
                                     if (fileExists("k8s/${module}-deployment.yaml")) {
-                                        // Deployment가 존재하는지 확인
-                                        def deploymentExists = sh(
-                                            script: "kubectl get deployment ${module} -n ${env.K8S_NAMESPACE} 2>/dev/null || echo 'NOT_FOUND'",
-                                            returnStdout: true
-                                        ).trim()
-
-                                        if (deploymentExists.contains('NOT_FOUND')) {
-                                            // Deployment가 없으면 먼저 생성 (이미지 없이)
-                                            sh "kubectl apply -f k8s/${module}-deployment.yaml -n ${env.K8S_NAMESPACE}"
-                                            
-                                            // 이미지 설정
-                                            sh "kubectl set image deployment/${module} ${module}=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n ${env.K8S_NAMESPACE}"
-                                        } else {
-                                            // Deployment가 있으면 YAML 적용 후 이미지 업데이트
-                                            sh "kubectl apply -f k8s/${module}-deployment.yaml -n ${env.K8S_NAMESPACE}"
-                                            
-                                            // 이미지 업데이트
-                                            sh "kubectl set image deployment/${module} ${module}=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n ${env.K8S_NAMESPACE}"
-                                        }
+                                        // 환경변수 설정 후 YAML 적용
+                                        sh """
+                                            export DOCKER_REGISTRY=${DOCKER_REGISTRY}
+                                            export IMAGE_TAG=${TIMESTAMP}
+                                            envsubst < k8s/${module}-deployment.yaml | kubectl apply -f - -n ${env.K8S_NAMESPACE}
+                                        """
                                         
                                         // 환경 변수 설정 (프로파일 포함)
                                         sh """
@@ -177,10 +163,7 @@ pipeline {
                                             -n ${env.K8S_NAMESPACE} --overwrite
                                         """
                                         
-                                        // Ingress는 첫 번째 모듈에서만 적용 (fintech 네임스페이스)
-                                        if (module == 'payment-api') {
-                                            sh "kubectl apply -f k8s/ingress.yaml"
-                                        }
+                                        // Ingress 관련 코드 제거
                                     } else {
                                         // YAML 파일이 없으면 기존 방식 사용
                                         def deploymentExists = sh(
@@ -213,47 +196,9 @@ pipeline {
                                                 -n ${env.K8S_NAMESPACE} --overwrite
                                             """
                                         }
-                                        
-                                        // Ingress 생성/업데이트 (YAML 파일이 없는 경우만)
-                                        def ingressPath = module.replace('-api', '')
-                                        def hostName = env.K8S_NAMESPACE == 'production' ? 'passion-pay.com' : 'test.passion-pay.com'
-                                        
-                                        sh """
-                                            kubectl apply -f - <<EOF
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: ${module}-ingress
-  namespace: ${env.K8S_NAMESPACE}
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-spec:
-  tls:
-  - hosts:
-    - ${hostName}
-    secretName: ${module}-tls
-  rules:
-  - host: ${hostName}
-    http:
-      paths:
-      - path: /${ingressPath}
-        pathType: Prefix
-        backend:
-          service:
-            name: ${module}
-            port:
-              number: ${modulePort}
-EOF
-                                        """
                                     }
                                     
-                                    def ingressPath = module.replace('-api', '')
-                                    def hostName = env.K8S_NAMESPACE == 'production' ? 'passion-pay.com' : 'test.passion-pay.com'
-                                    
                                     echo "배포 완료: ${module} (Profile: ${env.SPRING_PROFILE}, Namespace: ${env.K8S_NAMESPACE})"
-                                    echo "접근 URL: https://${hostName}/${ingressPath}/swagger-ui/index.html"
                                 }
                             }
                         }
