@@ -16,7 +16,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: payment-api.fintech-be  # 다른 네임스페이스 서비스 참조
+            name: payment-api  # 직접 참조 (같은 네임스페이스)
             port:
               number: 8081
       # Backoffice API (향후 추가)

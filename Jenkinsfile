@@ -26,23 +26,23 @@ pipeline {
                 script {
                     // 브랜치별 프로파일 설정
                     def springProfile = 'local'  // 기본값
-                    def kubernetesNamespace = 'fintech-be'  // 서비스들은 fintech-be
+                    def kubernetesNamespace = 'fintech'  // 모든 환경을 fintech로 통합
                     
                     if (env.GIT_BRANCH == 'test' || env.GIT_BRANCH.startsWith('feature/')) {
                         springProfile = 'local'
-                        kubernetesNamespace = 'fintech-be'
+                        kubernetesNamespace = 'fintech'
                         echo "테스트 환경 설정: profile=${springProfile}, namespace=${kubernetesNamespace}"
                     } else if (env.GIT_BRANCH == 'develop') {
                         springProfile = 'dev'
-                        kubernetesNamespace = 'fintech-be'
+                        kubernetesNamespace = 'fintech'
                         echo "개발 환경 설정: profile=${springProfile}, namespace=${kubernetesNamespace}"
                     } else if (env.GIT_BRANCH == 'main' || env.GIT_BRANCH == 'master') {
                         springProfile = 'prod'
-                        kubernetesNamespace = 'production'  // 운영환경은 그대로 유지
+                        kubernetesNamespace = 'fintech'  # production도 fintech로 변경
                         echo "운영 환경 설정: profile=${springProfile}, namespace=${kubernetesNamespace}"
                     } else {
-                        springProfile = 'dev'  // 기타 브랜치는 개발 환경으로
-                        kubernetesNamespace = 'fintech-be'
+                        springProfile = 'dev'
+                        kubernetesNamespace = 'fintech'
                         echo "기타 브랜치 - 개발 환경으로 설정: profile=${springProfile}, namespace=${kubernetesNamespace}"
                     }
                     
