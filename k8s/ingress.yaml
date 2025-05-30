@@ -1,0 +1,37 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fintech-ingress
+  namespace: fintech
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: test.passion-pay.com
+    http:
+      paths:
+      # Payment API (fintech-be 네임스페이스의 서비스)
+      - path: /payment
+        pathType: Prefix
+        backend:
+          service:
+            name: payment-api.fintech-be  # 다른 네임스페이스 서비스 참조
+            port:
+              number: 8081
+      # Backoffice API (향후 추가)
+      # - path: /backoffice
+      #   pathType: Prefix
+      #   backend:
+      #     service:
+      #       name: backoffice-api.fintech-be
+      #       port:
+      #         number: 8080
+      # Backoffice Management (향후 추가)
+      # - path: /manage
+      #   pathType: Prefix
+      #   backend:
+      #     service:
+      #       name: backoffice-manage.fintech-be
+      #       port:
+      #         number: 8082

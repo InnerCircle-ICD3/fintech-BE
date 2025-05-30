@@ -26,23 +26,23 @@ pipeline {
                 script {
                     // 브랜치별 프로파일 설정
                     def springProfile = 'local'  // 기본값
-                    def kubernetesNamespace = 'default'
+                    def kubernetesNamespace = 'fintech-be'  // 서비스들은 fintech-be
                     
                     if (env.GIT_BRANCH == 'test' || env.GIT_BRANCH.startsWith('feature/')) {
                         springProfile = 'local'
-                        kubernetesNamespace = 'test'
+                        kubernetesNamespace = 'fintech-be'
                         echo "테스트 환경 설정: profile=${springProfile}, namespace=${kubernetesNamespace}"
                     } else if (env.GIT_BRANCH == 'develop') {
                         springProfile = 'dev'
-                        kubernetesNamespace = 'default'
+                        kubernetesNamespace = 'fintech-be'
                         echo "개발 환경 설정: profile=${springProfile}, namespace=${kubernetesNamespace}"
                     } else if (env.GIT_BRANCH == 'main' || env.GIT_BRANCH == 'master') {
                         springProfile = 'prod'
-                        kubernetesNamespace = 'production'
+                        kubernetesNamespace = 'production'  // 운영환경은 그대로 유지
                         echo "운영 환경 설정: profile=${springProfile}, namespace=${kubernetesNamespace}"
                     } else {
                         springProfile = 'dev'  // 기타 브랜치는 개발 환경으로
-                        kubernetesNamespace = 'default'
+                        kubernetesNamespace = 'fintech-be'
                         echo "기타 브랜치 - 개발 환경으로 설정: profile=${springProfile}, namespace=${kubernetesNamespace}"
                     }
                     
@@ -145,13 +145,29 @@ pipeline {
                                 stage("${module} 배포") {
                                     // 네임스페이스 생성 (존재하지 않는 경우)
                                     sh "kubectl create namespace ${env.K8S_NAMESPACE} || true"
+                                    sh "kubectl create namespace fintech || true"  // Ingress용 네임스페이스
                                     
-                                    // k8s YAML 파일 적용 (Deployment, Service, Ingress 모두 포함)
+                                    // k8s YAML 파일 적용 (Deployment, Service만 포함)
                                     if (fileExists("k8s/${module}-deployment.yaml")) {
-                                        sh "kubectl apply -f k8s/${module}-deployment.yaml -n ${env.K8S_NAMESPACE}"
-                                        
-                                        // 이미지 업데이트
-                                        sh "kubectl set image deployment/${module} ${module}=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n ${env.K8S_NAMESPACE}"
+                                        // Deployment가 존재하는지 확인
+                                        def deploymentExists = sh(
+                                            script: "kubectl get deployment ${module} -n ${env.K8S_NAMESPACE} 2>/dev/null || echo 'NOT_FOUND'",
+                                            returnStdout: true
+                                        ).trim()
+
+                                        if (deploymentExists.contains('NOT_FOUND')) {
+                                            // Deployment가 없으면 먼저 생성 (이미지 없이)
+                                            sh "kubectl apply -f k8s/${module}-deployment.yaml -n ${env.K8S_NAMESPACE}"
+                                            
+                                            // 이미지 설정
+                                            sh "kubectl set image deployment/${module} ${module}=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n ${env.K8S_NAMESPACE}"
+                                        } else {
+                                            // Deployment가 있으면 YAML 적용 후 이미지 업데이트
+                                            sh "kubectl apply -f k8s/${module}-deployment.yaml -n ${env.K8S_NAMESPACE}"
+                                            
+                                            // 이미지 업데이트
+                                            sh "kubectl set image deployment/${module} ${module}=${DOCKER_REGISTRY}/${module}:${TIMESTAMP} -n ${env.K8S_NAMESPACE}"
+                                        }
                                         
                                         // 환경 변수 설정 (프로파일 포함)
                                         sh """
@@ -160,6 +176,11 @@ pipeline {
                                             SPRING_PROFILES_ACTIVE=${env.SPRING_PROFILE} \\
                                             -n ${env.K8S_NAMESPACE} --overwrite
                                         """
+                                        
+                                        // Ingress는 첫 번째 모듈에서만 적용 (fintech 네임스페이스)
+                                        if (module == 'payment-api') {
+                                            sh "kubectl apply -f k8s/ingress.yaml"
+                                        }
                                     } else {
                                         // YAML 파일이 없으면 기존 방식 사용
                                         def deploymentExists = sh(
