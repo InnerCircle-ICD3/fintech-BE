@@ -31,7 +31,7 @@ spec:
           value: "dev"
         readinessProbe:
           httpGet:
-            path: /
+            path: /error
             port: 8081
           initialDelaySeconds: 30
           periodSeconds: 10
