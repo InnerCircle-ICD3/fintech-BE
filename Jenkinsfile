@@ -38,7 +38,7 @@ pipeline {
                         echo "개발 환경 설정: profile=${springProfile}, namespace=${kubernetesNamespace}"
                     } else if (env.GIT_BRANCH == 'main' || env.GIT_BRANCH == 'master') {
                         springProfile = 'prod'
-                        kubernetesNamespace = 'fintech'  # production도 fintech로 변경
+                        kubernetesNamespace = 'fintech'  // production도 fintech로 변경
                         echo "운영 환경 설정: profile=${springProfile}, namespace=${kubernetesNamespace}"
                     } else {
                         springProfile = 'dev'
