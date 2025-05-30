@@ -30,8 +30,7 @@ spec:
         - name: SPRING_PROFILES_ACTIVE
           value: "dev"
         readinessProbe:
-          httpGet:
-            path: /error
+          tcpSocket:
             port: 8081
           initialDelaySeconds: 30
           periodSeconds: 10
