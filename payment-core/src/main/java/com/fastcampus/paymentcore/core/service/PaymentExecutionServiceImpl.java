@@ -40,17 +40,19 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
         boolean approved = simulateCardApproval(request.getCardToken());
         TransactionStatus status = approved ? TransactionStatus.COMPLETED : TransactionStatus.FAILED;
 
-        // 4. 상태 갱신
+        // 4. 기존 엔티티의 필드 수정
         tx.setStatus(status);
         tx.setCardToken(request.getCardToken());
 
         // 5. 저장 (DB + Redis)
         transactionRepository.save(tx);
-        redisTransactionRepository.save(tx, claims.getExpiration().getTime() / 1000 - System.currentTimeMillis() / 1000);
+        long ttlSeconds = (claims.getExpiration().getTime() - System.currentTimeMillis()) / 1000;
+        redisTransactionRepository.save(tx, ttlSeconds);
 
         // 6. 응답 반환
         return new PaymentProgressResponse(originalToken, status);
     }
+
 
     private boolean simulateCardApproval(String cardToken) {
         return new Random().nextInt(100) < 90;

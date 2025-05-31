@@ -4,6 +4,8 @@ package com.fastcampus.paymentcore.parksay;
 import com.fastcampus.paymentcore.PaymentCoreApplication;
 import com.fastcampus.paymentcore.core.common.util.SystemParameterUtil;
 import com.fastcampus.paymentcore.core.dto.PaymentProgressDto;
+import com.fastcampus.paymentcore.core.dto.PaymentReadyRequestDto;
+import com.fastcampus.paymentcore.core.dto.ProgressTransactionRequest;
 import com.fastcampus.paymentcore.core.dto.ResponsePaymentReady;
 import com.fastcampus.paymentcore.core.service.PaymentProgressService;
 import com.fastcampus.paymentcore.core.service.PaymentReadyService;
@@ -35,23 +37,20 @@ public class MyTest {
 
     @Test
     public void readyPayment() {
-        //
-        Map<String, Object> paramMap = new HashMap<>();
-        paramMap.put("merchantId", "1");
-        paramMap.put("merchantOrderId", "1");
-        paramMap.put("amount", "1");
-
-        ResponsePaymentReady response = readyService.readyPayment(paramMap);
-        //
+        PaymentReadyRequestDto request = new PaymentReadyRequestDto(
+                1L,
+                "1",
+                1L
+        );
+        ResponsePaymentReady response = readyService.readyPayment(request);
         logger.info(response.toString());
     }
 
     @Test
     public void progressPayment() {
-        //
         String qrToken = "qr token from sdk";
-        PaymentProgressDto paymentProgressDto = progressService.progressPayment(qrToken);
-        //
+        ProgressTransactionRequest request = new ProgressTransactionRequest(qrToken);
+        PaymentProgressDto paymentProgressDto = progressService.progressPayment(request);
         logger.info(paymentProgressDto.toString());
     }
 

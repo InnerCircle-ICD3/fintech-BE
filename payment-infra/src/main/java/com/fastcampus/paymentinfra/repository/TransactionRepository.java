@@ -7,8 +7,5 @@ import java.util.Optional;
 import java.util.List;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
-    Optional<Transaction> findByMerchantOrderId(String merchantOrderId);
-
-    List<Transaction> findByMerchantId(Long merchantId);
-    Optional<Transaction> findByTransactionToken(String transactionToken);
+    Optional<Transaction> findByMerchantIdAndMerchantOrderId(Long merchantId, String merchantOrderId);
 }
