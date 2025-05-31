@@ -123,13 +123,13 @@ pipeline {
                         if (module?.trim()) {
                             stage("${module} 빌드 및 배포") {
                                 // Docker 이미지 빌드
-                                def modulePort = 8080 // 기본 포트
+                                def modulePort = 9080 // 기본 포트
                                 if (module == 'payment-api') {
-                                    modulePort = 8081
+                                    modulePort = 9081
                                 } else if (module == 'backoffice-api') {
-                                    modulePort = 8080
+                                    modulePort = 9080
                                 } else if (module == 'backoffice-manage') {
-                                    modulePort = 8082
+                                    modulePort = 9082
                                 }
                                 
                                 sh """

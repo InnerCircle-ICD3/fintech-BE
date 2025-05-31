@@ -18,7 +18,7 @@ spec:
           service:
             name: payment-api  # 직접 참조 (같은 네임스페이스)
             port:
-              number: 8081
+              number: 9081
       # Backoffice API (향후 추가)
       # - path: /backoffice
       #   pathType: Prefix
@@ -26,7 +26,7 @@ spec:
       #     service:
       #       name: backoffice-api.fintech-be
       #       port:
-      #         number: 8080
+      #         number: 9080
       # Backoffice Management (향후 추가)
       # - path: /manage
       #   pathType: Prefix
@@ -34,4 +34,4 @@ spec:
       #     service:
       #       name: backoffice-manage.fintech-be
       #       port:
-      #         number: 8082
+      #         number: 9082
