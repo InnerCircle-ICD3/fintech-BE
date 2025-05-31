@@ -49,7 +49,13 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
         redisTransactionRepository.save(tx, claims.getExpiration().getTime() / 1000 - System.currentTimeMillis() / 1000);
 
         // 6. 응답 반환
-        return new PaymentProgressResponse(originalToken, status);
+        // 250531 - 세현: 란영 님. PaymentProgressResponse 클래스는 제가 PaymentProgressResponse.progressPayment() 에서 쓰려고 만든 response class 입니다
+        // 제 생각에는 PaymentExecutionService 에서 쓰실 dto class 를 새로 만드시는 게 더 좋을 것 같아요!
+        // 일단 제 부분 수정하면서 컴파일 에러 때문에 어쩔 수 없이 같이 수정했습니다. 영향도 있는지 보시고 추후에 다시 수정해 주세요!
+        Transaction transaction =  new Transaction();
+        transaction.setTransactionToken(originalToken);
+        transaction.setStatus(status);
+        return new PaymentProgressResponse(transaction);
     }
 
     private boolean simulateCardApproval(String cardToken) {
