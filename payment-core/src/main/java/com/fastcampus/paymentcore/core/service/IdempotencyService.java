@@ -2,7 +2,7 @@ package com.fastcampus.paymentcore.core.service;
 
 import com.fastcampus.paymentcore.core.dto.IdempotencyDto;
 import com.fastcampus.paymentinfra.entity.Idempotency;
-import com.fastcampus.paymentinfra.repository.IdempotencyRepository;
+import com.fastcampus.paymentinfra.repository.ItempotencyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -12,25 +12,24 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class IdempotencyService {
 
-    private final IdempotencyRepository idempotencyRepository;
+    private final ItempotencyRepository idempotencyRepository;
 
     public Optional<IdempotencyDto> checkIdempotency(String idempotencyKey) {
-        return idempotencyRepository.findByIdempotencyKey(idempotencyKey)
-                .map(this::convertToDto);
+        Optional<Idempotency> result = idempotencyRepository.findByIdempotencyKey(idempotencyKey);
+        // 이전에 처리한 기록이 없음
+        if(result.isEmpty()) {
+            return Optional.empty();
+        }
+        // 이미 처리한 기록이 있음
+        IdempotencyDto dto = new IdempotencyDto(result.get());
+        return Optional.of(dto);
+
     }
 
-    public int saveIdempotency(IdempotencyDto idempotencyDto) {
-        Idempotency entity = new Idempotency();
-        entity.setIdempotencyKey(idempotencyDto.getIdempotencyKey());
-        entity.setResponseData(idempotencyDto.getResponseData());
-        return idempotencyRepository.save(entity).getId();
+    public Long saveIdempotency(IdempotencyDto idempotencyDto) {
+        Idempotency entity = idempotencyDto.convertToEntity();
+        idempotencyRepository.save(entity);
+        return entity.getId();
     }
 
-    private IdempotencyDto convertToDto(Idempotency entity) {
-        IdempotencyDto dto = new IdempotencyDto();
-        dto.setId(entity.getId());
-        dto.setIdempotencyKey(entity.getIdempotencyKey());
-        dto.setResponseData(entity.getResponseData());
-        return dto;
-    }
 }

@@ -1,8 +1,10 @@
 package com.fastcampus.paymentcore.core.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
+@AllArgsConstructor
 public class PaymentProgressRequest {
     /**
      * 결제 실행 요청 DTO
