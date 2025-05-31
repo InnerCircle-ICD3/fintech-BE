@@ -1,10 +1,11 @@
 package com.fastcampus.paymentapi.payment.controller;
 
+import com.fastcampus.paymentapi.payment.dto.request.ApiProgressTransactionRequest;
 import com.fastcampus.paymentapi.payment.dto.request.InitiateTransactionRequest;
 import com.fastcampus.paymentapi.payment.dto.response.GetTransactionProgressResponse;
 import com.fastcampus.paymentapi.payment.dto.response.PaymentProgressResponseDto;
-import com.fastcampus.paymentapi.payment.dto.request.ProgressTransactionRequest;
 import com.fastcampus.paymentapi.payment.dto.response.ResponsePaymentReadyDto;
+import com.fastcampus.paymentapi.payment.mapper.PaymentDtoMapper;
 import com.fastcampus.paymentcore.core.dto.*;
 import com.fastcampus.paymentcore.core.service.*;
 import jakarta.validation.Valid;
@@ -25,33 +26,34 @@ public class PaymentController {
      * 1. 결제 요청 처리
      * - 거래 생성 및 QR Token 반환
      */
-//    @PostMapping("/transactions/initiate")
-//    public ResponsePaymentReadyDto initiateTransaction(
-//            @RequestBody @Valid InitiateTransactionRequest request
-//    ) {
-//        ResponsePaymentReady internal = paymentReadyService.initiate(request);
-//        return new ResponsePaymentReadyDto(
-//                internal.getTransactionToken(),
-//                internal.getExpiresAt()
-//        );
-//    }
+    @PostMapping("/transactions/initiate")
+    public ResponsePaymentReadyDto initiateTransaction(@RequestBody @Valid InitiateTransactionRequest request) {
+        PaymentReadyRequestDto coreRequest = PaymentDtoMapper.toCoreDto(request);
+        ResponsePaymentReady internal = paymentReadyService.readyPayment(coreRequest);
+
+        return new ResponsePaymentReadyDto(
+                internal.getTransactionToken(),
+                internal.getExpiresAt()
+        );
+    }
 
     /**
      * 2. QR 코드 거래 상태 조회
      * - transaction_token으로 거래 상태 확인
      */
-//    @GetMapping("/transactions/{token}")
-//    public GetTransactionProgressResponse getTransactionProgress(
-//            @Valid @ModelAttribute ProgressTransactionRequest request
-//    ) {
-//        PaymentProgressDto dto = paymentProgressService.progressPayment(request);
-//        return new GetTransactionProgressResponse(
-//                dto.getTransactionToken(),
-//                dto.getStatus().name(),
-//                dto.getAmount(),
-//                dto.getCreatedAt()
-//        );
-//    }
+    @GetMapping("/transactions/{token}")
+    public GetTransactionProgressResponse getTransactionProgress(@PathVariable String token) {
+        ApiProgressTransactionRequest request = new ApiProgressTransactionRequest(token);
+        ProgressTransactionRequest coreRequest = PaymentDtoMapper.toCoreDto(request);
+        PaymentProgressDto dto = paymentProgressService.progressPayment(coreRequest);
+
+        return new GetTransactionProgressResponse(
+                dto.getTransactionToken(),
+                dto.getStatus().name(),
+                dto.getAmount(),
+                dto.getCreatedAt()
+        );
+    }
 
     /**
      * 3. 결제 실행

@@ -5,7 +5,6 @@ import org.hibernate.annotations.Immutable;
 
 import java.time.LocalDateTime;
 
-@Entity
 @Immutable
 @Table(name = "keys")
 public class KeysReadOnly {

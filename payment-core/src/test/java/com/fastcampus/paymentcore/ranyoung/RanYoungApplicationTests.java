@@ -29,7 +29,7 @@ public class RanYoungApplicationTests {
 	private ObjectMapper objectMapper;
 
 	@Autowired
-	private RedisTemplate<String, Transaction> redisTemplate;
+	private RedisTemplate<String, Object> redisTemplate;
 
 	private RedisTransactionRepository redisTransactionRepository;
 
@@ -47,21 +47,25 @@ public class RanYoungApplicationTests {
 	@Test
 	void redis에_거래_저장하고_조회된다() {
 		// given
-		Transaction tx = new Transaction();
-		tx.setTransactionToken("test123");
-		tx.setMerchantId(1L);
-		tx.setMerchantOrderId("ORD001");
-		tx.setAmount(10000L);
-		tx.setStatus(TransactionStatus.REQUESTED);
-		tx.setExpireAt(LocalDateTime.now().plusMinutes(3));
+		String token = "test123";
+		Transaction tx = new Transaction(
+				1L,
+				"ORD001",
+				10000L,
+				TransactionStatus.REQUESTED,
+				token,
+				null,
+				LocalDateTime.now(),
+				LocalDateTime.now().plusMinutes(3)
+		);
 
 		// when
 		redisTransactionRepository.save(tx, 180);
 
 		// then
-		Transaction saved = redisTransactionRepository.findByToken("test123")
+		Transaction saved = redisTransactionRepository.findByToken(token)
 				.orElseThrow();
 		assertThat(saved.getAmount()).isEqualTo(10000L);
-		assertThat(saved.getStatus()).isEqualTo("READY");
+		assertThat(saved.getStatus()).isEqualTo(TransactionStatus.REQUESTED);
 	}
 }

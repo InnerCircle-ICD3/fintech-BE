@@ -8,25 +8,26 @@ import jakarta.validation.constraints.NotNull;
 public class InitiateTransactionRequest {
 
     @NotBlank(message = "merchantId는 필수입니다.")
-    private final String merchantId;
+    private final Long merchantId;
 
     @NotNull(message = "amount는 필수입니다.")
     private final Long amount;
 
-    private final String orderId;
+    @NotBlank(message = "merchantOrderId는 필수입니다.")
+    private final String merchantOrderId;
 
     @JsonCreator
     public InitiateTransactionRequest(
-            @JsonProperty("merchantId") String merchantId,
+            @JsonProperty("merchantId") Long merchantId,
             @JsonProperty("amount") Long amount,
-            @JsonProperty("orderId") String orderId
+            @JsonProperty("merchantOrderId") String merchantOrderId
     ) {
         this.merchantId = merchantId;
         this.amount = amount;
-        this.orderId = orderId;
+        this.merchantOrderId = merchantOrderId;
     }
 
-    public String getMerchantId() {
+    public Long getMerchantId() {
         return merchantId;
     }
 
@@ -34,7 +35,7 @@ public class InitiateTransactionRequest {
         return amount;
     }
 
-    public String getOrderId() {
-        return orderId;
+    public String getMerchantOrderId() {
+        return merchantOrderId;
     }
 }
