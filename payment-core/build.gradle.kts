@@ -28,19 +28,19 @@ dependencies {
 	// spring
 	implementation("org.springframework.boot:spring-boot-starter-aop")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-	implementation("androidx.compose.foundation:foundation-android:1.8.1")
-	implementation("com.google.firebase:firebase-crashlytics-buildtools:3.0.3")
+	//implementation("androidx.compose.foundation:foundation-android:1.8.1")
+//	implementation("com.google.firebase:firebase-crashlytics-buildtools:3.0.3")
 	implementation ("org.springframework.boot:spring-boot-starter-web")
-	implementation(project(":payment-infra"))
+//	implementation(project(":payment-infra"))
 
 	// lombok
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
 
 	// modules
-	implementation(project(":payment-infra"))
-	implementation(project(":common"))
 
+	implementation(project(":common"))
+	implementation(project(":payment-infra"))
 	// test
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")

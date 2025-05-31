@@ -25,6 +25,8 @@ repositories {
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+   // implementation(project(":payment-core"))
+
 
     // ✅ PostgreSQL JDBC 드라이버
     runtimeOnly("org.postgresql:postgresql:42.7.3")
@@ -36,6 +38,7 @@ dependencies {
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
 }
 
 tasks.test {

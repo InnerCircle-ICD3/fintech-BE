@@ -1,11 +1,17 @@
 package com.fastcampus.paymentinfra.entity;
 
+import com.fastcampus.paymentinfra.type.TransactionStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+
+
+
 import java.time.LocalDateTime;
+
+
 
 @Entity
 @Table
@@ -22,9 +28,12 @@ public class Transaction {
     private Long merchantId;
     private String merchantOrderId;
     private Long amount;
-    private String status;
-    private String transactionToken;
-    private String cardToken;
+
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TransactionStatus status;
+
 
     @CreationTimestamp
     @Column(columnDefinition = "TIMESTAMP")

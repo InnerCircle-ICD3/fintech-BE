@@ -1,5 +1,6 @@
 package com.fastcampus.paymentcore.core.service;
 
+import com.fastcampus.paymentcore.core.common.type.TransactionStatus;
 import com.fastcampus.paymentcore.core.dto.PaymentProgressRequest;
 import com.fastcampus.paymentcore.core.dto.PaymentProgressResponse;
 import com.fastcampus.paymentinfra.entity.Transaction;
@@ -34,11 +35,15 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
                 .orElseGet(() -> transactionRepository.findByTransactionToken(request.getTransactionToken())
                         .orElseThrow(() -> new RuntimeException("거래를 찾을 수 없습니다.")));
 
+        if(tx.getStatus() != null && tx.getStatus().isFinal()){
+            throw  new IllegalStateException("이미 결제가 완료된 거래입니다.");
+        }
+
         //2. 카드 승인 여부 판단(시뮬레이션)
         boolean approved = simulateCardApproval(request.getCardToken());
 
         //3. 상태 결정 및 업데이트
-        String status = approved ? "COMPLETED" : "FAILED";
+        String status = approved ? TransactionStatus.COMPLETED : TransactionStatus.FAILED;
         tx.setStatus(status);
         tx.setCardToken(request.getCardToken());
 
