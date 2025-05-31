@@ -1,30 +1,28 @@
 package com.fastcampus.paymentinfra.entity;
 
+import com.fastcampus.paymentinfra.common.ObjectStringConverter;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "idempotency")
-@Getter
-@Setter
-@NoArgsConstructor
+@Data
 public class Idempotency {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @Column(nullable = false, unique = true)
     private String idempotencyKey;
 
-    @Column(columnDefinition = "TEXT")
+    @Convert(converter = ObjectStringConverter.class)
     private String responseData;
 
     @CreationTimestamp
+    @Column(columnDefinition = "TIMESTAMP")
     private LocalDateTime createdAt;
 }

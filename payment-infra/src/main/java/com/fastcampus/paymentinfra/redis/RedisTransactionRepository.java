@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 @Repository
 public class RedisTransactionRepository {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, Transaction> redisTemplate; // 250531 - 세현: 란영 님 저번에 제가 수정 요청 드렸었는데 아직 수정이 안 돼 있어서 제가 그냥 수정했습니다~
     private static final String PREFIX = "transaction:";
 
     public Optional<Transaction> findByToken(String token) {

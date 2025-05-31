@@ -1,14 +1,12 @@
 package com.fastcampus.paymentinfra.repository;
 
 import com.fastcampus.paymentinfra.entity.Transaction;
-import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
-import java.util.List;
 
-public interface TransactionRepository extends JpaRepository<Transaction, Long> {
-    Optional<Transaction> findByMerchantOrderId(String merchantOrderId);
+public interface TransactionRepository {
+    public abstract Optional<Transaction> findByTransactionToken(String transactionToken);
+    public abstract Transaction save(Transaction transaction);
+    public abstract Optional<Transaction> findById(Long id);
 
-    List<Transaction> findByMerchantId(Long merchantId);
-    Optional<Transaction> findByTransactionToken(String transactionToken);
 }

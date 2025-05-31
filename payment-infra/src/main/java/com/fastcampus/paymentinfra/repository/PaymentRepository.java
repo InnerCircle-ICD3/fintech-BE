@@ -7,8 +7,10 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
+    @Query("SELECT p FROM Payment p WHERE p.userId = :userId")
     List<Payment> findByUserId(Long userId);
 
+    @Query("SELECT p FROM Payment p WHERE p.transactionId = :transactionId")
     List<Payment> findByTransactionId(Long transactionId);
 
     List<Payment> findByPaymentStatus(String paymentStatus);

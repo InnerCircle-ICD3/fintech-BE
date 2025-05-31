@@ -4,7 +4,8 @@ package com.fastcampus.paymentcore.parksay;
 import com.fastcampus.paymentcore.PaymentCoreApplication;
 import com.fastcampus.paymentcore.core.common.util.SystemParameterUtil;
 import com.fastcampus.paymentcore.core.dto.PaymentProgressDto;
-import com.fastcampus.paymentcore.core.dto.ResponsePaymentReady;
+import com.fastcampus.paymentcore.core.dto.PaymentReadyRequest;
+import com.fastcampus.paymentcore.core.dto.PaymentReadyResponse;
 import com.fastcampus.paymentcore.core.service.PaymentProgressService;
 import com.fastcampus.paymentcore.core.service.PaymentReadyService;
 import org.junit.jupiter.api.Test;
@@ -32,18 +33,14 @@ public class MyTest {
     public void myTest1() {
         logger.info("hello world!");
     }
-
+    
     @Test
     public void readyPayment() {
         //
-        Map<String, Object> paramMap = new HashMap<>();
-        paramMap.put("merchantId", "1");
-        paramMap.put("merchantOrderId", "1");
-        paramMap.put("amount", "1");
-
-        ResponsePaymentReady response = readyService.readyPayment(paramMap);
+        PaymentReadyRequest request =  new PaymentReadyRequest(1L, 2L, "test3");
+        PaymentReadyResponse response = readyService.readyPayment(request);
         //
-        logger.info(response.toString());
+        logger.info("test result >> readyPayment: " + response.toString());
     }
 
     @Test
