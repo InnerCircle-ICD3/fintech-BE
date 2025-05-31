@@ -1,4 +1,4 @@
-package com.fastcampus.paymentinfra.infra.client;
+package com.fastcampus.paymentinfra.client;
 
 public class MockCardApprovalClient {
 }
