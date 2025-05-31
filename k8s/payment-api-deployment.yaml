@@ -18,7 +18,7 @@ spec:
       - name: payment-api
         image: ${DOCKER_REGISTRY}/payment-api:${IMAGE_TAG}
         ports:
-        - containerPort: 8081
+        - containerPort: 9081
         resources:
           limits:
             cpu: "500m"
@@ -31,7 +31,7 @@ spec:
           value: "dev"
         readinessProbe:
           tcpSocket:
-            port: 8081
+            port: 9081
           initialDelaySeconds: 30
           periodSeconds: 10
 ---
@@ -43,6 +43,6 @@ spec:
   selector:
     app: payment-api
   ports:
-  - port: 8081
-    targetPort: 8081
+  - port: 9081
+    targetPort: 9081
   type: ClusterIP 
