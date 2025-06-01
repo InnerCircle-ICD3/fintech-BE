@@ -18,13 +18,13 @@ public class ApiKeyController {
     private final ApiKeyService apiKeyService;
 
     @PostMapping("/{merchantId}")
-    @Operation(summary = "Generate new API key for merchant")
+    @Operation(summary = "API key 신규 생성")
     public ResponseEntity<ApiKeyDto> generateApiKey(@PathVariable Long merchantId) {
         return ResponseEntity.ok(apiKeyService.generateApiKey(merchantId));
     }
 
     @PostMapping("/{merchantId}/reissue")
-    @Operation(summary = "Reissue API key for merchant")
+    @Operation(summary = "API key 재발급")
     public ResponseEntity<ApiKeyDto> reissueApiKey(
         @PathVariable("merchantId") Long merchantId,
         @RequestParam("currentKey ") String currentKey
@@ -33,13 +33,13 @@ public class ApiKeyController {
     }
 
     @GetMapping("/{merchantId}")
-    @Operation(summary = "Get all API keys for merchant")
+    @Operation(summary = "가맹점의 API keys조회")
     public ResponseEntity<List<ApiKeyDto>> getApiKeys(@PathVariable("merchantId") Long merchantId) {
         return ResponseEntity.ok(apiKeyService.getApiKeys(merchantId));
     }
 
     @DeleteMapping("/{key}")
-    @Operation(summary = "Deactivate API key")
+    @Operation(summary = "API key 비활성화")
     public ResponseEntity<Void> deactivateApiKey(@PathVariable String key) {
         apiKeyService.deactivateApiKey(key);
         return ResponseEntity.ok().build();

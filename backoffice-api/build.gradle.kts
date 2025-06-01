@@ -47,6 +47,7 @@ dependencies {
 
     // 공용 모듈
     implementation(project(":common"))
+    implementation (project(":payment-infra"))
 
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
