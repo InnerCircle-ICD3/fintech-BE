@@ -63,6 +63,8 @@ jobs:
             rm -f backoffice-manage/build/libs/*.jar
             ./gradlew :backoffice-manage:build -x test
             BACKOFFICE_MANAGE_JAR=$(find backoffice-manage/build/libs -name "backoffice-manage-*.jar" ! -name "*plain.jar" | sort | tail -1)
+            export yaml="${{ secrets.BM }}"
+            echo "$yaml" > backoffice-manage/src/main/resources/application.yml
             nohup java -jar $BACKOFFICE_MANAGE_JAR > backoffice-manage.log 2>&1 & echo $! > backoffice-manage.pid
 
             echo "모든 모듈 배포 및 재시작 완료"
