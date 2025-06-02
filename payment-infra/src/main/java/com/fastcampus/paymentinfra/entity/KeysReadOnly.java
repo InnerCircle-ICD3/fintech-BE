@@ -5,7 +5,7 @@ import org.hibernate.annotations.Immutable;
 
 import java.time.LocalDateTime;
 
-@Entity
+//@Entity //삭제해야할듯
 @Immutable
 @Table(name = "keys")
 public class KeysReadOnly {
