@@ -36,3 +36,5 @@ springdoc:
 logging:
   file:
     name: backoffice-manage.log
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
