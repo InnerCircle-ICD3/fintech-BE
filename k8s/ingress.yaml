@@ -5,7 +5,25 @@ metadata:
   namespace: fintech
   annotations:
     kubernetes.io/ingress.class: nginx
+    # Load Balancer SSL Termination용 설정
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    # X-Forwarded-Proto 헤더 기반 조건부 리다이렉트
+    nginx.ingress.kubernetes.io/server-snippet: |
+      if ($http_x_forwarded_proto = '') {
+        set $http_x_forwarded_proto $scheme;
+      }
+      if ($http_x_forwarded_proto != 'https') {
+        return 301 https://$host$request_uri;
+      }
+    # 보안 헤더 추가
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
 spec:
+  # TLS 설정 (Load Balancer SSL Termination 사용)
+  tls:
+  - hosts:
+    - test.passion-pay.com
   rules:
   - host: test.passion-pay.com
     http:
@@ -17,22 +35,6 @@ spec:
             name: payment-api
             port:
               number: 9081
-      # Backoffice API (향후 추가)
-      # - path: /backoffice
-      #   pathType: Prefix
-      #   backend:
-      #     service:
-      #       name: backoffice-api.fintech-be
-      #       port:
-      #         number: 9080
-      # Backoffice Management (향후 추가)
-      # - path: /manage
-      #   pathType: Prefix
-      #   backend:
-      #     service:
-      #       name: backoffice-manage.fintech-be
-      #       port:
-      #         number: 9082
       # API 스펙 파일용 경로 추가
       - path: /v3(/|$)(.*)
         pathType: Prefix
@@ -41,3 +43,19 @@ spec:
             name: payment-api
             port:
               number: 9081
+      # Backoffice API (향후 추가)
+      # - path: /backoffice
+      #   pathType: Prefix
+      #   backend:
+      #     service:
+      #       name: backoffice-api
+      #       port:
+      #         number: 9080
+      # Backoffice Management (향후 추가)
+      # - path: /manage
+      #   pathType: Prefix
+      #   backend:
+      #     service:
+      #       name: backoffice-manage
+      #       port:
+      #         number: 9082
