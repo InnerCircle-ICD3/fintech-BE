@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Getter
 @AllArgsConstructor
 @ToString
-public class ResponsePaymentReady {
+public class PaymentReadyResponse {
     private final String transactionToken;
     private final LocalDateTime expiresAt;
 }

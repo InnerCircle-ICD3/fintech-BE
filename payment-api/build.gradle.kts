@@ -19,7 +19,6 @@ repositories {
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
     // ✅ SpringDoc OpenAPI
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
@@ -31,6 +30,7 @@ dependencies {
     // 모듈 추가
     implementation(project(":common"))
     implementation(project(":payment-core"))
+    implementation(project(":payment-infra"))
 
     // 테스트
     testImplementation("org.springframework.boot:spring-boot-starter-test")

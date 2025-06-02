@@ -22,6 +22,10 @@ public class Payment {
     private String paymentStatus;
     private Long paidAmount;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "card_info_id")  // FK 컬럼명. DB에서 이 이름으로 FK 생성됨
+    private CardInfo cardInfo;
+
     @CreationTimestamp
     @Column(columnDefinition = "TIMESTAMP")
     private LocalDateTime approvedAt;

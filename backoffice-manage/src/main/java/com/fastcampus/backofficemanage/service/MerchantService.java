@@ -5,11 +5,14 @@ import com.fastcampus.backofficemanage.dto.info.MerchantInfoResponse;
 import com.fastcampus.backofficemanage.dto.update.request.MerchantUpdateRequest;
 import com.fastcampus.backofficemanage.entity.Merchant;
 import com.fastcampus.backofficemanage.repository.MerchantRepository;
+import com.fastcampus.common.exception.code.AuthErrorCode;
 import com.fastcampus.common.exception.code.MerchantErrorCode;
 import com.fastcampus.common.exception.exception.DuplicateKeyException;
 import com.fastcampus.common.exception.exception.NotFoundException;
+import com.fastcampus.common.exception.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +24,7 @@ import java.time.LocalDateTime;
 public class MerchantService {
 
     private final MerchantRepository merchantRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
     private final Clock clock;
 
     @Transactional(readOnly = true)
@@ -39,9 +43,16 @@ public class MerchantService {
     }
 
     @Transactional
-    public CommonResponse updateMyInfo(String loginId, MerchantUpdateRequest request) {
+    public CommonResponse updateMyInfo(MerchantUpdateRequest request) {
+        String loginId = request.getLoginId();
+
         Merchant merchant = merchantRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new NotFoundException(MerchantErrorCode.NOT_FOUND));
+
+        // 비밀번호 확인 (추가 보안)
+        if (!passwordEncoder.matches(request.getLoginPw(), merchant.getLoginPw())) {
+            throw new UnauthorizedException(AuthErrorCode.INVALID_PASSWORD);
+        }
 
         merchant.updateInfo(
                 request.getName(),
@@ -53,7 +64,7 @@ public class MerchantService {
         merchant.setUpdatedAt(LocalDateTime.now(clock));
 
         try {
-            merchantRepository.flush(); // unique 제약조건 위반 감지용
+            merchantRepository.flush(); // unique 제약 조건 위반 감지
         } catch (DataIntegrityViolationException e) {
             throw DuplicateKeyException.of(MerchantErrorCode.DUPLICATE_BUSINESS_NUMBER);
         }

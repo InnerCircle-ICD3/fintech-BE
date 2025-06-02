@@ -1,7 +1,7 @@
 package com.fastcampus.paymentcore.core.service;
 
 import com.fastcampus.paymentinfra.repository.KeysRepository;
-import com.fastcampus.paymentinfra.entity.Keys;
+import com.fastcampus.paymentinfra.entity.KeysReadOnly;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +13,7 @@ public class repotestservice {
 
     private final KeysRepository keysRepository;
 
-    public Optional<Keys> getKeyByMerchantId(Long merchantId) {
+    public Optional<KeysReadOnly> getKeyByMerchantId(Long merchantId) {
         return keysRepository.findByMerchantId(merchantId);
     }
 }

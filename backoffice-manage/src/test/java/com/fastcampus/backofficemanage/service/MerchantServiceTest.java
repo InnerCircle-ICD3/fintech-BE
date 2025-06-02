@@ -8,10 +8,12 @@ import com.fastcampus.backofficemanage.repository.MerchantRepository;
 import com.fastcampus.common.exception.code.MerchantErrorCode;
 import com.fastcampus.common.exception.exception.DuplicateKeyException;
 import com.fastcampus.common.exception.exception.NotFoundException;
+import com.fastcampus.common.exception.exception.UnauthorizedException;
 import org.junit.jupiter.api.*;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -27,6 +29,7 @@ import static org.mockito.MockitoAnnotations.openMocks;
 class MerchantServiceTest {
 
     @Mock private MerchantRepository merchantRepository;
+    @Mock private BCryptPasswordEncoder passwordEncoder;
     @Mock private Clock clock;
 
     @InjectMocks private MerchantService merchantService;
@@ -79,10 +82,15 @@ class MerchantServiceTest {
         @Test
         @DisplayName("정상적으로 수정 요청 시 성공 응답 반환")
         void givenValidUpdateRequest_whenUpdate_thenSuccessResponse() {
+            // given
             Merchant merchant = spy(createMerchant());
+            String rawPw = merchant.getLoginPw(); // 암호화 전 가정
             given(merchantRepository.findByLoginId(LOGIN_ID)).willReturn(Optional.of(merchant));
+            given(passwordEncoder.matches(anyString(), anyString())).willReturn(true);
 
             MerchantUpdateRequest request = MerchantUpdateRequest.builder()
+                    .loginId(LOGIN_ID)
+                    .loginPw(rawPw)
                     .name("변경된이름")
                     .businessNumber("999-999")
                     .contactName("이몽룡")
@@ -90,8 +98,10 @@ class MerchantServiceTest {
                     .contactPhone("010-9999-8888")
                     .build();
 
-            CommonResponse response = merchantService.updateMyInfo(LOGIN_ID, request);
+            // when
+            CommonResponse response = merchantService.updateMyInfo(request);
 
+            // then
             assertTrue(response.isSuccess());
             assertEquals("가맹점 정보가 성공적으로 수정되었습니다.", response.getMessage());
             verify(merchant).updateInfo(anyString(), anyString(), anyString(), anyString(), anyString());
@@ -100,11 +110,15 @@ class MerchantServiceTest {
         @Test
         @DisplayName("수정 시 중복 사업자번호 오류 발생 시 DuplicateKeyException 발생")
         void givenDuplicateBusinessNumber_whenUpdate_thenThrows() {
+            // given
             Merchant merchant = createMerchant();
             given(merchantRepository.findByLoginId(LOGIN_ID)).willReturn(Optional.of(merchant));
+            given(passwordEncoder.matches(anyString(), anyString())).willReturn(true);
             willThrow(DataIntegrityViolationException.class).given(merchantRepository).flush();
 
             MerchantUpdateRequest request = MerchantUpdateRequest.builder()
+                    .loginId(LOGIN_ID)
+                    .loginPw("dummyPw")
                     .name("변경된이름")
                     .businessNumber("999-999")
                     .contactName("이몽룡")
@@ -112,16 +126,40 @@ class MerchantServiceTest {
                     .contactPhone("010-9999-8888")
                     .build();
 
-            assertThrows(DuplicateKeyException.class, () -> merchantService.updateMyInfo(LOGIN_ID, request));
+            // when & then
+            assertThrows(DuplicateKeyException.class, () -> merchantService.updateMyInfo(request));
         }
 
         @Test
         @DisplayName("존재하지 않는 loginId로 수정 시 NotFoundException 발생")
         void givenInvalidLoginId_whenUpdate_thenThrows() {
+            // given
             given(merchantRepository.findByLoginId(LOGIN_ID)).willReturn(Optional.empty());
 
-            MerchantUpdateRequest request = MerchantUpdateRequest.builder().build();
-            assertThrows(NotFoundException.class, () -> merchantService.updateMyInfo(LOGIN_ID, request));
+            MerchantUpdateRequest request = MerchantUpdateRequest.builder()
+                    .loginId(LOGIN_ID)
+                    .loginPw("irrelevant")
+                    .build();
+
+            // when & then
+            assertThrows(NotFoundException.class, () -> merchantService.updateMyInfo(request));
+        }
+
+        @Test
+        @DisplayName("비밀번호 불일치 시 UnauthorizedException 발생")
+        void givenWrongPassword_whenUpdate_thenThrows() {
+            // given
+            Merchant merchant = createMerchant();
+            given(merchantRepository.findByLoginId(LOGIN_ID)).willReturn(Optional.of(merchant));
+            given(passwordEncoder.matches(anyString(), anyString())).willReturn(false);
+
+            MerchantUpdateRequest request = MerchantUpdateRequest.builder()
+                    .loginId(LOGIN_ID)
+                    .loginPw("wrongPassword")
+                    .build();
+
+            // when & then
+            assertThrows(UnauthorizedException.class, () -> merchantService.updateMyInfo(request));
         }
     }
 

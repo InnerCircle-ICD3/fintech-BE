@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface ApiKeyRepository extends JpaRepository<ApiKey, Long> {
     List<ApiKey> findByMerchant_MerchantId(Long merchantId);
     Optional<ApiKey> findByEncryptedKey(String key);
-    boolean existsByEncryptedKey(String key);
+    boolean existsByMerchant_MerchantIdAndActiveTrue(Long merchantId);
     @Modifying
     @Query("UPDATE ApiKey ak SET ak.active = false WHERE ak.merchant.merchantId = :merchantId AND ak.active = true")
     int deactivateActiveKeyByMerchantId(@Param("merchantId") Long merchantId);

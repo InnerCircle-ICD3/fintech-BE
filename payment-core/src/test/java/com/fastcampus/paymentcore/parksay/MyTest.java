@@ -1,18 +1,18 @@
 package com.fastcampus.paymentcore.parksay;
 
 
+import com.fastcampus.common.exception.exception.BadRequestException;
 import com.fastcampus.paymentcore.PaymentCoreApplication;
 import com.fastcampus.paymentcore.core.common.util.SystemParameterUtil;
-import com.fastcampus.paymentcore.core.dto.PaymentProgressDto;
-import com.fastcampus.paymentcore.core.dto.ResponsePaymentReady;
+import com.fastcampus.paymentcore.core.common.util.TokenHandler;
+import com.fastcampus.paymentcore.core.dto.*;
 import com.fastcampus.paymentcore.core.service.PaymentProgressService;
 import com.fastcampus.paymentcore.core.service.PaymentReadyService;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Logger;
 
 @SpringBootTest(classes = PaymentCoreApplication.class)
@@ -28,37 +28,50 @@ public class MyTest {
     @Autowired
     SystemParameterUtil systemParameter;
 
+    @Autowired
+    TokenHandler tokenHandler;
+
     @Test
     public void myTest1() {
         logger.info("hello world!");
     }
-
+    
     @Test
     public void readyPayment() {
         //
-        Map<String, Object> paramMap = new HashMap<>();
-        paramMap.put("merchantId", "1");
-        paramMap.put("merchantOrderId", "1");
-        paramMap.put("amount", "1");
-
-        ResponsePaymentReady response = readyService.readyPayment(paramMap);
+        PaymentReadyRequest request =  new PaymentReadyRequest(1L, 2L, "test3");
+        PaymentReadyResponse response = readyService.readyPayment(request);
         //
-        logger.info(response.toString());
+        logger.info("test result >> readyPayment: " + response.toString());
     }
 
     @Test
     public void progressPayment() {
-        //
-        String qrToken = "qr token from sdk";
-        PaymentProgressDto paymentProgressDto = progressService.progressPayment(qrToken);
-        //
-        logger.info(paymentProgressDto.toString());
+
+        // 일단 아무 값이 넣음
+        String qrToken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJxcl90b2tlbiIsInRyYW5zYWN0aW9uSWQiOjEsImlhdCI6MTc0ODcwNTEzOSwiZXhwIjoxNzQ4NzA1MzE5fQ.prHo1VomXsdbSAUUCMM1hPFYhCqeAA1rXqLxxQpFEWI";
+        String cardToken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJxcl90b2tlbiIsInRyYW5zYWN0aW9uSWQiOjEsImlhdCI6MTc0ODcwNTEzOSwiZXhwIjoxNzQ4NzA1MzE5fQ.prHo1VomXsdbSAUUCMM1hPFYhCqeAA1rXqLxxQpFEWI";
+
+        PaymentProgressRequest request = new PaymentProgressRequest(qrToken, cardToken);
+        Assertions.assertThrows(BadRequestException.class, ()->{
+            PaymentProgressResponse response = progressService.progressPayment(request);
+            logger.info(response.toString());
+        });
+
+
     }
 
     @Test
     public void systemParameterUtilTest() {
         String result = systemParameter.getProperty("hello");
         logger.info("===============================================");
+        logger.info(result);
+    }
+
+    @Test
+    public void tokenHandlerTest() {
+        Long id = 34L;
+        String result = tokenHandler.generateTokenWithTransactionId(id);
         logger.info(result);
     }
 }
