@@ -1,5 +1,7 @@
-package com.fastcampus.backofficemanage.security;
+package com.fastcampus.backofficemanage.config;
 
+import com.fastcampus.backofficemanage.jwt.JwtAuthenticationFilter;
+import com.fastcampus.backofficemanage.jwt.JwtProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +24,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configure(http))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/merchants/register",

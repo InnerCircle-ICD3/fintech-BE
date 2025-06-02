@@ -7,7 +7,7 @@ import com.fastcampus.backofficemanage.dto.signup.response.MerchantSignUpRespons
 import com.fastcampus.backofficemanage.entity.Keys;
 import com.fastcampus.backofficemanage.entity.Merchant;
 import com.fastcampus.backofficemanage.repository.MerchantRepository;
-import com.fastcampus.backofficemanage.security.JwtProvider;
+import com.fastcampus.backofficemanage.jwt.JwtProvider;
 import com.fastcampus.backofficemanage.dto.common.CommonResponse;
 import com.fastcampus.common.exception.code.AuthErrorCode;
 import com.fastcampus.common.exception.exception.DuplicateKeyException;

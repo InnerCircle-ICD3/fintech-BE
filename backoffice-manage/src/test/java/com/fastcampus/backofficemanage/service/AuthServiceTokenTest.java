@@ -3,7 +3,7 @@ package com.fastcampus.backofficemanage.service;
 import com.fastcampus.backofficemanage.dto.common.CommonResponse;
 import com.fastcampus.backofficemanage.dto.login.response.MerchantLoginResponse;
 import com.fastcampus.backofficemanage.repository.MerchantRepository;
-import com.fastcampus.backofficemanage.security.JwtProvider;
+import com.fastcampus.backofficemanage.jwt.JwtProvider;
 import com.fastcampus.common.constant.RedisKeys;
 import com.fastcampus.common.exception.code.AuthErrorCode;
 import com.fastcampus.common.exception.exception.UnauthorizedException;
