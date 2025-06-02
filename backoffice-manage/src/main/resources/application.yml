@@ -18,7 +18,7 @@ spring:
 
   data:
     redis:
-      host: redis.default.svc.cluster.local
+      host: ada3049ef3eb34e4682ce014dce0ff6f-1683256336.ap-northeast-2.elb.amazonaws.com
       port: 6379
 
 jwt:
