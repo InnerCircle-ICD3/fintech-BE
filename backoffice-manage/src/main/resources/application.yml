@@ -18,7 +18,7 @@ spring:
 
   data:
     redis:
-      host: localhost
+      host: redis.default.svc.cluster.local
       port: 6379
 
 jwt:
@@ -32,11 +32,3 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
-
-logging:
-  level:
-    com.fastcampus.backofficemanage: DEBUG
-  file:
-    name: backoffice-manage.log
-  pattern:
-    file: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
