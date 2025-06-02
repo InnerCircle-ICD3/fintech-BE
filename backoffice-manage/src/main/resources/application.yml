@@ -1,12 +1,5 @@
 server:
   port: 8082
-  tomcat:
-    accesslog:
-      enabled: true
-      directory: logs
-      prefix: access_log
-      suffix: .log
-      pattern: common
 
 spring:
   datasource:
@@ -41,5 +34,5 @@ springdoc:
     path: /swagger-ui.html
 
 logging:
-  level:
-    root: DEBUG
+  file:
+    name: backoffice-manage.log
