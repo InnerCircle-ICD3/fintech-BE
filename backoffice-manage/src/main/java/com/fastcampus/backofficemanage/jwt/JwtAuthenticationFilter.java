@@ -30,18 +30,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
 
+        String uri = request.getRequestURI();
+
+        if (uri.startsWith("/swagger-ui")
+                || uri.equals("/swagger-ui.html")
+                || uri.startsWith("/v3/api-docs")
+                || uri.startsWith("/swagger-resources")
+                || uri.equals("/merchants/register")
+                || uri.equals("/merchants/login")
+                || uri.equals("/merchants/reissue")
+                || uri.equals("/merchants/logout")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
 
-            // ✅ 로그아웃된 토큰 여부 확인
             if (Boolean.TRUE.equals(redisTemplate.hasKey(BLOCKLIST_PREFIX + token))) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
 
-            // ✅ JWT 유효성 확인
             if (jwtProvider.validateToken(token)) {
                 String loginId = jwtProvider.getSubject(token);
                 UsernamePasswordAuthenticationToken authentication =
