@@ -15,7 +15,11 @@ public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long paymentId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "merchant_id")
     private Long merchantId;//추가
+
     private Long transactionId;
     private Long userId;
     private Long paymentMethod;
