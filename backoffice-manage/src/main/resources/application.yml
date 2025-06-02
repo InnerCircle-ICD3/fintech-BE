@@ -32,3 +32,7 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+logging:
+  level:
+    root: DEBUG
