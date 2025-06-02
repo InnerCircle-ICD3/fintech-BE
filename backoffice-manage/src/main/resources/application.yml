@@ -34,6 +34,8 @@ springdoc:
     path: /swagger-ui.html
 
 logging:
+  level:
+    com.fastcampus.backofficemanage: DEBUG
   file:
     name: backoffice-manage.log
   pattern:
