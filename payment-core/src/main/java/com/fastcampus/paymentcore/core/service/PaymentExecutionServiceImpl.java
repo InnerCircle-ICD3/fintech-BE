@@ -71,12 +71,7 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
     }
 
     private void validateRequest(PaymentProgressRequest request) {
-        if(request.getTransactionToken() == null || request.getTransactionToken().trim().isEmpty()){
-            throw new IllegalArgumentException("transactionToken은 필수값입니다.");
-        }
-        if(request.getCardToken() == null || request.getCardToken().trim().isEmpty()){
-            throw new IllegalArgumentException("cardToken은 필수값입니다.");
-        }
+        request.nullCheckRequiredParam();
     }
     private Transaction findTransaction(String transactionToken) {
         return redisTransactionRepository.findByToken(transactionToken)
