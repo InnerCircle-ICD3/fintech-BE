@@ -70,14 +70,14 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
         request.nullCheckRequiredParam();
     }
     private Transaction findTransaction(String transactionToken) {
+    private Transaction findTransaction(String transactionToken) {
         return redisTransactionRepository.findByToken(transactionToken)
                 .orElseGet(() -> {
                     log.info("Redis에서 거래 조회 실패, DB에서 조회 - transactionToken: {}", transactionToken);
                     return transactionRepository.findByTransactionToken(transactionToken)
-                            .orElseThrow(() -> new RuntimeException("거래를 찾을 수 없습니다: " + transactionToken));
+                            .orElseThrow(() -> new BadRequestException(PaymentErrorCode.PAYMENT_NOT_FOUND));
                 });
     }
-
     private void validateTransactionStatus(Transaction tx) {
         if (tx.getStatus() == null) {
             throw new IllegalStateException("거래 상태가 설정되지 않았습니다.");
