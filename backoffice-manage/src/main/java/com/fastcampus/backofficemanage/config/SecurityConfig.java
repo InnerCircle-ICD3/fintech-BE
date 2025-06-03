@@ -2,6 +2,8 @@ package com.fastcampus.backofficemanage.config;
 
 import com.fastcampus.backofficemanage.jwt.JwtAuthenticationFilter;
 import com.fastcampus.backofficemanage.jwt.JwtProvider;
+import com.fastcampus.backofficemanage.securityhandler.CustomAccessDeniedHandler;
+import com.fastcampus.backofficemanage.securityhandler.CustomAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,6 +31,10 @@ public class SecurityConfig {
                 .cors(cors -> cors.configure(http))
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(new CustomAuthenticationEntryPoint())
+                        .accessDeniedHandler(new CustomAccessDeniedHandler())
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/swagger-ui/**",
