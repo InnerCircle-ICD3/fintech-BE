@@ -15,7 +15,10 @@ public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long paymentId;
-    private Long merchantId;//추가
+
+    @JoinColumn(name = "merchant_id")
+    private Long merchantId;
+
     private Long transactionId;
     private Long userId;
     private Long paymentMethod;
