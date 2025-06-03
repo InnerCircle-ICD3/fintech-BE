@@ -13,6 +13,7 @@ import com.fastcampus.backofficemanage.service.AuthService;
 import com.fastcampus.backofficemanage.service.MerchantService;
 import com.fastcampus.common.util.SwaggerDocs.StandardResponses;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -43,7 +44,7 @@ public class MerchantController {
     @Operation(summary = "Header에 있는 Token을 통한 가맹점 정보 조회")
     @StandardResponses
     @GetMapping("/info")
-    public ResponseEntity<MerchantInfoResponse> getInfo(@RequestHeader("Authorization") String authorizationHeader) {
+    public ResponseEntity<MerchantInfoResponse> getInfo(@Parameter(hidden = true) @RequestHeader("Authorization") String authorizationHeader) {
         return ResponseEntity.ok(merchantService.getMyInfoByToken(authorizationHeader));
     }
 
@@ -64,14 +65,14 @@ public class MerchantController {
     @Operation(summary = "가맹점 로그아웃")
     @StandardResponses
     @PostMapping("/logout")
-    public ResponseEntity<CommonResponse> logout(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<CommonResponse> logout(@Parameter(hidden = true) @RequestHeader("Authorization") String token) {
         return authService.logout(token);
     }
 
     @Operation(summary = "AccessToken 재발급")
     @StandardResponses
     @PostMapping("/reissue")
-    public ResponseEntity<MerchantLoginResponse> reissue(@RequestHeader("Refresh-Token") String refreshToken) {
+    public ResponseEntity<MerchantLoginResponse> reissue(@Parameter(hidden = true) @RequestHeader("Refresh-Token") String refreshToken) {
         return authService.reissue(refreshToken);
     }
 }
