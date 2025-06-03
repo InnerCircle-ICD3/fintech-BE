@@ -26,7 +26,6 @@ public class Keys {
 
     public void setMerchant(Merchant merchant) {
         this.merchant = merchant;
-        merchant.setKeys(this);
     }
 
     public static Keys createForMerchant(Merchant merchant) {
