@@ -40,14 +40,10 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
         validateRequest(request);
 
         //1. 거래 조회 (Redis -> DB Fallback)
-        Transaction tx = redisTransactionRepository.findByToken(request.getTransactionToken())
-                .orElseGet(() -> transactionRepository.findByTransactionToken(request.getTransactionToken())
-                        .orElseThrow(() -> new RuntimeException("거래를 찾을 수 없습니다.")));
+        Transaction tx = findTransaction(request.getTransactionToken());
 
         //2. 거래 상태 검증 추가
-        if(tx.getStatus().isFinal()){
-            throw new IllegalStateException("이미 완료된 거래입니다.:" + tx.getStatus());
-        }
+        validateTransactionStatus(tx);
 
         //3. 카드 승인 여부 판단(시뮬레이션)
         boolean approved = simulateCardApproval(request.getCardToken());
