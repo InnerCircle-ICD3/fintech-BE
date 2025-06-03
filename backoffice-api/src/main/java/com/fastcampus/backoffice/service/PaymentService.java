@@ -48,6 +48,19 @@ public class PaymentService {
         dto.setLastTransactionId(payment.getLastTransactionId());
         dto.setCreatedAt(payment.getCreatedAt());
         dto.setUpdatedAt(payment.getUpdatedAt());
+        
+        // 카드 정보 변환
+        if (payment.getCardInfo() != null) {
+            PaymentDto.CardInfoDto cardInfoDto = new PaymentDto.CardInfoDto();
+            cardInfoDto.setCardInfoId(payment.getCardInfo().getCardInfoId());
+            cardInfoDto.setType(payment.getCardInfo().getType());
+            cardInfoDto.setLast4(payment.getCardInfo().getLast4());
+            cardInfoDto.setCardCompany(payment.getCardInfo().getCardCompany());
+            cardInfoDto.setCreatedAt(payment.getCardInfo().getCreatedAt());
+            cardInfoDto.setUpdatedAt(payment.getCardInfo().getUpdatedAt());
+            dto.setCardInfo(cardInfoDto);
+        }
+        
         return dto;
     }
 } 

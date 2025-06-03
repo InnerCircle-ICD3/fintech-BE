@@ -13,12 +13,11 @@ import java.util.Optional;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
-    @Query("""
-    SELECT p FROM Payment p
-    WHERE p.merchantId = :merchantId
-      AND p.approvedAt BETWEEN :startDate AND :endDate
-      AND (:status IS NULL OR p.paymentStatus = :status)
-    """)
+    @Query("SELECT p FROM Payment p " +
+           "LEFT JOIN FETCH p.cardInfo " +
+           "WHERE p.merchantId = :merchantId " +
+           "AND (:status IS NULL OR p.paymentStatus = :status) " +
+           "AND p.approvedAt BETWEEN :startDate AND :endDate")
     Page<Payment> findPaymentHistoryWithOptionalStatus(
             @Param("merchantId") Long merchantId,
             @Param("status") String status,
@@ -27,6 +26,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             Pageable pageable
     );
 
-    Optional<Payment> findByTransactionId(Long transactionId);
+    @Query("SELECT p FROM Payment p " +
+           "LEFT JOIN FETCH p.cardInfo " +
+           "WHERE p.transactionId = :transactionId")
+    Optional<Payment> findByTransactionId(@Param("transactionId") Long transactionId);
 }
 
