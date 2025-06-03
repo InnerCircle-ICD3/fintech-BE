@@ -48,24 +48,11 @@ management:
     enabled: false
 
 ---
-# 기본 프로파일 설정
+# 기본 프로파일 설정 (localhost Redis만 다름)
 spring:
-  datasource:
-    url: jdbc:postgresql://postgres-service.db.svc.cluster.local:5432/testdb
-    username: testuser
-    password: testpass
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
   data:
     redis:
       host: localhost
       port: 6379
   application:
-    name: backoffice-api 
+    name: backoffice-api
