@@ -7,7 +7,7 @@ COPY . .
 
 # 모듈 지정하여 빌드
 ARG MODULE
-RUN gradle clean ${MODULE}:build -x test --no-daemon
+RUN gradle clean ${MODULE}:test ${MODULE}:build --no-daemon
 
 # 2단계: 실행용 이미지
 FROM eclipse-temurin:21-jre-alpine
