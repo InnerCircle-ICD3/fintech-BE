@@ -3,6 +3,7 @@ package com.fastcampus.backofficemanage.service;
 import com.fastcampus.backofficemanage.dto.common.CommonResponse;
 import com.fastcampus.backofficemanage.dto.info.MerchantInfoResponse;
 import com.fastcampus.backofficemanage.dto.update.request.MerchantUpdateRequest;
+import com.fastcampus.backofficemanage.dto.update.response.MerchantUpdateResponse;
 import com.fastcampus.backofficemanage.entity.Merchant;
 import com.fastcampus.backofficemanage.repository.MerchantRepository;
 import com.fastcampus.common.exception.code.MerchantErrorCode;
@@ -80,8 +81,8 @@ class MerchantServiceTest {
     class UpdateMyInfoTests {
 
         @Test
-        @DisplayName("정상적으로 수정 요청 시 성공 응답 반환")
-        void givenValidUpdateRequest_whenUpdate_thenSuccessResponse() {
+        @DisplayName("정상적으로 수정 요청 시 수정된 가맹점 정보 반환")
+        void givenValidUpdateRequest_whenUpdate_thenUpdatedMerchantInfo() {
             // given
             Merchant merchant = spy(createMerchant());
             String rawPw = merchant.getLoginPw(); // 암호화 전 가정
@@ -99,12 +100,23 @@ class MerchantServiceTest {
                     .build();
 
             // when
-            CommonResponse response = merchantService.updateMyInfo(request);
+            MerchantUpdateResponse response = merchantService.updateMyInfo(request);
 
             // then
-            assertTrue(response.isSuccess());
-            assertEquals("가맹점 정보가 성공적으로 수정되었습니다.", response.getMessage());
-            verify(merchant).updateInfo(anyString(), anyString(), anyString(), anyString(), anyString());
+            assertNotNull(response);
+            assertEquals("변경된이름", response.getName());
+            assertEquals("999-999", response.getBusinessNumber());
+            assertEquals("이몽룡", response.getContactName());
+            assertEquals("new@email.com", response.getContactEmail());
+            assertEquals("010-9999-8888", response.getContactPhone());
+            // 상태나 기타 필드도 필요에 따라 검증
+            verify(merchant).updateInfo(
+                    eq(request.getName()),
+                    eq(request.getBusinessNumber()),
+                    eq(request.getContactName()),
+                    eq(request.getContactEmail()),
+                    eq(request.getContactPhone())
+            );
         }
 
         @Test

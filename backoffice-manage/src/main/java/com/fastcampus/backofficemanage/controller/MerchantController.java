@@ -8,6 +8,7 @@ import com.fastcampus.backofficemanage.dto.login.response.MerchantLoginResponse;
 import com.fastcampus.backofficemanage.dto.signup.request.MerchantSignUpRequest;
 import com.fastcampus.backofficemanage.dto.signup.response.MerchantSignUpResponse;
 import com.fastcampus.backofficemanage.dto.update.request.MerchantUpdateRequest;
+import com.fastcampus.backofficemanage.dto.update.response.MerchantUpdateResponse;
 import com.fastcampus.backofficemanage.service.AuthService;
 import com.fastcampus.backofficemanage.service.MerchantService;
 import com.fastcampus.common.util.SwaggerDocs.StandardResponses;
@@ -42,14 +43,14 @@ public class MerchantController {
     @Operation(summary = "가맹점 정보 조회")
     @StandardResponses
     @GetMapping("/info")
-    public ResponseEntity<MerchantInfoResponse> getInfo(@CurrentLoginId String loginId) {
-        return ResponseEntity.ok(merchantService.getMyInfo(loginId));
+    public ResponseEntity<MerchantInfoResponse> getInfo(@RequestHeader("Authorization") String authorizationHeader) {
+        return ResponseEntity.ok(merchantService.getMyInfoByToken(authorizationHeader));
     }
 
     @Operation(summary = "가맹점 정보 수정")
     @StandardResponses
     @PutMapping("/modify")
-    public ResponseEntity<CommonResponse> updateInfo(@RequestBody @Valid MerchantUpdateRequest request) {
+    public ResponseEntity<MerchantUpdateResponse> updateInfo(@RequestBody @Valid MerchantUpdateRequest request) {
         return ResponseEntity.ok(merchantService.updateMyInfo(request));
     }
 

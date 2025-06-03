@@ -3,8 +3,10 @@ package com.fastcampus.backofficemanage.service;
 import com.fastcampus.backofficemanage.dto.common.CommonResponse;
 import com.fastcampus.backofficemanage.dto.info.MerchantInfoResponse;
 import com.fastcampus.backofficemanage.dto.update.request.MerchantUpdateRequest;
+import com.fastcampus.backofficemanage.dto.update.response.MerchantUpdateResponse;
 import com.fastcampus.backofficemanage.entity.Merchant;
 import com.fastcampus.backofficemanage.repository.MerchantRepository;
+import com.fastcampus.backofficemanage.jwt.JwtProvider;
 import com.fastcampus.common.exception.code.AuthErrorCode;
 import com.fastcampus.common.exception.code.MerchantErrorCode;
 import com.fastcampus.common.exception.exception.DuplicateKeyException;
@@ -26,6 +28,14 @@ public class MerchantService {
     private final MerchantRepository merchantRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final Clock clock;
+    private final JwtProvider jwtProvider;
+
+    @Transactional(readOnly = true)
+    public MerchantInfoResponse getMyInfoByToken(String authorizationHeader) {
+        String token = resolveBearerToken(authorizationHeader);
+        String loginId = jwtProvider.getSubject(token);
+        return getMyInfo(loginId);
+    }
 
     @Transactional(readOnly = true)
     public MerchantInfoResponse getMyInfo(String loginId) {
@@ -43,13 +53,12 @@ public class MerchantService {
     }
 
     @Transactional
-    public CommonResponse updateMyInfo(MerchantUpdateRequest request) {
+    public MerchantUpdateResponse updateMyInfo(MerchantUpdateRequest request) {
         String loginId = request.getLoginId();
 
         Merchant merchant = merchantRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new NotFoundException(MerchantErrorCode.NOT_FOUND));
 
-        // 비밀번호 확인 (추가 보안)
         if (!passwordEncoder.matches(request.getLoginPw(), merchant.getLoginPw())) {
             throw new UnauthorizedException(AuthErrorCode.INVALID_PASSWORD);
         }
@@ -64,19 +73,26 @@ public class MerchantService {
         merchant.setUpdatedAt(LocalDateTime.now(clock));
 
         try {
-            merchantRepository.flush(); // unique 제약 조건 위반 감지
+            merchantRepository.flush();
         } catch (DataIntegrityViolationException e) {
             throw DuplicateKeyException.of(MerchantErrorCode.DUPLICATE_BUSINESS_NUMBER);
         }
 
-        return CommonResponse.builder()
-                .success(true)
-                .message("가맹점 정보가 성공적으로 수정되었습니다.")
-                .build();
+        return new MerchantUpdateResponse(
+                merchant.getName(),
+                merchant.getBusinessNumber(),
+                merchant.getContactName(),
+                merchant.getContactEmail(),
+                merchant.getContactPhone(),
+                merchant.getStatus()
+        );
     }
 
     @Transactional
-    public CommonResponse deleteMyAccount(String loginId) {
+    public CommonResponse deleteMyAccount(String authorizationHeader) {
+        String token = resolveBearerToken(authorizationHeader);
+        String loginId = jwtProvider.getSubject(token);
+
         Merchant merchant = merchantRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new NotFoundException(MerchantErrorCode.NOT_FOUND));
 
@@ -87,5 +103,14 @@ public class MerchantService {
                 .success(true)
                 .message("회원 탈퇴가 완료되었습니다.")
                 .build();
+    }
+
+    private String resolveBearerToken(String header) {
+        if (header == null || header.isBlank()) {
+            throw new UnauthorizedException(AuthErrorCode.MISSING_ACCESS_TOKEN);
+        }
+        return header.startsWith("Bearer ")
+                ? header.substring(7)
+                : header;
     }
 }
