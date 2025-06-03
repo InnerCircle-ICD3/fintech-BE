@@ -14,12 +14,16 @@ import com.fastcampus.common.exception.exception.NotFoundException;
 import com.fastcampus.common.exception.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
+
+import static com.fastcampus.common.constant.RedisKeys.BLOCKLIST_PREFIX;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +33,7 @@ public class MerchantService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final Clock clock;
     private final JwtProvider jwtProvider;
+    private final RedisTemplate<String, String> redisTemplate;
 
     @Transactional(readOnly = true)
     public MerchantInfoResponse getMyInfoByToken(String authorizationHeader) {
@@ -98,6 +103,10 @@ public class MerchantService {
 
         merchant.setStatus("DELETED");
         merchant.setUpdatedAt(LocalDateTime.now(clock));
+
+        // 🔒 기존 토큰을 블랙리스트 처리
+        long exp = jwtProvider.getRemainingExpiration(token);
+        redisTemplate.opsForValue().set(BLOCKLIST_PREFIX + token, "logout", exp, TimeUnit.MILLISECONDS);
 
         return CommonResponse.builder()
                 .success(true)

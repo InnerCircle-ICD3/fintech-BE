@@ -58,8 +58,9 @@ public class MerchantController {
     @Operation(summary = "가맹점 삭제")
     @StandardResponses
     @DeleteMapping("/delete")
-    public ResponseEntity<CommonResponse> delete(@CurrentLoginId String loginId) {
-        return ResponseEntity.ok(merchantService.deleteMyAccount(loginId));
+    public ResponseEntity<CommonResponse> delete(
+            @Parameter(hidden = true) @RequestHeader("Authorization") String authorizationHeader) {
+        return ResponseEntity.ok(merchantService.deleteMyAccount(authorizationHeader));
     }
 
     @Operation(summary = "가맹점 로그아웃")
