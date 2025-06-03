@@ -55,7 +55,7 @@ public class MerchantController {
         return ResponseEntity.ok(merchantService.updateMyInfo(request));
     }
 
-    @Operation(summary = "가맹점 삭제")
+    @Operation(summary = "가맹점 삭제(Soft Delete)")
     @StandardResponses
     @DeleteMapping("/delete")
     public ResponseEntity<CommonResponse> delete(
