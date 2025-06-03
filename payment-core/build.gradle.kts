@@ -30,7 +30,6 @@ dependencies {
 //	implementation("androidx.compose.foundation:foundation-android:1.8.1")
 //	implementation("com.google.firebase:firebase-crashlytics-build tools:3.0.3")
 	implementation ("org.springframework.boot:spring-boot-starter-web")
-	implementation(project(":payment-infra"))
 
 	// JWT
 	implementation("io.jsonwebtoken:jjwt-api:0.11.5")
