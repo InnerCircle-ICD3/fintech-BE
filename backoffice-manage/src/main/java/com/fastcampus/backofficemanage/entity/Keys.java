@@ -3,6 +3,8 @@ package com.fastcampus.backofficemanage.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.UUID;
+
 @Entity
 @Table(name = "keys")
 @Getter
@@ -15,10 +17,24 @@ public class Keys {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long keysId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 36)
     private String encryptedKey;
 
     @OneToOne
     @JoinColumn(name = "merchant_id", nullable = false, unique = true)
     private Merchant merchant;
+
+    public void setMerchant(Merchant merchant) {
+        this.merchant = merchant;
+        merchant.setKeys(this);
+    }
+
+    public static Keys createForMerchant(Merchant merchant) {
+        Keys keys = Keys.builder()
+                .encryptedKey(UUID.randomUUID().toString())
+                .merchant(merchant)
+                .build();
+        merchant.setKeys(keys);
+        return keys;
+    }
 }

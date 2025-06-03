@@ -17,7 +17,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
@@ -36,8 +35,8 @@ class MerchantServiceTest {
     @InjectMocks private MerchantService merchantService;
 
     private AutoCloseable closeable;
-    private final static String LOGIN_ID = "merchant123";
-    private final static LocalDateTime NOW = LocalDateTime.of(2025, 5, 20, 12, 0);
+    private static final String LOGIN_ID = "merchant123";
+    private static final LocalDateTime NOW = LocalDateTime.of(2025, 5, 20, 12, 0);
 
     @BeforeEach
     void setUp() {
@@ -58,13 +57,19 @@ class MerchantServiceTest {
         @Test
         @DisplayName("정상적인 loginId로 조회 시 가맹점 정보 반환")
         void givenValidLoginId_whenGetMyInfo_thenReturnsInfo() {
+            // given
             Merchant merchant = createMerchant();
             given(merchantRepository.findByLoginId(LOGIN_ID)).willReturn(Optional.of(merchant));
 
+            // when
             MerchantInfoResponse response = merchantService.getMyInfo(LOGIN_ID);
 
-            assertEquals("가맹점", response.getName());
-            assertEquals("123-456", response.getBusinessNumber());
+            // then
+            assertAll(
+                    () -> assertEquals(merchant.getName(), response.getName()),
+                    () -> assertEquals(merchant.getBusinessNumber(), response.getBusinessNumber()),
+                    () -> assertEquals(merchant.getContactName(), response.getContactName())
+            );
         }
 
         @Test
@@ -85,31 +90,20 @@ class MerchantServiceTest {
         void givenValidUpdateRequest_whenUpdate_thenUpdatedMerchantInfo() {
             // given
             Merchant merchant = spy(createMerchant());
-            String rawPw = merchant.getLoginPw(); // 암호화 전 가정
             given(merchantRepository.findByLoginId(LOGIN_ID)).willReturn(Optional.of(merchant));
             given(passwordEncoder.matches(anyString(), anyString())).willReturn(true);
 
-            MerchantUpdateRequest request = MerchantUpdateRequest.builder()
-                    .loginId(LOGIN_ID)
-                    .loginPw(rawPw)
-                    .name("변경된이름")
-                    .businessNumber("999-999")
-                    .contactName("이몽룡")
-                    .contactEmail("new@email.com")
-                    .contactPhone("010-9999-8888")
-                    .build();
+            MerchantUpdateRequest request = createUpdateRequest("변경된이름", "999-999", "이몽룡", "new@email.com", "010-9999-8888");
 
             // when
             MerchantUpdateResponse response = merchantService.updateMyInfo(request);
 
             // then
-            assertNotNull(response);
-            assertEquals("변경된이름", response.getName());
-            assertEquals("999-999", response.getBusinessNumber());
-            assertEquals("이몽룡", response.getContactName());
-            assertEquals("new@email.com", response.getContactEmail());
-            assertEquals("010-9999-8888", response.getContactPhone());
-            // 상태나 기타 필드도 필요에 따라 검증
+            assertAll(
+                    () -> assertEquals(request.getName(), response.getName()),
+                    () -> assertEquals(request.getBusinessNumber(), response.getBusinessNumber()),
+                    () -> assertEquals(request.getContactName(), response.getContactName())
+            );
             verify(merchant).updateInfo(
                     eq(request.getName()),
                     eq(request.getBusinessNumber()),
@@ -120,57 +114,36 @@ class MerchantServiceTest {
         }
 
         @Test
-        @DisplayName("수정 시 중복 사업자번호 오류 발생 시 DuplicateKeyException 발생")
+        @DisplayName("중복 사업자번호 오류 시 DuplicateKeyException 발생")
         void givenDuplicateBusinessNumber_whenUpdate_thenThrows() {
-            // given
             Merchant merchant = createMerchant();
             given(merchantRepository.findByLoginId(LOGIN_ID)).willReturn(Optional.of(merchant));
             given(passwordEncoder.matches(anyString(), anyString())).willReturn(true);
             willThrow(DataIntegrityViolationException.class).given(merchantRepository).flush();
 
-            MerchantUpdateRequest request = MerchantUpdateRequest.builder()
-                    .loginId(LOGIN_ID)
-                    .loginPw("dummyPw")
-                    .name("변경된이름")
-                    .businessNumber("999-999")
-                    .contactName("이몽룡")
-                    .contactEmail("new@email.com")
-                    .contactPhone("010-9999-8888")
-                    .build();
+            MerchantUpdateRequest request = createUpdateRequest("name", "999-999", "홍길동", "email", "010-0000-0000");
 
-            // when & then
             assertThrows(DuplicateKeyException.class, () -> merchantService.updateMyInfo(request));
         }
 
         @Test
         @DisplayName("존재하지 않는 loginId로 수정 시 NotFoundException 발생")
         void givenInvalidLoginId_whenUpdate_thenThrows() {
-            // given
             given(merchantRepository.findByLoginId(LOGIN_ID)).willReturn(Optional.empty());
+            MerchantUpdateRequest request = createUpdateRequest("name", "bn", "홍길동", "email", "010");
 
-            MerchantUpdateRequest request = MerchantUpdateRequest.builder()
-                    .loginId(LOGIN_ID)
-                    .loginPw("irrelevant")
-                    .build();
-
-            // when & then
             assertThrows(NotFoundException.class, () -> merchantService.updateMyInfo(request));
         }
 
         @Test
         @DisplayName("비밀번호 불일치 시 UnauthorizedException 발생")
         void givenWrongPassword_whenUpdate_thenThrows() {
-            // given
             Merchant merchant = createMerchant();
             given(merchantRepository.findByLoginId(LOGIN_ID)).willReturn(Optional.of(merchant));
             given(passwordEncoder.matches(anyString(), anyString())).willReturn(false);
 
-            MerchantUpdateRequest request = MerchantUpdateRequest.builder()
-                    .loginId(LOGIN_ID)
-                    .loginPw("wrongPassword")
-                    .build();
+            MerchantUpdateRequest request = createUpdateRequest("name", "bn", "홍길동", "email", "010");
 
-            // when & then
             assertThrows(UnauthorizedException.class, () -> merchantService.updateMyInfo(request));
         }
     }
@@ -180,16 +153,18 @@ class MerchantServiceTest {
     class DeleteMyAccountTests {
 
         @Test
-        @DisplayName("정상적으로 회원 탈퇴 요청 시 상태값 변경 및 응답 반환")
+        @DisplayName("정상적인 요청 시 상태 변경 및 응답 반환")
         void givenValidLoginId_whenDelete_thenSuccessResponse() {
             Merchant merchant = createMerchant();
             given(merchantRepository.findByLoginId(LOGIN_ID)).willReturn(Optional.of(merchant));
 
             CommonResponse response = merchantService.deleteMyAccount(LOGIN_ID);
 
-            assertTrue(response.isSuccess());
-            assertEquals("회원 탈퇴가 완료되었습니다.", response.getMessage());
-            assertEquals("DELETED", merchant.getStatus());
+            assertAll(
+                    () -> assertTrue(response.isSuccess()),
+                    () -> assertEquals("회원 탈퇴가 완료되었습니다.", response.getMessage()),
+                    () -> assertEquals("DELETED", merchant.getStatus())
+            );
         }
 
         @Test
@@ -201,7 +176,7 @@ class MerchantServiceTest {
         }
     }
 
-    // === Fixtures ===
+    // ====== Fixtures / Helpers ======
     private Merchant createMerchant() {
         return Merchant.builder()
                 .loginId(LOGIN_ID)
@@ -212,6 +187,18 @@ class MerchantServiceTest {
                 .contactEmail("email@test.com")
                 .contactPhone("010-1234-5678")
                 .status("ACTIVE")
+                .build();
+    }
+
+    private MerchantUpdateRequest createUpdateRequest(String name, String bn, String contactName, String email, String phone) {
+        return MerchantUpdateRequest.builder()
+                .loginId(LOGIN_ID)
+                .loginPw("rawPw")
+                .name(name)
+                .businessNumber(bn)
+                .contactName(contactName)
+                .contactEmail(email)
+                .contactPhone(phone)
                 .build();
     }
 }

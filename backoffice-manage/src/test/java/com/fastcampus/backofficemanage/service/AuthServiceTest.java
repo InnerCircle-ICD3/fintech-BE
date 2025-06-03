@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 import static org.mockito.MockitoAnnotations.openMocks;
 
-@DisplayName("AuthService 유닛 테스트")
+@DisplayName("AuthService - 회원가입/로그인 로직 테스트")
 class AuthServiceTest {
 
     @Mock private MerchantRepository merchantRepository;
@@ -51,27 +51,35 @@ class AuthServiceTest {
     class SignupTests {
 
         @Test
-        @DisplayName("정상 회원가입 시 응답 DTO가 반환된다")
-        void givenValidSignupRequest_whenSignup_thenReturnsResponse() {
+        @DisplayName("정상 회원가입 - Keys 생성 포함 확인")
+        void signupSuccess() {
             // given
             MerchantSignUpRequest request = createSignupRequest();
             given(merchantRepository.existsByLoginId(LOGIN_ID)).willReturn(false);
             given(passwordEncoder.encode(RAW_PW)).willReturn(ENCODED_PW);
+
+            // merchantRepository.save(...) 호출될 때, merchant.keys도 함께 save되는지 검증 가능
             given(merchantRepository.save(any(Merchant.class)))
-                    .willAnswer(invocation -> invocation.getArgument(0));
+                    .willAnswer(invocation -> {
+                        Merchant merchant = invocation.getArgument(0);
+                        assertNotNull(merchant.getKeys()); // Keys가 서비스 로직에서 생성되었는지 확인
+                        return merchant;
+                    });
 
             // when
             MerchantSignUpResponse response = authService.signup(request);
 
             // then
-            assertEquals(LOGIN_ID, response.getLoginId());
-            assertEquals("가맹점", response.getName());
-            assertEquals("ACTIVE", response.getStatus());
+            assertAll(
+                    () -> assertEquals(LOGIN_ID, response.getLoginId()),
+                    () -> assertEquals("가맹점", response.getName()),
+                    () -> assertEquals("ACTIVE", response.getStatus())
+            );
         }
 
         @Test
-        @DisplayName("중복된 loginId로 회원가입 시 DuplicateKeyException이 발생한다")
-        void givenDuplicateLoginId_whenSignup_thenThrowsException() {
+        @DisplayName("중복 loginId로 회원가입 시 DuplicateKeyException 발생")
+        void signupDuplicateId() {
             // given
             MerchantSignUpRequest request = createSignupRequest();
             given(merchantRepository.existsByLoginId(LOGIN_ID)).willReturn(true);
@@ -86,8 +94,8 @@ class AuthServiceTest {
     class LoginTests {
 
         @Test
-        @DisplayName("유효한 로그인 정보로 로그인 시 토큰이 반환된다")
-        void givenValidLoginCredentials_whenLogin_thenReturnsTokens() {
+        @DisplayName("유효한 정보로 로그인 시 토큰 반환")
+        void loginSuccess() {
             // given
             Merchant merchant = createMerchant(LOGIN_ID, ENCODED_PW);
             given(merchantRepository.findByLoginId(LOGIN_ID)).willReturn(Optional.of(merchant));
@@ -95,27 +103,23 @@ class AuthServiceTest {
             given(jwtProvider.generateAccessToken(LOGIN_ID)).willReturn("access-token");
             given(jwtProvider.generateRefreshToken(LOGIN_ID)).willReturn("refresh-token");
 
-            MerchantLoginRequest request = MerchantLoginRequest.builder()
-                    .loginId(LOGIN_ID)
-                    .loginPw(RAW_PW)
-                    .build();
+            MerchantLoginRequest request = createLoginRequest(LOGIN_ID, RAW_PW);
 
             // when
             MerchantLoginResponse response = authService.login(request);
 
             // then
-            assertEquals("access-token", response.getAccessToken());
-            assertEquals("refresh-token", response.getRefreshToken());
+            assertAll(
+                    () -> assertEquals("access-token", response.getAccessToken()),
+                    () -> assertEquals("refresh-token", response.getRefreshToken())
+            );
         }
 
         @Test
-        @DisplayName("존재하지 않는 loginId로 로그인 시 NotFoundException이 발생한다")
-        void givenInvalidLoginId_whenLogin_thenThrowsNotFoundException() {
+        @DisplayName("존재하지 않는 loginId로 로그인 시 NotFoundException 발생")
+        void loginNotFound() {
             // given
-            MerchantLoginRequest request = MerchantLoginRequest.builder()
-                    .loginId("wrongId")
-                    .loginPw(RAW_PW)
-                    .build();
+            MerchantLoginRequest request = createLoginRequest("wrongId", RAW_PW);
             given(merchantRepository.findByLoginId("wrongId")).willReturn(Optional.empty());
 
             // expect
@@ -123,17 +127,14 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("비밀번호가 틀린 경우 UnauthorizedException이 발생한다")
-        void givenInvalidPassword_whenLogin_thenThrowsUnauthorizedException() {
+        @DisplayName("비밀번호 틀린 경우 UnauthorizedException 발생")
+        void loginInvalidPassword() {
             // given
             Merchant merchant = createMerchant(LOGIN_ID, ENCODED_PW);
             given(merchantRepository.findByLoginId(LOGIN_ID)).willReturn(Optional.of(merchant));
             given(passwordEncoder.matches("wrongPw", ENCODED_PW)).willReturn(false);
 
-            MerchantLoginRequest request = MerchantLoginRequest.builder()
-                    .loginId(LOGIN_ID)
-                    .loginPw("wrongPw")
-                    .build();
+            MerchantLoginRequest request = createLoginRequest(LOGIN_ID, "wrongPw");
 
             // expect
             assertThrows(UnauthorizedException.class, () -> authService.login(request));
@@ -150,6 +151,13 @@ class AuthServiceTest {
                 .contactName("홍길동")
                 .contactEmail("email@test.com")
                 .contactPhone("010-1234-5678")
+                .build();
+    }
+
+    private MerchantLoginRequest createLoginRequest(String id, String pw) {
+        return MerchantLoginRequest.builder()
+                .loginId(id)
+                .loginPw(pw)
                 .build();
     }
 

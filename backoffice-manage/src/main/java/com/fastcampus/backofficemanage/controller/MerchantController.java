@@ -1,6 +1,5 @@
 package com.fastcampus.backofficemanage.controller;
 
-import com.fastcampus.backofficemanage.aspect.CurrentLoginId;
 import com.fastcampus.backofficemanage.dto.common.CommonResponse;
 import com.fastcampus.backofficemanage.dto.info.MerchantInfoResponse;
 import com.fastcampus.backofficemanage.dto.login.request.MerchantLoginRequest;
