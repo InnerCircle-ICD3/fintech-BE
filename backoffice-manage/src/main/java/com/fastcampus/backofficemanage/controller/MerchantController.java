@@ -40,7 +40,7 @@ public class MerchantController {
         return ResponseEntity.ok(authService.login(request));
     }
 
-    @Operation(summary = "가맹점 정보 조회")
+    @Operation(summary = "Header에 있는 Token을 통한 가맹점 정보 조회")
     @StandardResponses
     @GetMapping("/info")
     public ResponseEntity<MerchantInfoResponse> getInfo(@RequestHeader("Authorization") String authorizationHeader) {
