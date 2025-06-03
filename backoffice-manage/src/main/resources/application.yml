@@ -46,8 +46,17 @@ management:
   endpoint:
     health:
       show-details: always
+# Actuator 설정 추가
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
   security:
-    enabled: false # actuator 보안 비활성화
+    enabled: true
 
 ---
 # 기본 프로파일 설정
