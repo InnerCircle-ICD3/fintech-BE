@@ -57,9 +57,8 @@ public class AuthService {
     public MerchantLoginResponse login(MerchantLoginRequest request) {
         Merchant merchant = findMerchantByLoginId(request.getLoginId());
 
-        if (!passwordEncoder.matches(request.getLoginPw(), merchant.getLoginPw())) {
-            throw new UnauthorizedException(AuthErrorCode.INVALID_PASSWORD);
-        }
+        checkMerchantStatus(merchant);
+        checkPassword(merchant, request.getLoginPw());
 
         return generateLoginTokens(merchant.getLoginId());
     }
@@ -144,5 +143,17 @@ public class AuthService {
         return header.startsWith("Bearer ")
                 ? header.substring(7)
                 : header;
+    }
+
+    private void checkMerchantStatus(Merchant merchant) {
+        if (!"ACTIVE".equals(merchant.getStatus())) {
+            throw new UnauthorizedException(AuthErrorCode.ACCOUNT_INACTIVE);
+        }
+    }
+
+    private void checkPassword(Merchant merchant, String rawPassword) {
+        if (!passwordEncoder.matches(rawPassword, merchant.getLoginPw())) {
+            throw new UnauthorizedException(AuthErrorCode.INVALID_PASSWORD);
+        }
     }
 }

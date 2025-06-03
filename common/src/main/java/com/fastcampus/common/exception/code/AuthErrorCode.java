@@ -10,7 +10,8 @@ public enum AuthErrorCode implements ErrorCode {
     INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다."),
     MISSING_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "Authorization 헤더가 없습니다."),
     MISSING_REFRESH_TOKEN(HttpStatus.BAD_REQUEST, "리프레시 토큰이 없습니다."),
-    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 리프레시 토큰입니다.");
+    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 리프레시 토큰입니다."),
+    ACCOUNT_INACTIVE(HttpStatus.UNAUTHORIZED, "이미 탈퇴가 완료된 회원입니다.(softdelete)");
 
     private final HttpStatus status;
     private final String message;

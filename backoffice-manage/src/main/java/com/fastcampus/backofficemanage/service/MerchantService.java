@@ -101,7 +101,7 @@ public class MerchantService {
         Merchant merchant = merchantRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new NotFoundException(MerchantErrorCode.NOT_FOUND));
 
-        merchant.setStatus("DELETED");
+        merchant.setStatus("INACTIVE");
         merchant.setUpdatedAt(LocalDateTime.now(clock));
 
         // 🔒 기존 토큰을 블랙리스트 처리

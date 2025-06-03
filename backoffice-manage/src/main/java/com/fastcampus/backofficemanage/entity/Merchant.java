@@ -35,7 +35,7 @@ public class Merchant {
 
     @Setter
     @Column(nullable = false)
-    private String status;  // 예: ACTIVE, INACTIVE, DELETED 등
+    private String status;  // ACTIVE, INACTIVE
 
     private LocalDateTime createdAt;
     @Setter
