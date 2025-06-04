@@ -42,7 +42,7 @@ dependencies {
 	// Swagger Customize
 	implementation("org.springdoc:springdoc-openapi-starter-common:2.3.0")
 
-	// 테스트 의존성
+	// 테스트 의존성 추가
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
