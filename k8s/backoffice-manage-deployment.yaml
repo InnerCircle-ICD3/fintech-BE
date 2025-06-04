@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backoffice-manage
+  namespace: ${NAMESPACE}
+  labels:
+    app: backoffice-manage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backoffice-manage
+  template:
+    metadata:
+      labels:
+        app: backoffice-manage
+    spec:
+      containers:
+      - name: backoffice-manage
+        image: ${DOCKER_REGISTRY}/backoffice-manage:${IMAGE_TAG}
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "${SPRING_PROFILE}"
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backoffice-manage-service
+  namespace: ${NAMESPACE}
+spec:
+  selector:
+    app: backoffice-manage
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: ClusterIP 

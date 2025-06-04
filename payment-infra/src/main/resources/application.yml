@@ -3,7 +3,7 @@ spring:
     name: payment-infra
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/testdb
+    url: jdbc:postgresql://postgres-service.db.svc.cluster.local:5432/testdb
     driver-class-name: org.postgresql.Driver
     username: testuser
     password: testpass
@@ -12,3 +12,17 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
+      properties:
+        hibernate:
+          format_sql: true
+
+loggint.level:
+    org.hibernate.SQL: debug
+
+
+      #Redis settings
+redis:
+    host: localhost
+    port: 6379
+    timeout: 1000
+

@@ -1,28 +1,72 @@
-server:
-  port: 8081
-
 spring:
+  config:
+    activate:
+      on-profile: testing
   datasource:
-    url: jdbc:postgresql://localhost:5432/testdb
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://postgres-service.db.svc.cluster.local:5432/testdb
     username: testuser
     password: testpass
-
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  application:
+    name: payment-api
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
 
-lifetime:
-  qr: 180
+server:
+  port: 8080
 
-time:
-  zoneId: Asia/Seoul
-
-jwt:
-  secret: dYVzdC1zZWNyZXQta2V5LXlvdS2jYW4tY2hhbmdlPXRoaXM=
+sdk:
+  ttl-days: 180
+  ttl-qr: 3
 
 springdoc:
   api-docs:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+# Actuator 설정 추가
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+---
+# 기본 프로파일 설정 (H2 인메모리 DB 사용)
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  application:
+    name: payment-api
+
+server:
+  port: 8080
+
+sdk:
+  ttl-days: 180
+  ttl-qr: 3

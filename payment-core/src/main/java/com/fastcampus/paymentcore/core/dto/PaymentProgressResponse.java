@@ -1,7 +1,7 @@
 package com.fastcampus.paymentcore.core.dto;
 
 import com.fastcampus.paymentinfra.entity.Transaction;
-import com.fastcampus.paymentinfra.entity.TransactionStatus;
+import com.fastcampus.paymentinfra.type.TransactionStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

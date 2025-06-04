@@ -1,7 +1,6 @@
 package com.fastcampus.paymentinfra.entity;
 
-import com.fastcampus.common.exception.code.PaymentErrorCode;
-import com.fastcampus.common.exception.exception.BadRequestException;
+import com.fastcampus.paymentinfra.type.TransactionStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -24,11 +23,10 @@ public class Transaction {
     @Enumerated(EnumType.STRING)
     private TransactionStatus status;
 
-    @Column(nullable = true)
     private String transactionToken;
-
     private String cardToken;
 
+    @CreationTimestamp
     @Column(columnDefinition = "TIMESTAMP")
     private LocalDateTime expireAt;
 
@@ -40,9 +38,5 @@ public class Transaction {
     @Column(columnDefinition = "TIMESTAMP")
     private LocalDateTime updatedAt;
 
-    public void checkStatusAlreadyDone() {
-        if (!TransactionStatus.REQUESTED.equals(this.getStatus())) {
-            throw new BadRequestException(PaymentErrorCode.DUPLICATE_ORDER);
-        }
-    }
+
 }
