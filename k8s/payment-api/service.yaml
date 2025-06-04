@@ -18,11 +18,11 @@ kind: Ingress
 metadata:
   name: payment-api-ingress
   annotations:
-    kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
+  ingressClassName: nginx
   tls:
   - hosts:
     - api.passionpay.com
@@ -37,4 +37,4 @@ spec:
           service:
             name: payment-api
             port:
-              number: 80 
+              number: 80
