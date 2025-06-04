@@ -71,13 +71,9 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
     }
     private Transaction findTransaction(String transactionToken) {
     private Transaction findTransaction(String transactionToken) {
-        return redisTransactionRepository.findByToken(transactionToken)
-                .orElseGet(() -> {
-                    log.info("Redis에서 거래 조회 실패, DB에서 조회 - transactionToken: {}", transactionToken);
-                    return transactionRepository.findByTransactionToken(transactionToken)
-                            .orElseThrow(() -> new BadRequestException(PaymentErrorCode.PAYMENT_NOT_FOUND));
-                });
-    }
+ import java.util.Random;
+ import com.fastcampus.common.exception.exception.BadRequestException;
+ import com.fastcampus.common.exception.code.PaymentErrorCode;
     private void validateTransactionStatus(Transaction tx) {
         if (tx.getStatus() == null) {
             throw new IllegalStateException("거래 상태가 설정되지 않았습니다.");
