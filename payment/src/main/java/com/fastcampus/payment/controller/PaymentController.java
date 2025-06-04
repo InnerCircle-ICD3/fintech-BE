@@ -1,0 +1,69 @@
+package com.fastcampus.payment.controller;
+
+import com.fastcampus.payment.dto.PaymentProgressResponseDto;
+import com.fastcampus.payment.service.PaymentExecutionService;
+import com.fastcampus.payment.service.PaymentProgressService;
+import com.fastcampus.payment.service.PaymentReadyService;
+import com.fastcampus.payment.servicedto.PaymentProgressRequest;
+import com.fastcampus.payment.servicedto.PaymentProgressResponse;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api")
+@RequiredArgsConstructor
+@Slf4j
+public class PaymentController {
+
+    private final PaymentReadyService paymentReadyService;
+    private final PaymentProgressService paymentProgressService;
+    private final PaymentExecutionService paymentExecutionService;
+
+    // Core와 API의 DTO를 분리해 놓았고, Core에서 Map, String으로 되어 있는 부분 수정되는 대로 주석 풀고 수정 예정
+    /**
+     * 1. 결제 요청 처리
+     * - 거래 생성 및 QR Token 반환
+     */
+//    @PostMapping("/transactions/initiate")
+//    public ResponsePaymentReadyDto initiateTransaction(
+//            @RequestBody @Valid InitiateTransactionRequest request
+//    ) {
+//        ResponsePaymentReady internal = paymentReadyService.initiate(request);
+//        return new ResponsePaymentReadyDto(
+//                internal.getTransactionToken(),
+//                internal.getExpiresAt()
+//        );
+//    }
+
+    /**
+     * 2. QR 코드 거래 상태 조회
+     * - transaction_token으로 거래 상태 확인
+     */
+//    @GetMapping("/transactions/{token}")
+//    public GetTransactionProgressResponse getTransactionProgress(
+//            @Valid @ModelAttribute ProgressTransactionRequest request
+//    ) {
+//        PaymentProgressDto dto = paymentProgressService.progressPayment(request);
+//        return new GetTransactionProgressResponse(
+//                dto.getTransactionToken(),
+//                dto.getStatus().name(),
+//                dto.getAmount(),
+//                dto.getCreatedAt()
+//        );
+//    }
+
+    /**
+     * 3. 결제 실행
+     * - transaction_token + card_token 이용해 결제 처리
+     */
+    @PostMapping("/payments/execute")
+    public PaymentProgressResponseDto executePayment(@RequestBody @Valid PaymentProgressRequest request) {
+        PaymentProgressResponse response = paymentExecutionService.execute(request);
+        return new PaymentProgressResponseDto(
+                response.getTransactionToken(),
+                response.getStatus()
+        );
+    }
+}
