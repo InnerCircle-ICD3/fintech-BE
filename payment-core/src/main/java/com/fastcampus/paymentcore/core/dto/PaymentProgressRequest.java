@@ -19,7 +19,13 @@ public class PaymentProgressRequest {
     private String transactionToken; // 외부 공개용 거래 식별자
     private String cardToken; // 카드 식별용 (등록된 카드 token)
 
-    //validation methods
+    /**
+     * 필수 파라미터인 transactionToken 또는 cardToken이 null인지 검증합니다.
+     *
+     * 두 값 중 하나라도 null이면 BadRequestException을 PAYMENT_PROGRESS_NULL_VALUE 코드와 함께 발생시킵니다.
+     *
+     * @throws BadRequestException transactionToken 또는 cardToken이 null인 경우
+     */
     public void nullCheckRequiredParam(){
         List<Object> targetList = Arrays.asList(transactionToken, cardToken);
         boolean isNull = targetList.stream().anyMatch(Objects::isNull);

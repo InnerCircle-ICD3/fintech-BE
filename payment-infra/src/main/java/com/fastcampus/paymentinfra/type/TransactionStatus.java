@@ -18,6 +18,13 @@ public enum TransactionStatus {
     REQUESTED,
     CANCELED;
 
+    /**
+     * 현재 거래 상태가 최종 상태인지 여부를 반환합니다.
+     *
+     * 거래 상태가 COMPLETED, FAILED, CANCELED 중 하나인 경우 true를 반환합니다.
+     *
+     * @return 거래 상태가 최종 상태이면 true, 그렇지 않으면 false
+     */
     public boolean isFinal() {
         return this == COMPLETED || this == FAILED || this == CANCELED;
     }

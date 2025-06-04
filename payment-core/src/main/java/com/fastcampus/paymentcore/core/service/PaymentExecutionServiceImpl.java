@@ -28,9 +28,18 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
     private final RedisTransactionRepository redisTransactionRepository; //Redis 저장소
 
     /**
-     * 결제 실행 메서드
-     * @param request 결제 실행 요청 (transactionToken + cardToken)
-     * @return 실행 결과 (transactionToken + 상태)
+     * 결제 요청을 실행하고 거래 상태를 갱신합니다.
+     *
+     * 결제 요청의 유효성을 검증한 후, 거래를 조회하여 이미 완료된 거래인지 확인합니다.
+     * 카드 승인 시뮬레이션을 통해 승인 여부에 따라 거래 상태를 COMPLETED 또는 FAILED로 변경하고,
+     * 변경된 거래 정보를 데이터베이스와 Redis에 반영합니다.
+     * 최종적으로 갱신된 거래 정보를 포함한 응답을 반환합니다.
+     *
+     * @param request 결제 실행에 필요한 거래 토큰과 카드 토큰을 포함한 요청 객체
+     * @return 처리 결과를 담은 PaymentProgressResponse 객체
+     * @throws IllegalArgumentException 요청 값이 유효하지 않을 경우
+     * @throws RuntimeException 거래를 찾을 수 없을 경우
+     * @throws IllegalStateException 이미 완료된 거래이거나 처리할 수 없는 상태일 경우
      */
     @Override
     @Transactional
@@ -70,6 +79,12 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
 
     }
 
+    /**
+     * 결제 진행 요청의 필수 필드인 transactionToken과 cardToken이 null이거나 비어 있는지 검증합니다.
+     *
+     * @param request 결제 진행 요청 객체
+     * @throws IllegalArgumentException 필수 값이 누락된 경우 발생합니다.
+     */
     private void validateRequest(PaymentProgressRequest request) {
         if(request.getTransactionToken() == null || request.getTransactionToken().trim().isEmpty()){
             throw new IllegalArgumentException("transactionToken은 필수값입니다.");
@@ -78,6 +93,13 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
             throw new IllegalArgumentException("cardToken은 필수값입니다.");
         }
     }
+    /**
+     * 주어진 거래 토큰으로 Redis에서 거래를 조회하고, 없을 경우 데이터베이스에서 조회합니다.
+     *
+     * @param transactionToken 조회할 거래의 토큰
+     * @return 조회된 거래 엔티티
+     * @throws RuntimeException 거래를 찾을 수 없는 경우 발생
+     */
     private Transaction findTransaction(String transactionToken) {
         return redisTransactionRepository.findByToken(transactionToken)
                 .orElseGet(() -> {
@@ -87,6 +109,14 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
                 });
     }
 
+    /**
+     * 거래의 상태와 만료 여부를 검증하여 유효하지 않을 경우 예외를 발생시킵니다.
+     *
+     * 거래 상태가 설정되지 않았거나, 이미 완료된 상태이거나, 만료 시간이 지났을 경우 {@code IllegalStateException}을 던집니다.
+     *
+     * @param tx 검증할 거래 객체
+     * @throws IllegalStateException 거래 상태가 유효하지 않거나 만료된 경우
+     */
     private void validateTransactionStatus(Transaction tx) {
         if (tx.getStatus() == null) {
             throw new IllegalStateException("거래 상태가 설정되지 않았습니다.");
@@ -102,10 +132,13 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
     }
 
     /**
-     * 카드 승인 시뮬레이션 로직
-     * 실제 카드사 연동이 아니라 랜덤으로 성공 여부 판단
+     * 카드 승인 과정을 90% 확률로 성공하는 방식으로 시뮬레이션합니다.
+     *
+     * 카드사와의 실제 연동 없이 승인 성공 또는 실패를 무작위로 결정합니다. 
+     * 승인 과정 중 인터럽트가 발생하면 실패로 간주합니다.
+     *
      * @param cardToken 카드 식별자
-     * @return 승인 여부 (true: 승인, false: 실패)
+     * @return 승인 성공 시 true, 실패 시 false
      */
     private boolean simulateCardApproval(String cardToken) {
        try {
