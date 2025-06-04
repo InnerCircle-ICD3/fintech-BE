@@ -2,14 +2,12 @@ server:
   port: 8082
 
 spring:
-  config:
-    activate:
-      on-profile: testing
   datasource:
-    url: jdbc:postgresql://postgres-service.db.svc.cluster.local:5432/testdb
+    url: jdbc:postgresql://localhost:5432/testdb
+    driver-class-name: org.postgresql.Driver
     username: testuser
     password: testpass
-    driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -17,13 +15,11 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+
   data:
     redis:
-      host: redis-service.db.svc.cluster.local
+      host: localhost
       port: 6379
-  application:
-    name: backoffice-manage
 
 jwt:
   secret: dYVzdC1zZWNyZXQta2V5LXlvdS2jYW4tY2hhbmdlPXRoaXM=
@@ -36,41 +32,3 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
-
-# Actuator 설정 추가
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-  endpoint:
-    health:
-      show-details: always
-  security:
-    enabled: false # actuator 보안 비활성화
-
----
-# 기본 프로파일 설정
-spring:
-  datasource:
-    url: jdbc:postgresql://postgres-service.db.svc.cluster.local:5432/testdb
-    driver-class-name: org.postgresql.Driver
-    username: testuser
-    password: testpass
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-  data:
-    redis:
-      host: localhost
-      port: 6379
-  application:
-    name: backoffice-manage
-
-# jwt, springdoc, management 등의 설정은 최상위에 있으므로 모든 프로파일에 기본 적용됩니다.
-# 만약 testing 프로파일에서 이들 설정을 다르게 하고 싶다면, 위 testing 블록 내에 재정의합니다.

@@ -24,9 +24,9 @@ public class SignupRequest {
     @NotBlank(message = "비밀번호는 필수입니다.")
     @Size(max = 20, message = "비밀번호는 최대 20자까지 입력 가능합니다.")
     @Pattern(
-            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z\\d]).{1,20}$",
-            message = "비밀번호는 특수문자, 영어 대/소문자, 숫자를 각각 최소 하나씩 포함해야 하며 20자 이하여야 합니다."
+            regexp = "^(?=.*[a-z])(?=.*\\d)(?=.*[^a-zA-Z\\d]).{8,20}$",
+            message = "비밀번호는 특수문자, 영어 소문자, 숫자를 각각 최소 하나씩 포함해야 하며 8자 이상 20자 이하여야 합니다."
     )
-    @Schema(description = "로그인 비밀번호", example = "Passw0rd!")
+    @Schema(description = "로그인 비밀번호", example = "passw0rd!")
     private String loginPw;
 }

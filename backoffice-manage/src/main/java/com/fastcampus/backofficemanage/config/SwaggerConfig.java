@@ -17,22 +17,24 @@ public class SwaggerConfig {
         final String refreshSchemeName = "refreshAuth";
 
         return new OpenAPI()
-                .info(new Info().title("Merchant API")
+                .info(new Info()
+                        .title("Merchant API")
                         .description("가맹점 인증 및 관리 API 문서")
                         .version("v1.0"))
+                // 모든 엔드포인트에 bearerAuth를 전역으로 적용
                 .addSecurityItem(new SecurityRequirement().addList(accessSchemeName))
                 .components(new Components()
                         .addSecuritySchemes(accessSchemeName,
                                 new SecurityScheme()
-                                        .name("Authorization")
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
-                                        .bearerFormat("JWT"))
+                                        .bearerFormat("JWT")
+                                        .description("Access Token (Bearer JWT)"))
                         .addSecuritySchemes(refreshSchemeName,
                                 new SecurityScheme()
-                                        .name("Refresh-Token")
                                         .type(SecurityScheme.Type.APIKEY)
                                         .in(SecurityScheme.In.HEADER)
-                                        .description("리프레시 토큰 헤더")));
+                                        .name("Refresh-Token")
+                                        .description("Refresh Token 헤더")));
     }
 }

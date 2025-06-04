@@ -2,6 +2,8 @@ package com.fastcampus.backofficemanage.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -17,33 +19,44 @@ public class Merchant {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long merchantId;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 20)
     private String loginId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 60)
     private String loginPw;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private String name;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 20)
     private String businessNumber;
 
+    @Column(length = 30)
     private String contactName;
+
+    @Column(length = 50)
     private String contactEmail;
+
+    @Column(length = 20)
     private String contactPhone;
 
-    @Setter
-    @Column(nullable = false)
-    private String status;  // 예: ACTIVE, INACTIVE, DELETED 등
+    @Column(nullable = false, length = 20)
+    private String status;
 
+    @CreationTimestamp
+    @Column(updatable = false)
     private LocalDateTime createdAt;
-    @Setter
+
+    @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @Setter
     @OneToOne(mappedBy = "merchant", cascade = CascadeType.ALL, orphanRemoval = true)
     private Keys keys;
+
+    public void setKeys(Keys keys) {
+        this.keys = keys;
+        keys.setMerchant(this);
+    }
 
     public void updateInfo(String name, String businessNumber, String contactName,
                            String contactEmail, String contactPhone) {
@@ -52,5 +65,17 @@ public class Merchant {
         this.contactName = contactName;
         this.contactEmail = contactEmail;
         this.contactPhone = contactPhone;
+    }
+
+    public void deactivate() {
+        this.status = "INACTIVE";
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public void updatePassword(String encodedNewPassword) {
+        this.loginPw = encodedNewPassword;
     }
 }

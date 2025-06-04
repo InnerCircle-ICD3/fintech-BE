@@ -60,6 +60,8 @@ jobs:
               kill $(cat backoffice-manage.pid) || true
               rm backoffice-manage.pid
             fi
+            export yaml="${{ secrets.BM }}"
+            echo "$yaml" > backoffice-manage/src/main/resources/application.yml
             rm -f backoffice-manage/build/libs/*.jar
             ./gradlew :backoffice-manage:build -x test
             BACKOFFICE_MANAGE_JAR=$(find backoffice-manage/build/libs -name "backoffice-manage-*.jar" ! -name "*plain.jar" | sort | tail -1)

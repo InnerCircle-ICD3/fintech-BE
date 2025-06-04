@@ -3,7 +3,7 @@ package com.fastcampus.backofficemanage.service;
 import com.fastcampus.backofficemanage.dto.common.CommonResponse;
 import com.fastcampus.backofficemanage.dto.login.response.MerchantLoginResponse;
 import com.fastcampus.backofficemanage.repository.MerchantRepository;
-import com.fastcampus.backofficemanage.security.JwtProvider;
+import com.fastcampus.backofficemanage.jwt.JwtProvider;
 import com.fastcampus.common.constant.RedisKeys;
 import com.fastcampus.common.exception.code.AuthErrorCode;
 import com.fastcampus.common.exception.exception.UnauthorizedException;
@@ -21,27 +21,27 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 import static org.mockito.MockitoAnnotations.openMocks;
 
-@DisplayName("AuthService - Token 관련 테스트")
+@DisplayName("AuthService - 토큰 처리 로직 테스트")
 class AuthServiceTokenTest {
 
     @Mock private MerchantRepository merchantRepository;
     @Mock private BCryptPasswordEncoder passwordEncoder;
     @Mock private JwtProvider jwtProvider;
     @Mock private RedisTemplate<String, String> redisTemplate;
-    @Mock private ValueOperations<String, String> valueOperations;
+    @Mock private ValueOperations<String, String> valueOps;
 
     @InjectMocks private AuthService authService;
 
     private AutoCloseable closeable;
 
     private static final String ACCESS_TOKEN = "abc.def.ghi";
-    private static final String REFRESH_TOKEN = "refresh.token.value";
+    private static final String REFRESH_TOKEN = "refresh.token";
     private static final String LOGIN_ID = "merchant123";
 
     @BeforeEach
     void setUp() {
         closeable = openMocks(this);
-        given(redisTemplate.opsForValue()).willReturn(valueOperations);
+        given(redisTemplate.opsForValue()).willReturn(valueOps);
     }
 
     @AfterEach
@@ -51,28 +51,29 @@ class AuthServiceTokenTest {
 
     @Nested
     @DisplayName("로그아웃")
-    class LogoutTest {
+    class LogoutTests {
 
         @Test
-        @DisplayName("정상 로그아웃 시 블랙리스트에 저장되고 응답을 반환한다")
-        void givenValidAccessToken_whenLogout_thenBlacklistedAndSuccess() {
+        @DisplayName("정상 로그아웃 시 블랙리스트 처리 및 성공 응답")
+        void logoutSuccess() {
             String bearerToken = "Bearer " + ACCESS_TOKEN;
-            long expiration = 100000L;
-            given(jwtProvider.getRemainingExpiration(ACCESS_TOKEN)).willReturn(expiration);
+            long exp = 100000L;
+            given(jwtProvider.getRemainingExpiration(ACCESS_TOKEN)).willReturn(exp);
 
             ResponseEntity<CommonResponse> response = authService.logout(bearerToken);
 
             then(redisTemplate.opsForValue()).should().set(
-                    RedisKeys.BLOCKLIST_PREFIX + ACCESS_TOKEN, "logout", expiration, TimeUnit.MILLISECONDS
+                    RedisKeys.BLOCKLIST_PREFIX + ACCESS_TOKEN, "logout", exp, TimeUnit.MILLISECONDS
             );
-
-            assertTrue(response.getBody().isSuccess());
-            assertEquals("로그아웃 완료", response.getBody().getMessage());
+            assertAll(
+                    () -> assertTrue(response.getBody().isSuccess()),
+                    () -> assertEquals("로그아웃 완료", response.getBody().getMessage())
+            );
         }
 
         @Test
-        @DisplayName("AccessToken이 누락되면 예외를 던진다")
-        void givenEmptyAccessToken_whenLogout_thenThrowsUnauthorized() {
+        @DisplayName("AccessToken이 없으면 UnauthorizedException 발생")
+        void logoutMissingToken() {
             UnauthorizedException ex = assertThrows(
                     UnauthorizedException.class,
                     () -> authService.logout("")
@@ -82,12 +83,12 @@ class AuthServiceTokenTest {
     }
 
     @Nested
-    @DisplayName("토큰 재발급")
-    class ReissueTest {
+    @DisplayName("리프레시 토큰 재발급")
+    class ReissueTests {
 
         @Test
-        @DisplayName("유효한 RefreshToken이면 새로운 AccessToken을 발급한다")
-        void givenValidRefreshToken_whenReissue_thenReturnsNewAccessToken() {
+        @DisplayName("유효한 RefreshToken으로 새로운 AccessToken 발급")
+        void reissueSuccess() {
             String bearer = "Bearer " + REFRESH_TOKEN;
             String newAccess = "new.access.token";
 
@@ -97,13 +98,15 @@ class AuthServiceTokenTest {
 
             ResponseEntity<MerchantLoginResponse> response = authService.reissue(bearer);
 
-            assertEquals(newAccess, response.getBody().getAccessToken());
-            assertEquals(REFRESH_TOKEN, response.getBody().getRefreshToken());
+            assertAll(
+                    () -> assertEquals(newAccess, response.getBody().getAccessToken()),
+                    () -> assertEquals(REFRESH_TOKEN, response.getBody().getRefreshToken())
+            );
         }
 
         @Test
-        @DisplayName("RefreshToken이 누락되면 예외를 던진다")
-        void givenEmptyRefreshToken_whenReissue_thenThrowsUnauthorized() {
+        @DisplayName("RefreshToken 누락 시 UnauthorizedException 발생")
+        void reissueMissingToken() {
             UnauthorizedException ex = assertThrows(
                     UnauthorizedException.class,
                     () -> authService.reissue("")
@@ -112,12 +115,10 @@ class AuthServiceTokenTest {
         }
 
         @Test
-        @DisplayName("RefreshToken 검증에 실패하면 예외를 던진다")
-        void givenInvalidRefreshToken_whenReissue_thenThrowsUnauthorized() {
+        @DisplayName("유효하지 않은 RefreshToken 시 UnauthorizedException 발생")
+        void reissueInvalidToken() {
             String bearer = "Bearer invalid.token";
-            String actual = "invalid.token";
-
-            given(jwtProvider.validateToken(actual)).willReturn(false);
+            given(jwtProvider.validateToken("invalid.token")).willReturn(false);
 
             UnauthorizedException ex = assertThrows(
                     UnauthorizedException.class,

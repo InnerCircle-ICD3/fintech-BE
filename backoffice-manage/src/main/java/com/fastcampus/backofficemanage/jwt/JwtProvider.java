@@ -1,4 +1,4 @@
-package com.fastcampus.backofficemanage.security;
+package com.fastcampus.backofficemanage.jwt;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;

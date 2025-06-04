@@ -1,4 +1,4 @@
-package com.fastcampus.backofficemanage.security;
+package com.fastcampus.backofficemanage.jwt;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -30,24 +30,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
 
+        String uri = request.getRequestURI();
+
+        // Swagger 및 인증이 필요없는 경로는 그대로 통과
+        if (uri.startsWith("/swagger-ui")
+                || uri.equals("/swagger-ui.html")
+                || uri.startsWith("/v3/api-docs")
+                || uri.startsWith("/swagger-resources")
+                || uri.equals("/merchants/register")
+                || uri.equals("/merchants/login")
+                || uri.equals("/merchants/reissue")
+                || uri.equals("/merchants/logout")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
 
-            // ✅ 로그아웃된 토큰 여부 확인
+            // 로그아웃된 토큰(블랙리스트)이라면 인증정보를 클리어
             if (Boolean.TRUE.equals(redisTemplate.hasKey(BLOCKLIST_PREFIX + token))) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
-            }
-
-            // ✅ JWT 유효성 확인
-            if (jwtProvider.validateToken(token)) {
+                SecurityContextHolder.clearContext();
+            } else if (jwtProvider.validateToken(token)) {
                 String loginId = jwtProvider.getSubject(token);
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(loginId, null, List.of());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+            } else {
+                // 토큰이 유효하지 않은 경우에도 인증정보를 클리어
+                SecurityContextHolder.clearContext();
             }
+        } else {
+            // Authorization 헤더가 없으면 인증정보를 클리어
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
