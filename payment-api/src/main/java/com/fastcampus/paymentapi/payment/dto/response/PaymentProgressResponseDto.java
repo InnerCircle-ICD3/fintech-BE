@@ -1,6 +1,6 @@
 package com.fastcampus.paymentapi.payment.dto.response;
 
-import com.fastcampus.paymentinfra.entity.TransactionStatus;
+import com.fastcampus.paymentinfra.type.TransactionStatus;
 
 /**
  * 결제 상태 응답 DTO (API 용)

@@ -15,6 +15,7 @@ public enum TransactionStatus {
     READY,
     COMPLETED,
     FAILED,
+    REQUESTED,
     CANCELED;
 
     public boolean isFinal() {
