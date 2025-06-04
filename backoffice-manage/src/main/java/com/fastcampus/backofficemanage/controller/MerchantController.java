@@ -56,6 +56,7 @@ public class MerchantController {
     @StandardResponses
     @PutMapping("/modify")
     public ResponseEntity<MerchantUpdateResponse> updateInfo(
+            @Parameter(hidden = true)
             @RequestHeader("Authorization") String authorization,
             @RequestBody @Valid MerchantUpdateRequest request
     ) {

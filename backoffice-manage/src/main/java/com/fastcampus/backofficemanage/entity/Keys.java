@@ -2,7 +2,10 @@ package com.fastcampus.backofficemanage.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -24,6 +27,18 @@ public class Keys {
     @JoinColumn(name = "merchant_id", nullable = false, unique = true)
     private Merchant merchant;
 
+    @Column(nullable = false, length = 20)
+    private String status = "ACTIVE";
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
+
+    private LocalDateTime expiredAt;
+
     public void setMerchant(Merchant merchant) {
         this.merchant = merchant;
     }
@@ -35,5 +50,9 @@ public class Keys {
                 .build();
         merchant.setKeys(keys);
         return keys;
+    }
+
+    public void deactivate() {
+        this.status = "INACTIVE";
     }
 }
