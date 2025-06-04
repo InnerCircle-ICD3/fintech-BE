@@ -1,10 +1,12 @@
 spring:
+  config:
+    activate:
+      on-profile: testing
   datasource:
-    url: jdbc:postgresql://localhost:5432/testdb
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://postgres-service.db.svc.cluster.local:5432/testdb
     username: testuser
     password: testpass
-
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
@@ -13,8 +15,12 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  data:
+    redis:
+      host: redis-service.db.svc.cluster.local
+      port: 6379
   application:
-    name: backoffice
+    name: backoffice-api
 
 server:
   port: 8080
@@ -27,10 +33,39 @@ springdoc:
 
 jwt:
   secret: dYVzdC1zZWNyZXQta2V5LXlvdS2jYW4tY2hhbmdlPXRoaXM=
-  expiration: 86400000 # 24 hours in milliseconds
+  expiration: 86400000 # 24 hours in milliseconds 
 
-logging:
-  level:
-    org.springframework.web: TRACE
-    com.fastcampus.backoffice: TRACE
-    org.springframework.security: TRACE 
+# Actuator 설정 추가
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+  security:
+    enabled: false
+
+---
+# 기본 프로파일 설정
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres-service.db.svc.cluster.local:5432/testdb
+    username: testuser
+    password: testpass
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  application:
+    name: backoffice-api 

@@ -2,9 +2,8 @@ package com.fastcampus.paymentcore.core.dto;
 
 import com.fastcampus.common.exception.code.PaymentErrorCode;
 import com.fastcampus.common.exception.exception.BadRequestException;
-import com.fastcampus.paymentcore.core.common.util.CommonUtil;
 import com.fastcampus.paymentinfra.entity.Transaction;
-import com.fastcampus.paymentinfra.entity.TransactionStatus;
+import com.fastcampus.paymentinfra.type.TransactionStatus;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import java.util.Arrays;
