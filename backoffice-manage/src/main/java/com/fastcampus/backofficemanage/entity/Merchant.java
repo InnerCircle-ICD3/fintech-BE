@@ -74,4 +74,8 @@ public class Merchant {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    public void updatePassword(String encodedNewPassword) {
+        this.loginPw = encodedNewPassword;
+    }
 }

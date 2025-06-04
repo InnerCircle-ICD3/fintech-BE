@@ -3,8 +3,10 @@ package com.fastcampus.backofficemanage.service;
 import com.fastcampus.backofficemanage.dto.common.CommonResponse;
 import com.fastcampus.backofficemanage.dto.info.MerchantInfoResponse;
 import com.fastcampus.backofficemanage.dto.update.request.MerchantUpdateRequest;
+import com.fastcampus.backofficemanage.dto.update.request.UpdatePasswordRequest;
 import com.fastcampus.backofficemanage.dto.update.response.MerchantUpdateResponse;
 import com.fastcampus.backofficemanage.entity.Merchant;
+import com.fastcampus.backofficemanage.jwt.JwtProvider;
 import com.fastcampus.backofficemanage.repository.MerchantRepository;
 import com.fastcampus.common.exception.code.MerchantErrorCode;
 import com.fastcampus.common.exception.exception.DuplicateKeyException;
@@ -31,6 +33,7 @@ class MerchantServiceTest {
     @Mock private MerchantRepository merchantRepository;
     @Mock private BCryptPasswordEncoder passwordEncoder;
     @Mock private Clock clock;
+    @Mock private JwtProvider jwtProvider;
 
     @InjectMocks private MerchantService merchantService;
 
@@ -91,12 +94,20 @@ class MerchantServiceTest {
             // given
             Merchant merchant = spy(createMerchant());
             given(merchantRepository.findByLoginId(LOGIN_ID)).willReturn(Optional.of(merchant));
-            given(passwordEncoder.matches(anyString(), anyString())).willReturn(true);
 
-            MerchantUpdateRequest request = createUpdateRequest("변경된이름", "999-999", "이몽룡", "new@email.com", "010-9999-8888");
+            MerchantUpdateRequest request = createUpdateRequest(
+                    "변경된이름",
+                    "999-999",
+                    "이몽룡",
+                    "new@email.com",
+                    "010-9999-8888"
+            );
+
+            String fakeToken = "Bearer faketoken";  // 실제론 jwtProvider.getSubject(fakeToken)에서 LOGIN_ID를 반환하도록 목킹
+            willReturn(LOGIN_ID).given(jwtProvider).getSubject(anyString());
 
             // when
-            MerchantUpdateResponse response = merchantService.updateMyInfo(request);
+            MerchantUpdateResponse response = merchantService.updateMyInfo(fakeToken, request);
 
             // then
             assertAll(
@@ -116,35 +127,107 @@ class MerchantServiceTest {
         @Test
         @DisplayName("중복 사업자번호 오류 시 DuplicateKeyException 발생")
         void givenDuplicateBusinessNumber_whenUpdate_thenThrows() {
+            // given
             Merchant merchant = createMerchant();
+            given(jwtProvider.getSubject(anyString())).willReturn(LOGIN_ID);
             given(merchantRepository.findByLoginId(LOGIN_ID)).willReturn(Optional.of(merchant));
-            given(passwordEncoder.matches(anyString(), anyString())).willReturn(true);
             willThrow(DataIntegrityViolationException.class).given(merchantRepository).flush();
 
-            MerchantUpdateRequest request = createUpdateRequest("name", "999-999", "홍길동", "email", "010-0000-0000");
+            MerchantUpdateRequest request = createUpdateRequest(
+                    "name",
+                    "999-999",
+                    "홍길동",
+                    "email",
+                    "010-0000-0000"
+            );
 
-            assertThrows(DuplicateKeyException.class, () -> merchantService.updateMyInfo(request));
+            // when & then
+            assertThrows(DuplicateKeyException.class,
+                    () -> merchantService.updateMyInfo("Bearer faketoken", request));
         }
+
 
         @Test
         @DisplayName("존재하지 않는 loginId로 수정 시 NotFoundException 발생")
         void givenInvalidLoginId_whenUpdate_thenThrows() {
+            // given
+            given(jwtProvider.getSubject(anyString())).willReturn(LOGIN_ID);
             given(merchantRepository.findByLoginId(LOGIN_ID)).willReturn(Optional.empty());
-            MerchantUpdateRequest request = createUpdateRequest("name", "bn", "홍길동", "email", "010");
 
-            assertThrows(NotFoundException.class, () -> merchantService.updateMyInfo(request));
+            MerchantUpdateRequest request = createUpdateRequest(
+                    "name",
+                    "bn",
+                    "홍길동",
+                    "email",
+                    "010"
+            );
+
+            // when & then
+            assertThrows(NotFoundException.class,
+                    () -> merchantService.updateMyInfo("Bearer faketoken", request));
+        }
+    }
+
+    @Nested
+    @DisplayName("비밀번호 변경 (updatePassword)")
+    class UpdatePasswordTests {
+
+        @Test
+        @DisplayName("정상적으로 비밀번호 변경 요청 시 성공적으로 변경됨")
+        void givenValidRequest_whenUpdatePassword_thenPasswordUpdated() {
+            // given
+            Merchant merchant = createMerchant();
+            given(jwtProvider.getSubject(anyString())).willReturn(LOGIN_ID);
+            given(merchantRepository.findByLoginId(LOGIN_ID)).willReturn(Optional.of(merchant));
+            given(passwordEncoder.matches("oldPass!1", merchant.getLoginPw())).willReturn(true);
+            given(passwordEncoder.encode("NewPass123!")).willReturn("encodedNewPassword");
+
+            UpdatePasswordRequest request = new UpdatePasswordRequest(
+                    "oldPass!1",
+                    "NewPass123!"
+            );
+
+            // when
+            merchantService.updatePassword("Bearer faketoken", request);
+
+            // then
+            assertEquals("encodedNewPassword", merchant.getLoginPw());
         }
 
         @Test
-        @DisplayName("비밀번호 불일치 시 UnauthorizedException 발생")
-        void givenWrongPassword_whenUpdate_thenThrows() {
+        @DisplayName("비밀번호가 일치하지 않을 경우 UnauthorizedException 발생")
+        void givenWrongCurrentPassword_whenUpdatePassword_thenThrows() {
+            // given
             Merchant merchant = createMerchant();
+            given(jwtProvider.getSubject(anyString())).willReturn(LOGIN_ID);
             given(merchantRepository.findByLoginId(LOGIN_ID)).willReturn(Optional.of(merchant));
             given(passwordEncoder.matches(anyString(), anyString())).willReturn(false);
 
-            MerchantUpdateRequest request = createUpdateRequest("name", "bn", "홍길동", "email", "010");
+            UpdatePasswordRequest request = new UpdatePasswordRequest(
+                    "wrongOldPass",
+                    "NewPass123!"
+            );
 
-            assertThrows(UnauthorizedException.class, () -> merchantService.updateMyInfo(request));
+            // when & then
+            assertThrows(UnauthorizedException.class,
+                    () -> merchantService.updatePassword("Bearer faketoken", request));
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 loginId일 경우 NotFoundException 발생")
+        void givenInvalidLoginId_whenUpdatePassword_thenThrows() {
+            // given
+            given(jwtProvider.getSubject(anyString())).willReturn(LOGIN_ID);
+            given(merchantRepository.findByLoginId(LOGIN_ID)).willReturn(Optional.empty());
+
+            UpdatePasswordRequest request = new UpdatePasswordRequest(
+                    "oldPass!1",
+                    "NewPass123!"
+            );
+
+            // when & then
+            assertThrows(NotFoundException.class,
+                    () -> merchantService.updatePassword("Bearer faketoken", request));
         }
     }
 
@@ -190,10 +273,9 @@ class MerchantServiceTest {
                 .build();
     }
 
-    private MerchantUpdateRequest createUpdateRequest(String name, String bn, String contactName, String email, String phone) {
+    private MerchantUpdateRequest createUpdateRequest(
+            String name, String bn, String contactName, String email, String phone) {
         return MerchantUpdateRequest.builder()
-                .loginId(LOGIN_ID)
-                .loginPw("rawPw")
                 .name(name)
                 .businessNumber(bn)
                 .contactName(contactName)

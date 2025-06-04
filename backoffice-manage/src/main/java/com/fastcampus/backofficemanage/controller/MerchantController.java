@@ -7,6 +7,7 @@ import com.fastcampus.backofficemanage.dto.login.response.MerchantLoginResponse;
 import com.fastcampus.backofficemanage.dto.signup.request.MerchantSignUpRequest;
 import com.fastcampus.backofficemanage.dto.signup.response.MerchantSignUpResponse;
 import com.fastcampus.backofficemanage.dto.update.request.MerchantUpdateRequest;
+import com.fastcampus.backofficemanage.dto.update.request.UpdatePasswordRequest;
 import com.fastcampus.backofficemanage.dto.update.response.MerchantUpdateResponse;
 import com.fastcampus.backofficemanage.service.AuthService;
 import com.fastcampus.backofficemanage.service.MerchantService;
@@ -29,29 +30,47 @@ public class MerchantController {
     @Operation(summary = "가맹점 회원가입")
     @StandardResponses
     @PostMapping("/register")
-    public ResponseEntity<MerchantSignUpResponse> register(@RequestBody @Valid MerchantSignUpRequest request) {
+    public ResponseEntity<MerchantSignUpResponse> register(
+            @RequestBody @Valid MerchantSignUpRequest request) {
         return ResponseEntity.ok(authService.signup(request));
     }
 
     @Operation(summary = "가맹점 로그인")
     @StandardResponses
     @PostMapping("/login")
-    public ResponseEntity<MerchantLoginResponse> login(@RequestBody @Valid MerchantLoginRequest request) {
+    public ResponseEntity<MerchantLoginResponse> login(
+            @RequestBody @Valid MerchantLoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
 
     @Operation(summary = "Header에 있는 Token을 통한 가맹점 정보 조회")
     @StandardResponses
     @GetMapping("/info")
-    public ResponseEntity<MerchantInfoResponse> getInfo(@Parameter(hidden = true) @RequestHeader("Authorization") String authorizationHeader) {
+    public ResponseEntity<MerchantInfoResponse> getInfo(
+            @Parameter(hidden = true)
+            @RequestHeader("Authorization") String authorizationHeader) {
         return ResponseEntity.ok(merchantService.getMyInfoByToken(authorizationHeader));
     }
 
     @Operation(summary = "가맹점 정보 수정")
     @StandardResponses
     @PutMapping("/modify")
-    public ResponseEntity<MerchantUpdateResponse> updateInfo(@RequestBody @Valid MerchantUpdateRequest request) {
-        return ResponseEntity.ok(merchantService.updateMyInfo(request));
+    public ResponseEntity<MerchantUpdateResponse> updateInfo(
+            @RequestHeader("Authorization") String authorization,
+            @RequestBody @Valid MerchantUpdateRequest request
+    ) {
+        return ResponseEntity.ok(merchantService.updateMyInfo(authorization, request));
+    }
+
+    @Operation(summary = "비밀번호 변경")
+    @StandardResponses
+    @PutMapping("/update-password")
+    public ResponseEntity<Void> updatePassword(
+            @RequestHeader("Authorization") String authorization,
+            @RequestBody @Valid UpdatePasswordRequest request
+    ) {
+        merchantService.updatePassword(authorization, request);
+        return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "가맹점 삭제(Soft Delete)")
@@ -65,14 +84,16 @@ public class MerchantController {
     @Operation(summary = "가맹점 로그아웃")
     @StandardResponses
     @PostMapping("/logout")
-    public ResponseEntity<CommonResponse> logout(@Parameter(hidden = true) @RequestHeader("Authorization") String token) {
+    public ResponseEntity<CommonResponse> logout(
+            @Parameter(hidden = true) @RequestHeader("Authorization") String token) {
         return authService.logout(token);
     }
 
     @Operation(summary = "AccessToken 재발급")
     @StandardResponses
     @PostMapping("/reissue")
-    public ResponseEntity<MerchantLoginResponse> reissue(@Parameter(hidden = true) @RequestHeader("Refresh-Token") String refreshToken) {
+    public ResponseEntity<MerchantLoginResponse> reissue(
+            @Parameter(hidden = true) @RequestHeader("Refresh-Token") String refreshToken) {
         return authService.reissue(refreshToken);
     }
 }

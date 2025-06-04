@@ -1,6 +1,5 @@
 package com.fastcampus.backofficemanage.dto.update.request;
 
-import com.fastcampus.backofficemanage.dto.update.UpdateRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -13,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @SuperBuilder
 @Schema(description = "가맹점 정보 수정 요청 DTO")
-public class MerchantUpdateRequest extends UpdateRequest {
+public class MerchantUpdateRequest {
 
     @NotBlank(message = "가맹점 이름은 필수입니다.")
     @Size(max = 50, message = "가맹점 이름은 최대 50자까지 입력 가능합니다.")

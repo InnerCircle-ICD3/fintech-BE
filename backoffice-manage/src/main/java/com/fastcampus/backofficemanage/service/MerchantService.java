@@ -3,6 +3,7 @@ package com.fastcampus.backofficemanage.service;
 import com.fastcampus.backofficemanage.dto.common.CommonResponse;
 import com.fastcampus.backofficemanage.dto.info.MerchantInfoResponse;
 import com.fastcampus.backofficemanage.dto.update.request.MerchantUpdateRequest;
+import com.fastcampus.backofficemanage.dto.update.request.UpdatePasswordRequest;
 import com.fastcampus.backofficemanage.dto.update.response.MerchantUpdateResponse;
 import com.fastcampus.backofficemanage.entity.Merchant;
 import com.fastcampus.backofficemanage.jwt.JwtProvider;
@@ -48,9 +49,9 @@ public class MerchantService {
     }
 
     @Transactional
-    public MerchantUpdateResponse updateMyInfo(MerchantUpdateRequest request) {
-        Merchant merchant = findMerchantByLoginId(request.getLoginId());
-        validatePassword(merchant, request.getLoginPw());
+    public MerchantUpdateResponse updateMyInfo(String authorizationHeader, MerchantUpdateRequest request) {
+        String loginId = extractLoginIdFromHeader(authorizationHeader);
+        Merchant merchant = findMerchantByLoginId(loginId);
 
         merchant.updateInfo(
                 request.getName(),
@@ -60,10 +61,22 @@ public class MerchantService {
                 request.getContactPhone()
         );
         updateTimestamp(merchant);
-
         flushAndHandleDuplicates();
 
         return toMerchantUpdateResponse(merchant);
+    }
+
+    @Transactional
+    public void updatePassword(String authorizationHeader, UpdatePasswordRequest request) {
+        String loginId = extractLoginIdFromHeader(authorizationHeader);
+        Merchant merchant = findMerchantByLoginId(loginId);
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), merchant.getLoginPw())) {
+            throw new UnauthorizedException(AuthErrorCode.INVALID_PASSWORD);
+        }
+
+        merchant.updatePassword(passwordEncoder.encode(request.getNewPassword()));
+        updateTimestamp(merchant);
     }
 
     @Transactional
