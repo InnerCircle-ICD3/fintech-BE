@@ -66,6 +66,7 @@ public class MerchantController {
     @StandardResponses
     @PutMapping("/update-password")
     public ResponseEntity<Void> updatePassword(
+            @Parameter(hidden = true)
             @RequestHeader("Authorization") String authorization,
             @RequestBody @Valid UpdatePasswordRequest request
     ) {
