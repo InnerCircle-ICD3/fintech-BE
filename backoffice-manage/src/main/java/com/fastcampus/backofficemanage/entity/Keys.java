@@ -55,4 +55,8 @@ public class Keys {
     public void deactivate() {
         this.status = "INACTIVE";
     }
+
+    public void activate() {
+        this.status = "ACTIVE";
+    }
 }
