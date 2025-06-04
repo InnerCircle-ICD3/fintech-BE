@@ -1,8 +1,8 @@
 package com.fastcampus.paymentcore.core.service;
 
 import com.fastcampus.paymentcore.core.dto.IdempotencyDto;
-import com.fastcampus.paymentinfra.entity.Idempotency;
-import com.fastcampus.paymentinfra.repository.ItempotencyRepository;
+import com.fastcampus.paymentcore.core.entity.Idempotency;
+import com.fastcampus.paymentcore.core.repository.IdempotencyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -12,7 +12,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class IdempotencyService {
 
-    private final ItempotencyRepository idempotencyRepository;
+    private final IdempotencyRepository idempotencyRepository;
 
     public Optional<IdempotencyDto> checkIdempotency(String idempotencyKey) {
         Optional<Idempotency> result = idempotencyRepository.findByIdempotencyKey(idempotencyKey);

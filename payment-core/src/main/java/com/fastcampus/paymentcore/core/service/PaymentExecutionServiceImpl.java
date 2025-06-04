@@ -3,10 +3,10 @@ package com.fastcampus.paymentcore.core.service;
 import com.fastcampus.paymentcore.core.common.util.TokenHandler;
 import com.fastcampus.paymentcore.core.dto.PaymentProgressRequest;
 import com.fastcampus.paymentcore.core.dto.PaymentProgressResponse;
-import com.fastcampus.paymentinfra.entity.Transaction;
-import com.fastcampus.paymentinfra.entity.TransactionStatus;
-import com.fastcampus.paymentinfra.redis.RedisTransactionRepository;
-import com.fastcampus.paymentinfra.repository.TransactionRepository;
+import com.fastcampus.paymentcore.core.entity.Transaction;
+import com.fastcampus.paymentcore.core.entity.TransactionStatus;
+import com.fastcampus.paymentcore.core.repository.TransactionRepository;
+import com.fastcampus.paymentcore.core.repository.TransactionRepositoryRedis;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,7 +19,8 @@ import java.util.Random;
 public class PaymentExecutionServiceImpl implements PaymentExecutionService {
 
     private final TransactionRepository transactionRepository;
-    private final RedisTransactionRepository redisTransactionRepository;
+//    private final TransactionRepositoryRedis transactionRepositoryRedis;
+    private TransactionRepositoryRedis transactionRepositoryRedis = null;
     private final TokenHandler tokenHandler;
 
     @Override
@@ -30,7 +31,7 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
         String originalToken = request.getTransactionToken();
 
         // 2. 거래 조회 (Redis → DB fallback)
-        Optional<Transaction> redisTx = redisTransactionRepository.findByToken(originalToken);
+        Optional<Transaction> redisTx = transactionRepositoryRedis.findByToken(originalToken);
         Transaction tx = redisTx.orElseGet(() ->
                 transactionRepository.findById(transactionId)
                         .orElseThrow(() -> new RuntimeException("거래를 찾을 수 없습니다."))
@@ -46,7 +47,7 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
 
         // 5. 저장 (DB + Redis)
         transactionRepository.save(tx);
-        redisTransactionRepository.save(tx, claims.getExpiration().getTime() / 1000 - System.currentTimeMillis() / 1000);
+        transactionRepositoryRedis.save(tx, claims.getExpiration().getTime() / 1000 - System.currentTimeMillis() / 1000);
 
         // 6. 응답 반환
         // 250531 - 세현: 란영 님. PaymentProgressResponse 클래스는 제가 PaymentProgressResponse.progressPayment() 에서 쓰려고 만든 response class 입니다

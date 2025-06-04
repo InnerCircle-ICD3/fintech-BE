@@ -1,6 +1,6 @@
-package com.fastcampus.paymentinfra.entity;
+package com.fastcampus.paymentcore.core.entity;
 
-import com.fastcampus.paymentinfra.common.ObjectStringConverter;
+import com.fastcampus.paymentcore.core.common.util.ObjectStringConverter;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;

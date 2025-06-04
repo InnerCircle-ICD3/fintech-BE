@@ -27,10 +27,13 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
     // ✅ PostgreSQL JDBC 드라이버
-    runtimeOnly("org.postgresql:postgresql:42.7.3")
+//    runtimeOnly("org.postgresql:postgresql:42.7.3")
+    runtimeOnly("com.h2database:h2")
 
     //
     implementation(project(":common"))
+    implementation(project(":payment-core"))
+
 
     // Redis(jackson은 Localdatetime땜에)
     implementation("org.springframework.boot:spring-boot-starter-data-redis")

@@ -1,8 +1,8 @@
 package com.fastcampus.paymentcore.ranyoung;
 
-import com.fastcampus.paymentinfra.entity.Transaction;
-import com.fastcampus.paymentinfra.entity.TransactionStatus;
-import com.fastcampus.paymentinfra.redis.RedisTransactionRepository;
+import com.fastcampus.paymentcore.core.entity.Transaction;
+import com.fastcampus.paymentcore.core.entity.TransactionStatus;
+import com.fastcampus.paymentcore.core.repository.TransactionRepositoryRedis;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -28,17 +27,17 @@ public class RanYoungApplicationTests {
 	@Autowired
 	private ObjectMapper objectMapper;
 
-	@Autowired
-	private RedisTemplate<String, Transaction> redisTemplate;
+//	@Autowired
+//	private RedisTemplate<String, Transaction> redisTemplate;
 
-	private RedisTransactionRepository redisTransactionRepository;
+	private TransactionRepositoryRedis transactionRepositoryRedis;
 
 	/**
 	 * 테스트 실행 전에 RedisTransactionRepository를 직접 생성해서 주입
 	 */
 	@BeforeEach
 	void setup() {
-		this.redisTransactionRepository = new RedisTransactionRepository(redisTemplate);
+//		this.transactionRepositoryRedis = new RedisTransactionRepository(redisTemplate);
 	}
 
 	/**
@@ -56,10 +55,10 @@ public class RanYoungApplicationTests {
 		tx.setExpireAt(LocalDateTime.now().plusMinutes(3));
 
 		// when
-		redisTransactionRepository.save(tx, 180);
+		transactionRepositoryRedis.save(tx, 180);
 
 		// then
-		Transaction saved = redisTransactionRepository.findByToken("test123")
+		Transaction saved = transactionRepositoryRedis.findByToken("test123")
 				.orElseThrow();
 		assertThat(saved.getAmount()).isEqualTo(10000L);
 		assertThat(saved.getStatus()).isEqualTo("READY");

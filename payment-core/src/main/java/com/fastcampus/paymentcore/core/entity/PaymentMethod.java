@@ -1,4 +1,5 @@
-package com.fastcampus.paymentinfra.entity;
+package com.fastcampus.paymentcore.core.entity;
+
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -10,15 +11,12 @@ import java.time.LocalDateTime;
 @Entity
 @Table
 @Data
-public class Users {
+public class PaymentMethod {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userId;
+    private Long paymentMethodId;
 
-    private String name;
-    private String phone;
-    private String email;
-    private String simplePassword;
+    private String type;
 
     @CreationTimestamp
     @Column(columnDefinition = "TIMESTAMP")

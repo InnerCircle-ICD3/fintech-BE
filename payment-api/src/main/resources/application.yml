@@ -2,15 +2,10 @@ server:
   port: 8081
 
 spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/testdb
-    driver-class-name: org.postgresql.Driver
-    username: testuser
-    password: testpass
-
-  jpa:
-    hibernate:
-      ddl-auto: update
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
 
 lifetime:
   qr: 180

@@ -1,6 +1,6 @@
 package com.fastcampus.paymentinfra.redis;
 
-import com.fastcampus.paymentinfra.entity.Transaction;
+import com.fastcampus.paymentcore.core.entity.Transaction;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;

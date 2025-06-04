@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: payment-core
+#  autoconfigure:
+#    exclude:
+#      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+#      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+
+jwt:
+  secret: dYVzdC1zZWNyZXQta2V5LXlvdS2jYW4tY2hhbmdlPXRoaXM=
+
+lifetime:
+  qr: 180
+
+time:
+  zoneId: Asia/Seoul
+
+debug: false

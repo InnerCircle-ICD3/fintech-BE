@@ -1,4 +1,4 @@
-package com.fastcampus.paymentinfra.entity;
+package com.fastcampus.paymentcore.core.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;

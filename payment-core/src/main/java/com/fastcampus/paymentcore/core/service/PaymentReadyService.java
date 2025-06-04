@@ -7,8 +7,8 @@ import com.fastcampus.paymentcore.core.common.util.SystemParameterUtil;
 import com.fastcampus.paymentcore.core.common.util.TokenHandler;
 import com.fastcampus.paymentcore.core.dto.PaymentReadyRequest;
 import com.fastcampus.paymentcore.core.dto.PaymentReadyResponse;
-import com.fastcampus.paymentinfra.entity.Transaction;
-import com.fastcampus.paymentinfra.repository.TransactionRepository;
+import com.fastcampus.paymentcore.core.entity.Transaction;
+import com.fastcampus.paymentcore.core.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

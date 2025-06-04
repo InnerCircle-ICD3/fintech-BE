@@ -2,24 +2,24 @@ package com.fastcampus.paymentcore.core.common.idem;
 
 import com.fastcampus.paymentcore.core.dto.IdempotencyDto;
 import com.fastcampus.paymentcore.core.service.IdempotencyService;
+import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
 @Aspect
 @Component
+@RequiredArgsConstructor
 public class IdempotencyAspect {
 
     private static final Logger logger = LoggerFactory.getLogger(IdempotencyAspect.class);
 
-    @Autowired
-    private IdempotencyService idempotencyService;
+    private final IdempotencyService idempotencyService;
 
     // @Around 에다가 어떤 method 들을 대상으로 aspect 를 적용할지 지정할 수 있음. 특정 annotation 이 붙은 method 들, 또는 이름이 어떤 패턴인 method 들 등등
     @Around("@annotation(com.fastcampus.paymentcore.core.common.idem.Idempotent)")

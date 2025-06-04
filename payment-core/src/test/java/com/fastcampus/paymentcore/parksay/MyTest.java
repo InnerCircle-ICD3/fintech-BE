@@ -12,10 +12,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 import java.util.logging.Logger;
 
 @SpringBootTest(classes = PaymentCoreApplication.class)
+@EnableJpaRepositories(basePackages = {"com.fastcampus.paymentinfra.repository"})
 public class MyTest {
     Logger logger = Logger.getLogger(MyTest.class.getName());
 

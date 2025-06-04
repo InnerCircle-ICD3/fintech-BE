@@ -1,6 +1,5 @@
 package com.fastcampus.paymentapi.payment.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
 
 public class ProgressTransactionRequest {
 

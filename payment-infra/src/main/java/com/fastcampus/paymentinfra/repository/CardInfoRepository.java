@@ -1,6 +1,6 @@
 package com.fastcampus.paymentinfra.repository;
 
-import com.fastcampus.paymentinfra.entity.CardInfo;
+import com.fastcampus.paymentcore.core.entity.CardInfo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 

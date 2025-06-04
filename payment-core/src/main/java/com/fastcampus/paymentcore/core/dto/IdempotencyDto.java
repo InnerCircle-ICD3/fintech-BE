@@ -1,7 +1,7 @@
 package com.fastcampus.paymentcore.core.dto;
 
-import com.fastcampus.paymentinfra.common.IdempotencyConverter;
-import com.fastcampus.paymentinfra.entity.Idempotency;
+import com.fastcampus.paymentcore.core.common.util.ObjectStringConverter;
+import com.fastcampus.paymentcore.core.entity.Idempotency;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +14,7 @@ public class IdempotencyDto {
     private Object responseData;
 
     @Autowired
-    private IdempotencyConverter converter;
+    private ObjectStringConverter converter;
 
     public IdempotencyDto(Long id, String idempotencyKey, Object responseData) {
         this.idempotencyId = id;

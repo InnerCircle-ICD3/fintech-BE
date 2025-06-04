@@ -1,6 +1,7 @@
 package com.fastcampus.paymentinfra.repository;
 
-import com.fastcampus.paymentinfra.entity.Users;
+
+import com.fastcampus.paymentcore.core.entity.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
