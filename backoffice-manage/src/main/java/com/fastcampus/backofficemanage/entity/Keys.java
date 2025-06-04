@@ -27,6 +27,7 @@ public class Keys {
     @JoinColumn(name = "merchant_id", nullable = false, unique = true)
     private Merchant merchant;
 
+    @Builder.Default
     @Column(nullable = false, length = 20)
     private String status = "ACTIVE";
 
