@@ -6,7 +6,7 @@ import lombok.*;
 import java.util.UUID;
 
 @Entity
-@Table(name = "keys")
+@Table(name = "sdk_key")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -17,7 +17,7 @@ public class Keys {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long keysId;
 
-    @Column(nullable = false, length = 36)
+    @Column(nullable = false, unique = true, length = 36)
     private String encryptedKey;
 
     @OneToOne
