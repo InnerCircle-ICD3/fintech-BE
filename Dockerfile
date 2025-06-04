@@ -13,9 +13,17 @@ RUN gradle clean ${MODULE}:test ${MODULE}:build --no-daemon
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
+# Create non-root user
+RUN addgroup -g 1000 appgroup && \
+    adduser -D -u 1000 -G appgroup appuser
+
 ARG MODULE
 # 명확한 파일명 패턴 사용
 COPY --from=builder /app/${MODULE}/build/libs/${MODULE}-0.0.1-SNAPSHOT.jar /app/app.jar
+
+# Change ownership and switch to non-root user
+RUN chown appuser:appgroup /app/app.jar
+USER appuser
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
