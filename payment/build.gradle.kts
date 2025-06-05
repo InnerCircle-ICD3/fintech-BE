@@ -30,7 +30,7 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok")
 
     // ✅ PostgreSQL JDBC 드라이버
-//    runtimeOnly("org.postgresql:postgresql:42.7.3")
+    runtimeOnly("org.postgresql:postgresql:42.7.3")
     runtimeOnly("com.h2database:h2")
 
     // JWT

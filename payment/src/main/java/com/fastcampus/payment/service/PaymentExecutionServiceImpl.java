@@ -1,10 +1,10 @@
 package com.fastcampus.payment.service;
 
 
+import com.fastcampus.payment.dto.PaymentExecutionRequest;
+import com.fastcampus.payment.dto.PaymentExecutionResponse;
 import com.fastcampus.payment.entity.Transaction;
 import com.fastcampus.payment.entity.TransactionStatus;
-import com.fastcampus.payment.servicedto.PaymentProgressRequest;
-import com.fastcampus.payment.servicedto.PaymentProgressResponse;
 import com.fastcampus.payment.repository.TransactionRepositoryRedis;
 import com.fastcampus.payment.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
@@ -43,7 +43,7 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
      */
     @Override
     @Transactional
-    public PaymentProgressResponse execute(PaymentProgressRequest   request) {
+    public PaymentExecutionResponse execute(PaymentExecutionRequest request) {
         log.info("결제 실행 시작 - transactionToken: {}",request.getTransactionToken());
         //입력 값 검증
         validateRequest(request);
@@ -75,7 +75,10 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
         log.info("결제 실행 완료- transactionToken: {}, 상태: {}", tx.getTransactionToken(), tx.getStatus());
 
         //6. 결과 반환
-       return new PaymentProgressResponse(tx);
+       return new PaymentExecutionResponse(
+               tx.getTransactionToken(),
+               tx.getStatus()
+       );
 
     }
 
@@ -85,7 +88,7 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
      * @param request 결제 진행 요청 객체
      * @throws IllegalArgumentException 필수 값이 누락된 경우 발생합니다.
      */
-    private void validateRequest(PaymentProgressRequest request) {
+    private void validateRequest(PaymentExecutionRequest request) {
         if(request.getTransactionToken() == null || request.getTransactionToken().trim().isEmpty()){
             throw new IllegalArgumentException("transactionToken은 필수값입니다.");
         }

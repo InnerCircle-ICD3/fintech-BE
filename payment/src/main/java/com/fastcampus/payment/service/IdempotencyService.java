@@ -1,7 +1,7 @@
 package com.fastcampus.payment.service;
 
 import com.fastcampus.payment.entity.Idempotency;
-import com.fastcampus.payment.servicedto.IdempotencyDto;
+import com.fastcampus.payment.common.idem.IdempotencyDto;
 import com.fastcampus.payment.repository.ItempotencyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

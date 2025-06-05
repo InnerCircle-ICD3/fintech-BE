@@ -1,4 +1,4 @@
-package com.fastcampus.payment.servicedto;
+package com.fastcampus.payment.common.idem;
 
 import com.fastcampus.payment.common.util.IdempotencyConverter;
 import com.fastcampus.payment.entity.Idempotency;

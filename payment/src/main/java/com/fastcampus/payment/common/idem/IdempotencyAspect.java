@@ -1,7 +1,6 @@
 package com.fastcampus.payment.common.idem;
 
 import com.fastcampus.payment.service.IdempotencyService;
-import com.fastcampus.payment.servicedto.IdempotencyDto;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;

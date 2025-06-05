@@ -3,8 +3,6 @@ package com.fastcampus.payment.service;
 import com.fastcampus.payment.common.util.TokenHandler;
 import com.fastcampus.payment.common.idem.Idempotent;
 import com.fastcampus.payment.entity.Transaction;
-import com.fastcampus.payment.servicedto.PaymentProgressRequest;
-import com.fastcampus.payment.servicedto.PaymentProgressResponse;
 import com.fastcampus.payment.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -21,14 +19,14 @@ public class PaymentProgressService {
     private final TokenHandler tokenHandler;
 
     @Idempotent
-    public PaymentProgressResponse progressPayment(PaymentProgressRequest request) {
+    public Transaction progressPayment(String transactionToken) {
         // QR 토큰에서 거래 ID 디코딩
-        Long transactionId = tokenHandler.decodeQrToken(request.getTransactionToken());
+        Long transactionId = tokenHandler.decodeQrToken(transactionToken);
 
         // 거래 조회
         Transaction transaction = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new RuntimeException("거래를 찾을 수 없습니다"));
 
-        return new PaymentProgressResponse(transaction);
+        return transaction;
     }
 }
