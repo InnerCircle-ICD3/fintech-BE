@@ -24,8 +24,8 @@ public class PaymentReadyService {
     public Transaction readyPayment(Transaction transaction) {
         nullCheckReadyPayment(transaction);
         checkPaymentStatus(transaction);
-        saveTransaction(transaction);
         inputTransactionValues(transaction);
+        saveTransaction(transaction);
         return transaction;
     }
 

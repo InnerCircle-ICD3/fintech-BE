@@ -1,5 +1,6 @@
 package com.fastcampus.payment.dto;
 
+import com.fastcampus.payment.entity.TransactionStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -12,7 +13,7 @@ import java.time.LocalDateTime;
 public class PaymentProgressResponse {
 
 
-    private final String status;
+    private final TransactionStatus status;
     private final Long amount;
     private final String merchantId;
     private final String merchantOrderId;

@@ -12,11 +12,11 @@ package com.fastcampus.payment.entity;
  * - CANCELED: 결제 취소
  */
 public enum TransactionStatus {
-    READY,
-    REQUESTED,
-    COMPLETED,
-    FAILED,
-    CANCELED;
+    READY,  //  결제 요청
+    REQUESTED,  // 결제 조회
+    COMPLETED,  // 결제 완료
+    FAILED, // 결제 실패
+    CANCELED;   // 결제 취소
 
     public boolean isFinal() {
         return this == COMPLETED || this == FAILED || this == CANCELED;

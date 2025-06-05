@@ -33,7 +33,7 @@ spring:
 #    console:
 #      enabled: true
 
-loggint.level:
+logging.level:
   org.hibernate.SQL: debug
 
 server:

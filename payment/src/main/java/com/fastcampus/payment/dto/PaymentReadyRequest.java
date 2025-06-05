@@ -34,6 +34,11 @@ public class PaymentReadyRequest {
         transaction.setMerchantId(Long.valueOf(this.merchantId));
         transaction.setAmount(this.amount);
         transaction.setMerchantOrderId(this.merchantOrderId);
+        try {
+            transaction.setMerchantId(Long.valueOf(this.merchantId));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("유효하지 않은 merchantId 형식입니다: " + this.merchantId, e);
+        }
         return transaction;
     }
 
