@@ -32,7 +32,8 @@ public class TokenHandler {
      */
     public String generateTokenWithTransactionId(Long transactionId) {
         long now = System.currentTimeMillis();
-        long exp = now + Long.parseLong(ttlQr) * 1000;
+        long ttlSec = Long.parseLong(ttlQr);
+        long exp = now + ttlSec * 1000L;
 
         return Jwts.builder()
                 .setSubject("qr_token")

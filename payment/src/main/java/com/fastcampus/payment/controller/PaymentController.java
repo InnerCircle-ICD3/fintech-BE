@@ -1,21 +1,21 @@
 package com.fastcampus.payment.controller;
 
-import com.fastcampus.payment.dto.PaymentExecutionRequest;
-import com.fastcampus.payment.dto.PaymentExecutionResponse;
-import com.fastcampus.payment.dto.PaymentReadyRequest;
-import com.fastcampus.payment.dto.PaymentReadyResponse;
+import com.fastcampus.payment.dto.*;
 import com.fastcampus.payment.entity.Transaction;
 import com.fastcampus.payment.service.PaymentExecutionService;
 import com.fastcampus.payment.service.PaymentProgressService;
 import com.fastcampus.payment.service.PaymentReadyService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
+@Validated
 @Slf4j
 public class PaymentController {
 
@@ -38,18 +38,12 @@ public class PaymentController {
      * 2. QR 코드 거래 상태 조회
      * - transaction_token으로 거래 상태 확인
      */
-//    @GetMapping("/transactions/{token}")
-//    public GetTransactionProgressResponse getTransactionProgress(
-//            @Valid @ModelAttribute ProgressTransactionRequest request
-//    ) {
-//        PaymentProgressDto dto = paymentProgressService.progressPayment(request);
-//        return new GetTransactionProgressResponse(
-//                dto.getTransactionToken(),
-//                dto.getStatus().name(),
-//                dto.getAmount(),
-//                dto.getCreatedAt()
-//        );
-//    }
+    @GetMapping("/transactions/{token}")
+    public PaymentProgressResponse getTransactionProgress(@NotBlank @PathVariable String token) {
+        Transaction transaction = paymentProgressService.progressPayment(token);
+        PaymentProgressResponse response = new PaymentProgressResponse(transaction);
+        return response;
+    }
 
     /**
      * 3. 결제 실행

@@ -5,6 +5,7 @@ import com.fastcampus.payment.common.util.SystemParameterUtil;
 import com.fastcampus.payment.common.util.TokenHandler;
 import com.fastcampus.payment.common.idem.Idempotent;
 import com.fastcampus.payment.entity.Transaction;
+import com.fastcampus.payment.entity.TransactionStatus;
 import com.fastcampus.payment.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,8 +25,9 @@ public class PaymentReadyService {
     public Transaction readyPayment(Transaction transaction) {
         nullCheckReadyPayment(transaction);
         checkPaymentStatus(transaction);
-        inputTransactionValues(transaction);
+        inputTransactionValuesBefore(transaction);
         saveTransaction(transaction);
+        inputTransactionValuesAfter(transaction);
         return transaction;
     }
 
@@ -54,7 +56,14 @@ public class PaymentReadyService {
         return transactionRepository.save(transaction);
     }
 
-    private Transaction inputTransactionValues(Transaction transaction) {
+
+    private Transaction inputTransactionValuesBefore(Transaction transaction) {
+        transaction.setStatus(TransactionStatus.READY);
+        transaction.setExpireAt(commonUtil.generateExpiresAt());
+        return transaction;
+    }
+
+    private Transaction inputTransactionValuesAfter(Transaction transaction) {
         String transactionToken = tokenHandler.generateTokenWithTransactionId(transaction.getTransactionId());
         transaction.setTransactionToken(transactionToken);
         transaction.setExpireAt(commonUtil.generateExpiresAt());
