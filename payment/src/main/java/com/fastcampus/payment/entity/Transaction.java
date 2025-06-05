@@ -41,6 +41,7 @@ public class Transaction {
     private LocalDateTime updatedAt;
 
 
+
     public void checkStatusAlreadyDone() {
         if (TransactionStatus.COMPLETED.equals(this.status)) {
             throw new IllegalStateException("이미 완료된 거래입니다.");
