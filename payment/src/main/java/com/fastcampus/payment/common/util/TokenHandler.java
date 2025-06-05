@@ -47,7 +47,7 @@ public class TokenHandler {
      * JWT QR 토큰에서 거래 ID 추출
      */
     public Long decodeQrToken(String token) {
-        Claims claims = Jwts.parserBuilder()
+        Claims claims = Jwts.parser()
                 .setSigningKey(signingKey)
                 .build()
                 .parseClaimsJws(token)
@@ -60,7 +60,7 @@ public class TokenHandler {
      * JWT QR 토큰에서 전체 Claims 반환
      */
     public Claims decodeQrTokenToClaims(String token) {
-        return Jwts.parserBuilder()
+        return Jwts.parser()
                 .setSigningKey(signingKey)
                 .build()
                 .parseClaimsJws(token)
