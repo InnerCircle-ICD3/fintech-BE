@@ -1,5 +1,7 @@
-package com.fastcampus.backofficemanage.security;
+package com.fastcampus.backofficemanage.config;
 
+import com.fastcampus.backofficemanage.jwt.JwtAuthenticationFilter;
+import com.fastcampus.backofficemanage.jwt.JwtProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
