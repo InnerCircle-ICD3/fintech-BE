@@ -1,116 +1,116 @@
-name: CI/CD Pipeline
-
-on:
-  push:
-    branches: [ main, develop, test ]
-  pull_request:
-    branches: [ main, develop, test ]
-
-jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up JDK 21
-      uses: actions/setup-java@v3
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-        cache: gradle
-    
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    
-    - name: Build with Gradle
-      run: ./gradlew build -x test
-    
-    - name: Run tests
-      run: ./gradlew test || echo "테스트 실패했지만 배포 계속 진행"
-      continue-on-error: true
-    
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-files
-        path: |
-          payment-api/build/libs/*.jar
-          backoffice-api/build/libs/*.jar
-  
-  trigger-jenkins:
-    needs: build-and-test
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/test')
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Trigger Jenkins job
-      env:
-        JENKINS_URL: ${{ secrets.JENKINS_URL }}
-        JENKINS_USER: ${{ secrets.JENKINS_USER }}
-        JENKINS_TOKEN: ${{ secrets.JENKINS_TOKEN }}
-        JENKINS_JOB_NAME: ${{ secrets.JENKINS_JOB_NAME }}
-        JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
-      run: |
-        echo "GitHub Actions 빌드 완료. Jenkins 작업 트리거 시작..."
-        
-        # Jenkins에 접근 가능한지 확인
-        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${JENKINS_URL}" || echo "000")
-        if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "403" ]; then
-          echo "Jenkins 서버에 접근할 수 없습니다. HTTP 응답 코드: ${HTTP_CODE}"
-          exit 1
-        fi
-        
-        # Jenkins CSRF 방지 토큰 가져오기
-        echo "Jenkins CSRF 토큰 가져오기..."
-        CRUMB=$(curl -s "${JENKINS_URL}/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)" -u "${JENKINS_USER}:${JENKINS_TOKEN}" || echo "Jenkins-Crumb:no-crumb")
-        
-        # 브랜치 및 커밋 정보
-        BRANCH="${{ github.ref_name }}"
-        COMMIT="${{ github.sha }}"
-        
-        echo "트리거 정보: 브랜치=$BRANCH, 커밋=$COMMIT"
-        
-        # 다양한 Jenkins 작업 URL 패턴 시도
-        echo "Jenkins 작업 트리거 시도 중..."
-        
-        # 일반적인 작업 경로 패턴들
-        JOB_URLS=(
-          "${JENKINS_URL}/job/${JENKINS_JOB_NAME}/buildWithParameters"
-          "${JENKINS_URL}/job/${JENKINS_JOB_NAME}/build"
-          "${JENKINS_URL}/buildByToken/build?job=${JENKINS_JOB_NAME}"
-          "${JENKINS_URL}/generic-webhook-trigger/invoke"
-        )
-        
-        SUCCESS=false
-        
-        for JOB_URL in "${JOB_URLS[@]}"; do
-          echo "URL 시도 중: ${JOB_URL}"
-          
-          # Jenkins 작업 트리거 시도
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-            -u "${JENKINS_USER}:${JENKINS_TOKEN}" \
-            -H "${CRUMB}" \
-            -d "BRANCH_NAME=${BRANCH}" \
-            -d "COMMIT_SHA=${COMMIT}" \
-            -d "token=${JENKINS_API_TOKEN}" \
-            "${JOB_URL}")
-            
-          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-          CONTENT=$(echo "$RESPONSE" | sed '$d')
-          
-          if [ "$HTTP_CODE" == "201" ] || [ "$HTTP_CODE" == "200" ] || [ "$HTTP_CODE" == "302" ]; then
-            echo "Jenkins 작업이 성공적으로 트리거되었습니다. URL: ${JOB_URL}"
-            echo "응답: $CONTENT"
-            SUCCESS=true
-            break
-          else
-            echo "URL ${JOB_URL} 시도 실패. HTTP 응답 코드: ${HTTP_CODE}"
-          fi
-        done
-        
-        if [ "$SUCCESS" = false ]; then
-          echo "모든 Jenkins 작업 URL 패턴 시도가 실패했습니다."
-          echo "Jenkins 관리자에게 문의하여 정확한 작업 URL을 확인하세요."
-          exit 1
-        fi 
+#name: CI/CD Pipeline
+#
+#on:
+#  push:
+#    branches: [ main, develop, test ]
+#  pull_request:
+#    branches: [ main, develop, test ]
+#
+#jobs:
+#  build-and-test:
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#    - uses: actions/checkout@v4
+#
+#    - name: Set up JDK 21
+#      uses: actions/setup-java@v3
+#      with:
+#        java-version: '21'
+#        distribution: 'temurin'
+#        cache: gradle
+#
+#    - name: Grant execute permission for gradlew
+#      run: chmod +x gradlew
+#
+#    - name: Build with Gradle
+#      run: ./gradlew build -x test
+#
+#    - name: Run tests
+#      run: ./gradlew test || echo "테스트 실패했지만 배포 계속 진행"
+#      continue-on-error: true
+#
+#    - name: Upload build artifacts
+#      uses: actions/upload-artifact@v4
+#      with:
+#        name: build-files
+#        path: |
+#          payment-api/build/libs/*.jar
+#          backoffice-api/build/libs/*.jar
+#
+#  trigger-jenkins:
+#    needs: build-and-test
+#    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/test')
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#    - name: Trigger Jenkins job
+#      env:
+#        JENKINS_URL: ${{ secrets.JENKINS_URL }}
+#        JENKINS_USER: ${{ secrets.JENKINS_USER }}
+#        JENKINS_TOKEN: ${{ secrets.JENKINS_TOKEN }}
+#        JENKINS_JOB_NAME: ${{ secrets.JENKINS_JOB_NAME }}
+#        JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
+#      run: |
+#        echo "GitHub Actions 빌드 완료. Jenkins 작업 트리거 시작..."
+#
+#        # Jenkins에 접근 가능한지 확인
+#        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${JENKINS_URL}" || echo "000")
+#        if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "403" ]; then
+#          echo "Jenkins 서버에 접근할 수 없습니다. HTTP 응답 코드: ${HTTP_CODE}"
+#          exit 1
+#        fi
+#
+#        # Jenkins CSRF 방지 토큰 가져오기
+#        echo "Jenkins CSRF 토큰 가져오기..."
+#        CRUMB=$(curl -s "${JENKINS_URL}/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)" -u "${JENKINS_USER}:${JENKINS_TOKEN}" || echo "Jenkins-Crumb:no-crumb")
+#
+#        # 브랜치 및 커밋 정보
+#        BRANCH="${{ github.ref_name }}"
+#        COMMIT="${{ github.sha }}"
+#
+#        echo "트리거 정보: 브랜치=$BRANCH, 커밋=$COMMIT"
+#
+#        # 다양한 Jenkins 작업 URL 패턴 시도
+#        echo "Jenkins 작업 트리거 시도 중..."
+#
+#        # 일반적인 작업 경로 패턴들
+#        JOB_URLS=(
+#          "${JENKINS_URL}/job/${JENKINS_JOB_NAME}/buildWithParameters"
+#          "${JENKINS_URL}/job/${JENKINS_JOB_NAME}/build"
+#          "${JENKINS_URL}/buildByToken/build?job=${JENKINS_JOB_NAME}"
+#          "${JENKINS_URL}/generic-webhook-trigger/invoke"
+#        )
+#
+#        SUCCESS=false
+#
+#        for JOB_URL in "${JOB_URLS[@]}"; do
+#          echo "URL 시도 중: ${JOB_URL}"
+#
+#          # Jenkins 작업 트리거 시도
+#          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+#            -u "${JENKINS_USER}:${JENKINS_TOKEN}" \
+#            -H "${CRUMB}" \
+#            -d "BRANCH_NAME=${BRANCH}" \
+#            -d "COMMIT_SHA=${COMMIT}" \
+#            -d "token=${JENKINS_API_TOKEN}" \
+#            "${JOB_URL}")
+#
+#          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+#          CONTENT=$(echo "$RESPONSE" | sed '$d')
+#
+#          if [ "$HTTP_CODE" == "201" ] || [ "$HTTP_CODE" == "200" ] || [ "$HTTP_CODE" == "302" ]; then
+#            echo "Jenkins 작업이 성공적으로 트리거되었습니다. URL: ${JOB_URL}"
+#            echo "응답: $CONTENT"
+#            SUCCESS=true
+#            break
+#          else
+#            echo "URL ${JOB_URL} 시도 실패. HTTP 응답 코드: ${HTTP_CODE}"
+#          fi
+#        done
+#
+#        if [ "$SUCCESS" = false ]; then
+#          echo "모든 Jenkins 작업 URL 패턴 시도가 실패했습니다."
+#          echo "Jenkins 관리자에게 문의하여 정확한 작업 URL을 확인하세요."
+#          exit 1
+#        fi
