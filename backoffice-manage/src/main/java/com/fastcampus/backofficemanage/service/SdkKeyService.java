@@ -74,6 +74,8 @@ public class SdkKeyService {
             oldKey.expire();
             sdkKeyRepository.save(oldKey);
             sdkKeyRepository.flush();
+            //DB에서 merchant_id만 null로 업데이트(JPA로 없애면, key 자체를 없애는 명령어라고 착각하기때문)
+            sdkKeyRepository.detachMerchant(oldKey.getKeysId());
         }
 
         // 이제 DB에 merchant_id가 null로 된 상태니까 새로운 insert 가능

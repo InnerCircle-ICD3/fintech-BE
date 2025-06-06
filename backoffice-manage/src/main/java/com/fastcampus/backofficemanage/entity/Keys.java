@@ -67,7 +67,6 @@ public class Keys {
     public void expire() {
         this.expiredAt = LocalDateTime.now();
         this.status = "INACTIVE";
-        this.expiredMerchantId = this.merchant.getMerchantId(); // 과거 merchantId 기록용임
-        this.merchant = null; // 기존 merchant와 연결 해제를 위해서
+        this.expiredMerchantId = this.merchant.getMerchantId(); // 과거 merchantId 기록용
     }
 }
