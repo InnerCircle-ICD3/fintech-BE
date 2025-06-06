@@ -50,8 +50,8 @@ public class PaymentController {
      * - transaction_token + card_token 이용해 결제 처리
      */
     @PostMapping("/payments/execute")
-    public PaymentExecutionResponse executePayment(@RequestBody @Valid PaymentExecutionRequest request) {
-        PaymentExecutionResponse response = paymentExecutionService.execute(request);
+    public Object executePayment(@RequestBody @Valid PaymentExecutionRequest request) {
+        PaymentProgressResponse response = paymentExecutionService.execute(request);
         return response;
     }
 }

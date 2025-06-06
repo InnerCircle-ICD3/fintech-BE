@@ -19,9 +19,10 @@ public class PaymentMethod {
     @Column(nullable = false)  //"CATD", "BANK_TRANSFER", "PAYPAL" 등
     private String type;
 
+
     //추가 필드
     private String name;  // 카드 이름, 은행 이름 등
-    private Boolean isActive; //활성화 여부
+    private Boolean isActive = true; //활성화 여부
 
     @CreationTimestamp
     @Column(columnDefinition = "TIMESTAMP")
