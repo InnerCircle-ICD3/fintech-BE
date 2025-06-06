@@ -1,0 +1,77 @@
+spring:
+  application:
+    name: payment
+  datasource:
+    url: jdbc:postgresql://postgres-service.db.svc.cluster.local:5432/testdb
+    driver-class-name: org.postgresql.Driver
+    username: testuser
+    password: testpass
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+      properties:
+        hibernate:
+          format_sql: true
+
+#spring:
+#  application:
+#    name: payment
+#  datasource:
+#    url: jdbc:h2:mem:testdb;
+#    driver-class-name: org.h2.Driver
+#    username: sa
+#    password:
+#  jpa:
+#    hibernate:
+#      ddl-auto: create  # 테스트마다 테이블 생성/삭제
+#    show-sql: true
+#    properties:
+#      hibernate:
+#        format_sql: true
+#  h2:
+#    console:
+#      enabled: true
+
+logging.level:
+  org.hibernate.SQL: debug
+
+server:
+  port: 8081
+
+#Redis settings
+redis:
+  host: localhost
+  port: 6379
+  timeout: 1000
+
+jwt:
+  secret: dYVzdC1zZWNyZXQta2V5LXlvdS2jYW4tY2hhbmdlPXRoaXM=
+
+lifetime:
+  qr: 180
+
+sdk:
+  ttl-days: 180
+  ttl-qr: 3
+
+time:
+  zoneId: Asia/Seoul
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+# Actuator 설정 추가
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+

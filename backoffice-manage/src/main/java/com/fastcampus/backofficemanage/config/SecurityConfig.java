@@ -38,7 +38,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(new JwtAuthenticationFilter(jwtProvider, redisTemplate), // ✅ 수정
+                .addFilterBefore(new JwtAuthenticationFilter(jwtProvider, redisTemplate),
                         org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
