@@ -71,12 +71,15 @@ public class SdkKeyService {
 
         Keys oldKey = merchant.getKeys();
         if (oldKey != null) {
-            oldKey.expire(); // 기존 키는 만료 처리
+            oldKey.expire();
             sdkKeyRepository.save(oldKey);
+            sdkKeyRepository.flush();
         }
 
+        // 이제 DB에 merchant_id가 null로 된 상태니까 새로운 insert 가능
         Keys newKey = Keys.createForMerchant(merchant);
         merchant.setKeys(newKey);
+        sdkKeyRepository.save(newKey);
 
         return newKey.getEncryptedKey();
     }
