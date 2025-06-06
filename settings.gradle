@@ -1,8 +1,10 @@
 rootProject.name = 'passionpay'
 
-include 'payment-api'
-include 'payment-core'
-include 'payment-infra'
 include 'backoffice-manage'
 include 'backoffice-api'
 include 'common'
+include 'payment'
+
+
+
+
