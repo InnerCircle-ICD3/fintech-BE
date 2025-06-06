@@ -2,7 +2,7 @@ package com.fastcampus.backoffice.service;
 
 import com.fastcampus.backoffice.dto.PaymentDto;
 import com.fastcampus.backoffice.repository.PaymentRepository;
-import com.fastcampus.paymentinfra.entity.Payment;
+import com.fastcampus.payment.entity.Payment;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
