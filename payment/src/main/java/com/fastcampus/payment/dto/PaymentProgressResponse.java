@@ -42,17 +42,6 @@ public class PaymentProgressResponse {
     }
 
     // 확장된 생성자
-    public PaymentProgressResponse(Transaction transaction, CardInfo cardInfo, PaymentMethod paymentMethod, Boolean approvalResult) {
-        this.status = transaction.getStatus();
-        this.amount = transaction.getAmount();
-        this.createdAt = transaction.getCreatedAt();
-        this.merchantId = Long.toString(transaction.getMerchantId());
-        this.merchantOrderId = transaction.getMerchantOrderId();
-        this.transactionToken = transaction.getTransactionToken();
-        this.cardInfo = cardInfo;
-        this.paymentMethod = paymentMethod;
-        this.approvalResult = approvalResult;
-    }
 
     public String getStatus() {
         return this.status.name();}
