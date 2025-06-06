@@ -67,4 +67,17 @@ jobs:
             BACKOFFICE_MANAGE_JAR=$(find backoffice-manage/build/libs -name "backoffice-manage-*.jar" ! -name "*plain.jar" | sort | tail -1)
             nohup java -jar $BACKOFFICE_MANAGE_JAR > backoffice-manage.log 2>&1 & echo $! > backoffice-manage.pid
 
+            # appuser-manage 애플리케이션 재시작
+            if [ -f appuser-manage.pid ]; then
+              kill $(cat appuser-manage.pid) || true
+              rm appuser-manage.pid
+            fi
+            export yaml="${{ secrets.UM }}"
+            echo "$yaml" > appuser-manage/src/main/resources/application.yml
+            rm -f appuser-manage/build/libs/*.jar
+            ./gradlew :appuser-manage:build -x test
+            APPUSER_MANAGE_JAR=$(find appuser-manage/build/libs -name "appuser-manage-*.jar" ! -name "*plain.jar" | sort | tail -1)
+            nohup java -jar $APPUSER_MANAGE_JAR > appuser-manage.log 2>&1 & echo $! > appuser-manage.pid
+
+
             echo "모든 모듈 배포 및 재시작 완료"

@@ -7,6 +7,8 @@ import com.fastcampus.backofficemanage.repository.MerchantRepository;
 import com.fastcampus.backofficemanage.repository.SdkKeyRepository;
 import com.fastcampus.common.exception.code.MerchantErrorCode;
 import com.fastcampus.common.exception.exception.NotFoundException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +22,9 @@ public class SdkKeyService {
     private final MerchantRepository merchantRepository;
     private final SdkKeyRepository sdkKeyRepository;
     private final JwtProvider jwtProvider;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Transactional(readOnly = true)
     public String getSdkKey(String authorizationHeader) {
@@ -76,6 +81,7 @@ public class SdkKeyService {
             sdkKeyRepository.flush();
             //DB에서 merchant_id만 null로 업데이트(JPA로 없애면, key 자체를 없애는 명령어라고 착각하기때문)
             sdkKeyRepository.detachMerchant(oldKey.getKeysId());
+            entityManager.clear();
         }
 
         // 이제 DB에 merchant_id가 null로 된 상태니까 새로운 insert 가능
