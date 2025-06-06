@@ -19,21 +19,22 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
     private Long userId;
 
-    @Column(nullable = false, unique = true, length = 50)  // 이메일은 ID 역할
+    @Column(name = "email", nullable = false, unique = true, length = 50)  // 이메일은 ID 역할
     private String email;
 
-    @Column(nullable = false, length = 60)
+    @Column(name = "password", nullable = false, length = 60)
     private String password;
 
-    @Column(nullable = false, length = 50)
+    @Column(name = "name", nullable = false, length = 50)
     private String name;
 
-    @Column(length = 20)
+    @Column(name = "phone", length = 20)
     private String phone;
 
-    @Column(nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 20)
     @Builder.Default
     private String status = "ACTIVE";  // 기본값 ACTIVE
 
@@ -41,10 +42,11 @@ public class User {
     private List<UserCard> userCards = new ArrayList<>();
 
     @CreationTimestamp
-    @Column(updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     // 활성화
