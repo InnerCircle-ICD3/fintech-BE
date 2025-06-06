@@ -24,7 +24,7 @@ public class Keys {
     private String encryptedKey;
 
     @OneToOne
-    @JoinColumn(name = "merchant_id", nullable = false, unique = true)
+    @JoinColumn(name = "merchant_id", unique = true)
     private Merchant merchant;
 
     @Builder.Default
@@ -39,6 +39,9 @@ public class Keys {
     private LocalDateTime updatedAt;
 
     private LocalDateTime expiredAt;
+
+    @Column(name = "expired_merchant_id")
+    private Long expiredMerchantId;
 
     public void setMerchant(Merchant merchant) {
         this.merchant = merchant;
@@ -59,5 +62,12 @@ public class Keys {
 
     public void activate() {
         this.status = "ACTIVE";
+    }
+
+    public void expire() {
+        this.expiredAt = LocalDateTime.now();
+        this.status = "INACTIVE";
+        this.expiredMerchantId = this.merchant.getMerchantId(); // 과거 merchantId 기록용임
+        this.merchant = null; // 기존 merchant와 연결 해제를 위해서
     }
 }

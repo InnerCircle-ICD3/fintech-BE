@@ -49,4 +49,26 @@ public class SdkKeyController {
         sdkKeyService.activateSdkKey(authorization);
         return ResponseEntity.ok(CommonResponse.success("SDK Key가 활성화되었습니다."));
     }
+
+    @Operation(summary = "SDK Key 유효성 확인")
+    @StandardResponses
+    @GetMapping("/validate")
+    public ResponseEntity<CommonResponse> validateSdkKey(
+            @Parameter(hidden = true)
+            @RequestHeader("Authorization") String authorization
+    ) {
+        boolean isValid = sdkKeyService.isSdkKeyValid(authorization);
+        return ResponseEntity.ok(CommonResponse.success(isValid ? "SDK Key가 유효합니다." : "SDK Key가 유효하지 않습니다."));
+    }
+
+    @Operation(summary = "SDK Key 재발급 처리")
+    @StandardResponses
+    @PostMapping("/regenerate")
+    public ResponseEntity<CommonResponse> regenerateSdkKey(
+            @Parameter(hidden = true)
+            @RequestHeader("Authorization") String authorization
+    ) {
+        String newSdkKey = sdkKeyService.regenerateSdkKey(authorization);
+        return ResponseEntity.ok(CommonResponse.success("SDK Key가 재발급되었습니다. 새로운 Key: " + newSdkKey));
+    }
 }
