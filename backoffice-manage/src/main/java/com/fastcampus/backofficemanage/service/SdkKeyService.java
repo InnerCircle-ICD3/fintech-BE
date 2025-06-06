@@ -4,6 +4,7 @@ import com.fastcampus.backofficemanage.entity.Keys;
 import com.fastcampus.backofficemanage.entity.Merchant;
 import com.fastcampus.backofficemanage.jwt.JwtProvider;
 import com.fastcampus.backofficemanage.repository.MerchantRepository;
+import com.fastcampus.backofficemanage.repository.SdkKeyRepository;
 import com.fastcampus.common.exception.code.MerchantErrorCode;
 import com.fastcampus.common.exception.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
 public class SdkKeyService {
 
     private final MerchantRepository merchantRepository;
+    private final SdkKeyRepository sdkKeyRepository;
     private final JwtProvider jwtProvider;
 
     @Transactional(readOnly = true)
@@ -70,6 +72,7 @@ public class SdkKeyService {
         Keys oldKey = merchant.getKeys();
         if (oldKey != null) {
             oldKey.expire(); // 기존 키는 만료 처리
+            sdkKeyRepository.save(oldKey);
         }
 
         Keys newKey = Keys.createForMerchant(merchant);
