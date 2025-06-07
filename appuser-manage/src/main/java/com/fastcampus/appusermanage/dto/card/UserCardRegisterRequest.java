@@ -1,6 +1,6 @@
 package com.fastcampus.appusermanage.dto.card;
 
-import com.fastcampus.appusermanage.entity.CardType;
+import com.fastcampus.paymentmethod.entity.CardType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;

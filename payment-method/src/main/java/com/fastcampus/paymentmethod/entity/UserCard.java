@@ -1,4 +1,4 @@
-package com.fastcampus.appusermanage.entity;
+package com.fastcampus.paymentmethod.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

@@ -1,7 +1,7 @@
 package com.fastcampus.appusermanage.dto.card;
 
-import com.fastcampus.appusermanage.entity.CardType;
-import com.fastcampus.appusermanage.entity.UserCard;
+import com.fastcampus.paymentmethod.entity.CardType;
+import com.fastcampus.paymentmethod.entity.UserCard;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

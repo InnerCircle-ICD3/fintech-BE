@@ -1,4 +1,4 @@
-package com.fastcampus.appusermanage.entity;
+package com.fastcampus.paymentmethod.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -39,6 +39,7 @@ public class User {
     private String status = "ACTIVE";  // 기본값 ACTIVE
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<UserCard> userCards = new ArrayList<>();
 
     @CreationTimestamp

@@ -2,11 +2,11 @@ package com.fastcampus.appusermanage.service;
 
 import com.fastcampus.appusermanage.dto.card.UserCardRegisterRequest;
 import com.fastcampus.appusermanage.dto.card.UserCardResponse;
-import com.fastcampus.appusermanage.entity.User;
-import com.fastcampus.appusermanage.entity.UserCard;
+import com.fastcampus.paymentmethod.entity.User;
+import com.fastcampus.paymentmethod.entity.UserCard;
 import com.fastcampus.appusermanage.jwt.JwtProvider;
-import com.fastcampus.appusermanage.repository.CardRepository;
-import com.fastcampus.appusermanage.repository.UserRepository;
+import com.fastcampus.paymentmethod.repository.CardRepository;
+import com.fastcampus.paymentmethod.repository.UserRepository;
 import com.fastcampus.common.exception.code.AuthErrorCode;
 import com.fastcampus.common.exception.code.CardErrorCode;
 import com.fastcampus.common.exception.exception.NotFoundException;
