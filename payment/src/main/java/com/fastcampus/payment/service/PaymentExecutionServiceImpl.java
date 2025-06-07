@@ -189,12 +189,8 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
         try {
             Thread.sleep(methodType.getProcessingTimeMs());
             // 계좌 잔액 확인 시뮬레이션
-            // TODO: 실제 잔액 조회 서비스 호출로 대체
-            boolean hasSufficientBalance = accountBalanceService.hasEnoughBalance(accountId, amount);
-            if (!hasSufficientBalance) {
-                log.warn("계좌 잔액 부족: accountId={}, amount={}", accountId, amount);
-                return false;
-            }
+            // TODO: 실제 잔액 조회 서비스 구현 후 활성화
+            // 현재는 기본 성공률로 처리
             return new Random().nextInt(100) < methodType.getSuccessRate();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
