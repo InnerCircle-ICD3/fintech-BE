@@ -5,6 +5,7 @@ import com.fastcampus.payment.dto.PaymentExecutionRequest;
 import com.fastcampus.payment.dto.PaymentProgressResponse;
 import com.fastcampus.payment.entity.CardInfo;
 import com.fastcampus.payment.entity.PaymentMethod;
+import com.fastcampus.payment.entity.PaymentMethodType;
 import com.fastcampus.payment.entity.Transaction;
 import com.fastcampus.payment.entity.TransactionStatus;
 import com.fastcampus.payment.repository.CardInfoRepository;
@@ -36,13 +37,11 @@ import static org.mockito.Mockito.*;
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
         "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
-        // 🔥 Redis 자동 설정을 완전히 끄고, Redis 관련 Bean들도 스캔 제외
         "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration",
         "spring.main.allow-bean-definition-overriding=true"
 })
 class PaymentExecutionServiceImplTest {
 
-    // 🔥 가장 간단한 방법: TestConfiguration으로 모든 Redis 관련 Bean을 Mock으로 생성
     @TestConfiguration
     static class TestConfig {
         @Bean
@@ -54,7 +53,7 @@ class PaymentExecutionServiceImplTest {
         @Bean
         @Primary
         public Object redisTransactionRepository() {
-            return mock(Object.class); // RedisTransactionRepository 클래스가 뭔지 모르니 Object로 Mock
+            return mock(Object.class);
         }
 
         @Bean("redisTemplate")
@@ -78,21 +77,106 @@ class PaymentExecutionServiceImplTest {
 
     @Test
     @Transactional
+    @DisplayName("카드 결제 실행 성공")
+    void executePayment_Card_Success() {
+        // Given
+        Transaction transaction = createTestTransaction("test_transaction_card");
+        transactionRepository.save(transaction);
+
+        CardInfo cardInfo = createTestCardInfo("valid_card_token", "VISA");
+        cardInfoRepository.save(cardInfo);
+
+        // 수정: 이미 존재하는 PaymentMethod 조회 또는 생성
+        PaymentMethod paymentMethod = getOrCreatePaymentMethod(PaymentMethodType.CARD);
+
+        PaymentExecutionRequest request = new PaymentExecutionRequest();
+        request.setTransactionToken("test_transaction_card");
+        request.setCardToken("valid_card_token");
+        request.setPaymentMethodType("CARD");
+
+        // When
+        PaymentProgressResponse response = paymentExecutionService.execute(request);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.getTransactionToken()).isEqualTo("test_transaction_card");
+        assertThat(response.getStatus()).isIn("COMPLETED", "FAILED"); // 시뮬레이션이므로 둘 다 가능
+        assertThat(response.getAmount()).isEqualTo(10000L);
+    }
+
+    @Test
+    @Transactional
+    @DisplayName("계좌이체 결제 실행 성공")
+    void executePayment_BankTransfer_Success() {
+        // Given
+        Transaction transaction = createTestTransaction("test_transaction_bank");
+        transactionRepository.save(transaction);
+
+        CardInfo cardInfo = createTestCardInfo("bank_account_token", "KB국민은행");
+        cardInfoRepository.save(cardInfo);
+
+        //  수정: 이미 존재하는 PaymentMethod 조회 또는 생성
+        PaymentMethod paymentMethod = getOrCreatePaymentMethod(PaymentMethodType.BANK_TRANSFER);
+
+        PaymentExecutionRequest request = new PaymentExecutionRequest();
+        request.setTransactionToken("test_transaction_bank");
+        request.setCardToken("bank_account_token");
+        request.setPaymentMethodType("BANK_TRANSFER");
+
+        // When
+        PaymentProgressResponse response = paymentExecutionService.execute(request);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.getTransactionToken()).isEqualTo("test_transaction_bank");
+        assertThat(response.getStatus()).isIn("COMPLETED", "FAILED");
+        assertThat(response.getAmount()).isEqualTo(10000L);
+    }
+
+    @Test
+    @Transactional
+    @DisplayName("모바일페이 결제 실행 성공")
+    void executePayment_MobilePay_Success() {
+        // Given
+        Transaction transaction = createTestTransaction("test_transaction_mobile");
+        transactionRepository.save(transaction);
+
+        CardInfo cardInfo = createTestCardInfo("mobile_pay_token", "카카오페이");
+        cardInfoRepository.save(cardInfo);
+
+        //수정: 이미 존재하는 PaymentMethod 조회 또는 생성
+        PaymentMethod paymentMethod = getOrCreatePaymentMethod(PaymentMethodType.MOBILE_PAY);
+
+        PaymentExecutionRequest request = new PaymentExecutionRequest();
+        request.setTransactionToken("test_transaction_mobile");
+        request.setCardToken("mobile_pay_token");
+        request.setPaymentMethodType("MOBILE_PAY");
+
+        // When
+        PaymentProgressResponse response = paymentExecutionService.execute(request);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isIn("COMPLETED", "FAILED");
+    }
+
+    @Test
+    @Transactional
     @DisplayName("존재하지 않는 카드 토큰 - 예외 발생")
     void executePayment_CardNotFound_ThrowsException() {
-        // Given: 거래는 생성하되, 카드는 생성하지 않음
+        // Given
         Transaction transaction = createTestTransaction("test_transaction_456");
         transactionRepository.save(transaction);
 
-        PaymentMethod paymentMethod = createTestPaymentMethod("CARD");
-        paymentMethodRepository.save(paymentMethod);
+        //  수정: 이미 존재하는 PaymentMethod 조회 또는 생성
+        PaymentMethod paymentMethod = getOrCreatePaymentMethod(PaymentMethodType.CARD);
 
         PaymentExecutionRequest request = new PaymentExecutionRequest();
         request.setTransactionToken("test_transaction_456");
-        request.setCardToken("invalid_card_token");  // 🚨 존재하지 않는 토큰
+        request.setCardToken("invalid_card_token");
         request.setPaymentMethodType("CARD");
 
-        // When & Then: 예외 발생 확인
+        // When & Then
         assertThatThrownBy(() -> paymentExecutionService.execute(request))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("카드 정보를 찾을 수 없습니다");
@@ -100,35 +184,75 @@ class PaymentExecutionServiceImplTest {
 
     @Test
     @Transactional
-    @DisplayName("결제 실행 성공 - 통합 테스트")
-    void executePayment_Success() {
-        // Given: 모든 필요한 데이터 생성
-        Transaction transaction = createTestTransaction("test_transaction_789");
+    @DisplayName("비활성화된 결제 방식 - 예외 발생")
+    void executePayment_InactivePaymentMethod_ThrowsException() {
+        // Given
+        Transaction transaction = createTestTransaction("test_transaction_inactive");
         transactionRepository.save(transaction);
 
-        CardInfo cardInfo = createTestCardInfo("valid_card_token", "VISA");
+        CardInfo cardInfo = createTestCardInfo("crypto_wallet_token", "Bitcoin");
         cardInfoRepository.save(cardInfo);
 
-        PaymentMethod paymentMethod = createTestPaymentMethod("CARD");
-        paymentMethodRepository.save(paymentMethod);
+        // 수정: 기존 PaymentMethod를 조회하고 비활성화
+        PaymentMethod inactiveMethod = getOrCreatePaymentMethod(PaymentMethodType.CRYPTO);
+        inactiveMethod.setIsActive(false);
+        paymentMethodRepository.save(inactiveMethod);
 
         PaymentExecutionRequest request = new PaymentExecutionRequest();
-        request.setTransactionToken("test_transaction_789");
-        request.setCardToken("valid_card_token");
-        request.setPaymentMethodType("CARD");
+        request.setTransactionToken("test_transaction_inactive");
+        request.setCardToken("crypto_wallet_token");
+        request.setPaymentMethodType("CRYPTO");
 
-        // When: 결제 실행
-        PaymentProgressResponse response = paymentExecutionService.execute(request);
-
-        // Then: 결과 검증
-        assertThat(response).isNotNull();
-        assertThat(response.getTransactionToken()).isEqualTo("test_transaction_789");
-        // 🔥 수정: getStatus()가 String을 반환하므로 String으로 비교
-        assertThat(response.getStatus()).isEqualTo("COMPLETED");
-        assertThat(response.getAmount()).isEqualTo(10000L);
+        // When & Then
+        assertThatThrownBy(() -> paymentExecutionService.execute(request))
+                .isInstanceOf(BadRequestException.class);
     }
 
-    // 🔧 테스트 헬퍼 메서드들
+    @Test
+    @Transactional
+    @DisplayName("지원하지 않는 결제 방식 - 예외 발생")
+    void executePayment_UnsupportedPaymentMethod_ThrowsException() {
+        // Given
+        Transaction transaction = createTestTransaction("test_transaction_unsupported");
+        transactionRepository.save(transaction);
+
+        CardInfo cardInfo = createTestCardInfo("unknown_token", "UNKNOWN");
+        cardInfoRepository.save(cardInfo);
+
+        PaymentExecutionRequest request = new PaymentExecutionRequest();
+        request.setTransactionToken("test_transaction_unsupported");
+        request.setCardToken("unknown_token");
+        request.setPaymentMethodType("UNSUPPORTED_METHOD");
+
+        // When & Then
+        assertThatThrownBy(() -> paymentExecutionService.execute(request))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    @DisplayName("모든 결제 방식 타입 테스트")
+    void testAllPaymentMethodTypes() {
+        // Given & When & Then
+        for (PaymentMethodType type : PaymentMethodType.values()) {
+            PaymentMethod method = createTestPaymentMethod(type);
+
+            assertThat(method.getType()).isEqualTo(type);
+            assertThat(method.getType().getDisplayName()).isNotEmpty();
+            assertThat(method.getType().getProcessingTimeMs()).isGreaterThan(0);
+            assertThat(method.getType().getSuccessRate()).isBetween(0, 100);
+        }
+    }
+
+    // 🔥 새로운 헬퍼 메서드: 기존 PaymentMethod 조회 또는 생성
+    private PaymentMethod getOrCreatePaymentMethod(PaymentMethodType type) {
+        return paymentMethodRepository.findByType(type)
+                .orElseGet(() -> {
+                    PaymentMethod newMethod = createTestPaymentMethod(type);
+                    return paymentMethodRepository.save(newMethod);
+                });
+    }
+
+    //  헬퍼 메서드들 - Enum 지원으로 업데이트
     private CardInfo createTestCardInfo(String token, String company) {
         CardInfo cardInfo = new CardInfo();
         cardInfo.setToken(token);
@@ -139,11 +263,19 @@ class PaymentExecutionServiceImplTest {
         return cardInfo;
     }
 
-    private PaymentMethod createTestPaymentMethod(String type) {
+    //수정: PaymentMethodType Enum을 받도록 변경
+    private PaymentMethod createTestPaymentMethod(PaymentMethodType type) {
         PaymentMethod paymentMethod = new PaymentMethod();
         paymentMethod.setType(type);
         paymentMethod.setIsActive(true);
+        paymentMethod.setDescription(type.getDisplayName() + " 테스트");
         return paymentMethod;
+    }
+
+    //  하위 호환성을 위한 String 버전도 유지
+    private PaymentMethod createTestPaymentMethod(String typeString) {
+        PaymentMethodType type = PaymentMethodType.fromString(typeString);
+        return createTestPaymentMethod(type);
     }
 
     private Transaction createTestTransaction(String token) {

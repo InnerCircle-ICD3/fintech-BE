@@ -4,7 +4,8 @@ include 'backoffice-manage'
 include 'backoffice-api'
 include 'common'
 include 'payment'
-
+include 'appuser-manage'
+include 'payment-method'
 
 
 

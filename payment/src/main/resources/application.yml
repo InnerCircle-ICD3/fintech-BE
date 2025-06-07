@@ -18,7 +18,7 @@ spring:
 #  application:
 #    name: payment
 #  datasource:
-#    url: jdbc:h2:mem:testdb;
+#    url: jdbc:h2:mem:testdb
 #    driver-class-name: org.h2.Driver
 #    username: sa
 #    password:
@@ -34,7 +34,7 @@ spring:
 #      enabled: true
 
 logging.level:
-  org.hibernate.SQL: debug
+  org.hibernate.SQL: info
 
 server:
   port: 8081
@@ -50,10 +50,6 @@ jwt:
 
 lifetime:
   qr: 180
-
-sdk:
-  ttl-days: 180
-  ttl-qr: 3
 
 time:
   zoneId: Asia/Seoul
@@ -75,3 +71,8 @@ management:
       show-details: always
 
 
+# CORS 예외 처리
+cors:
+  allowed-origins:
+    - http://localhost:3000
+    - http://localhost:5173

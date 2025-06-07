@@ -101,12 +101,6 @@ public class MerchantService {
                 .orElseThrow(() -> new NotFoundException(MerchantErrorCode.NOT_FOUND));
     }
 
-    private void validatePassword(Merchant merchant, String rawPassword) {
-        if (!passwordEncoder.matches(rawPassword, merchant.getLoginPw())) {
-            throw new UnauthorizedException(AuthErrorCode.INVALID_PASSWORD);
-        }
-    }
-
     private void flushAndHandleDuplicates() {
         try {
             merchantRepository.flush();

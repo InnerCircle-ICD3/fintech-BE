@@ -4,8 +4,11 @@ import com.fastcampus.backofficemanage.entity.Keys;
 import com.fastcampus.backofficemanage.entity.Merchant;
 import com.fastcampus.backofficemanage.jwt.JwtProvider;
 import com.fastcampus.backofficemanage.repository.MerchantRepository;
+import com.fastcampus.backofficemanage.repository.SdkKeyRepository;
 import com.fastcampus.common.exception.code.MerchantErrorCode;
 import com.fastcampus.common.exception.exception.NotFoundException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +20,11 @@ import java.time.LocalDateTime;
 public class SdkKeyService {
 
     private final MerchantRepository merchantRepository;
+    private final SdkKeyRepository sdkKeyRepository;
     private final JwtProvider jwtProvider;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Transactional(readOnly = true)
     public String getSdkKey(String authorizationHeader) {
@@ -69,11 +76,18 @@ public class SdkKeyService {
 
         Keys oldKey = merchant.getKeys();
         if (oldKey != null) {
-            oldKey.expire(); // 기존 키는 만료 처리
+            oldKey.expire();
+            sdkKeyRepository.save(oldKey);
+            sdkKeyRepository.flush();
+            //DB에서 merchant_id만 null로 업데이트(JPA로 없애면, key 자체를 없애는 명령어라고 착각하기때문)
+            sdkKeyRepository.detachMerchant(oldKey.getKeysId());
+            entityManager.clear();
         }
 
+        // 이제 DB에 merchant_id가 null로 된 상태니까 새로운 insert 가능
         Keys newKey = Keys.createForMerchant(merchant);
         merchant.setKeys(newKey);
+        sdkKeyRepository.save(newKey);
 
         return newKey.getEncryptedKey();
     }

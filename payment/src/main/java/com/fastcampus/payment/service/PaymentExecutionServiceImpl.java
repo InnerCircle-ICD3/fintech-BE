@@ -4,10 +4,7 @@ import com.fastcampus.payment.common.exception.BadRequestException;
 import com.fastcampus.payment.common.exception.error.PaymentErrorCode;
 import com.fastcampus.payment.dto.PaymentExecutionRequest;
 import com.fastcampus.payment.dto.PaymentProgressResponse;
-import com.fastcampus.payment.entity.CardInfo;
-import com.fastcampus.payment.entity.PaymentMethod;
-import com.fastcampus.payment.entity.Transaction;
-import com.fastcampus.payment.entity.TransactionStatus;
+import com.fastcampus.payment.entity.*;
 import com.fastcampus.payment.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,12 +44,12 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
         Transaction tx = findTransaction(request.getTransactionToken());
         validateTransactionStatus(tx);
 
-        // 2. 카드 & 결제수단 검증
+        // 3. 카드 & 결제수단 검증
         CardInfo cardInfo = validateAndGetCardInfo(request.getCardToken());
         PaymentMethod paymentMethod = validatePaymentMethod(request.getPaymentMethodType());
 
-        // 3. 카드 승인 여부 판단(시뮬레이션)
-        boolean approvalResult = simulateCardApproval(request.getCardToken());
+        // 4. 결제 방식에 따른 승인 처리
+        boolean approvalResult = processPaymentByMethod(request, paymentMethod);
 
         // 상태 결정 및 업데이트
         TransactionStatus newStatus = approvalResult ? TransactionStatus.COMPLETED : TransactionStatus.FAILED;
@@ -74,7 +71,7 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
         // 6. 결과 반환
         return PaymentProgressResponse.builder()
                 .transactionToken(tx.getTransactionToken())
-                .status(newStatus) // 🔥 수정: 그냥 Enum을 전달, DTO의 getStatus()에서 String으로 변환
+                .status(newStatus) // 수정: 그냥 Enum을 전달, DTO의 getStatus()에서 String으로 변환
                 .amount(tx.getAmount())
                 .merchantId(Long.toString(tx.getMerchantId()))
                 .merchantOrderId(tx.getMerchantOrderId())
@@ -94,10 +91,18 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
     }
 
     /**
-     * 결제 수단 검증
+     * 결제 수단 검증 - Enum과 String 모두 지원
      */
     private PaymentMethod validatePaymentMethod(String methodType) {
-        PaymentMethod method = paymentMethodRepository.findByType(methodType)
+        // String을 Enum으로 변환하여 검증
+        PaymentMethodType enumType;
+        try {
+            enumType = PaymentMethodType.fromString(methodType);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException(PaymentErrorCode.INVALID_PAYMENT_METHOD);
+        }
+
+        PaymentMethod method = paymentMethodRepository.findByType(enumType)
                 .orElseThrow(() -> new BadRequestException(PaymentErrorCode.INVALID_PAYMENT_METHOD));
 
         if (!method.getIsActive()) {
@@ -148,17 +153,106 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
     }
 
     /**
-     * 카드 승인 과정을 90% 확률로 성공하는 방식으로 시뮬레이션합니다.
+     * 결제 방식에 따른 승인 처리
      */
-    private boolean simulateCardApproval(String cardToken) {
+    private boolean processPaymentByMethod(PaymentExecutionRequest request, PaymentMethod paymentMethod) {
+        PaymentMethodType methodType = paymentMethod.getType();
+
+        return switch (methodType) {
+            case CARD -> CardApproval(request.getCardToken(), methodType);
+            case BANK_TRANSFER -> BankTransferApproval(request.getCardToken(), methodType);
+            case MOBILE_PAY -> MobilePayApproval(request.getCardToken(), methodType);
+            case CRYPTO -> CryptoApproval(request.getCardToken(), methodType);
+            case PAYPAL -> PaypalApproval(request.getCardToken(), methodType);
+            case APPLE_PAY, GOOGLE_PAY -> WalletPayApproval(request.getCardToken(), methodType);
+        };
+    }
+
+    /**
+     * 카드 승인 과정을 시뮬레이션합니다.
+     */
+    private boolean CardApproval(String cardToken, PaymentMethodType methodType) {
         try {
-            // 실제 카드사 API 호출 시뮬레이션
-            Thread.sleep(100);
-            // 90% 확률로 승인 성공
-            return new Random().nextInt(100) < 90;
+            Thread.sleep(methodType.getProcessingTimeMs());
+            return new Random().nextInt(100) < methodType.getSuccessRate();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.error("카드 승인 시뮬레이션 중 인터럽트 발생", e);
+            return false;
+        }
+    }
+
+    /**
+     * 계좌이체 승인 시뮬레이션
+     */
+    private boolean BankTransferApproval(String accountToken, PaymentMethodType methodType) {
+        try {
+            Thread.sleep(methodType.getProcessingTimeMs());
+            // 계좌 잔액 확인 시뮬레이션
+            if (accountToken.contains("insufficient")) {
+                log.warn("계좌 잔액 부족: {}", accountToken);
+                return false;
+            }
+            return new Random().nextInt(100) < methodType.getSuccessRate();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
+    /**
+     * 모바일페이 승인 시뮬레이션
+     */
+    private boolean MobilePayApproval(String mobilePayToken, PaymentMethodType methodType) {
+        try {
+            Thread.sleep(methodType.getProcessingTimeMs());
+            return new Random().nextInt(100) < methodType.getSuccessRate();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
+    /**
+     * 암호화폐 승인 시뮬레이션
+     */
+    private boolean CryptoApproval(String cryptoWalletToken, PaymentMethodType methodType) {
+        try {
+            Thread.sleep(methodType.getProcessingTimeMs()); // 블록체인 확인 시간
+            // 네트워크 혼잡 시뮬레이션
+            if (new Random().nextInt(100) < 10) {
+                log.warn("블록체인 네트워크 혼잡으로 인한 지연");
+                Thread.sleep(1000); // 추가 지연
+            }
+            return new Random().nextInt(100) < methodType.getSuccessRate();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
+    /**
+     * PayPal 승인 시뮬레이션
+     */
+    private boolean PaypalApproval(String paypalToken, PaymentMethodType methodType) {
+        try {
+            Thread.sleep(methodType.getProcessingTimeMs());
+            return new Random().nextInt(100) < methodType.getSuccessRate();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
+    /**
+     * 지갑형 결제 (Apple Pay, Google Pay) 승인 시뮬레이션
+     */
+    private boolean WalletPayApproval(String walletToken, PaymentMethodType methodType) {
+        try {
+            Thread.sleep(methodType.getProcessingTimeMs());
+            return new Random().nextInt(100) < methodType.getSuccessRate();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             return false;
         }
     }
