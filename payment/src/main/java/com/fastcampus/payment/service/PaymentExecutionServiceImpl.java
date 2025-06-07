@@ -189,8 +189,10 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
         try {
             Thread.sleep(methodType.getProcessingTimeMs());
             // 계좌 잔액 확인 시뮬레이션
-            if (accountToken.contains("insufficient")) {
-                log.warn("계좌 잔액 부족: {}", accountToken);
+            // TODO: 실제 잔액 조회 서비스 호출로 대체
+            boolean hasSufficientBalance = accountBalanceService.hasEnoughBalance(accountId, amount);
+            if (!hasSufficientBalance) {
+                log.warn("계좌 잔액 부족: accountId={}, amount={}", accountId, amount);
                 return false;
             }
             return new Random().nextInt(100) < methodType.getSuccessRate();
