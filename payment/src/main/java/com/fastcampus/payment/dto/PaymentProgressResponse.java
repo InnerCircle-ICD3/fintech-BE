@@ -7,12 +7,14 @@ import com.fastcampus.payment.entity.TransactionStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
 @Getter
 @AllArgsConstructor
 @Builder
+@ToString
 public class PaymentProgressResponse {
 
 
