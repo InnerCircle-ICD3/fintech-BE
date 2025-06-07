@@ -1,14 +1,19 @@
 package com.fastcampus.payment.service;
 
 
+import com.fastcampus.payment.common.exception.BadRequestException;
+import com.fastcampus.payment.common.exception.error.PaymentErrorCode;
 import com.fastcampus.payment.dto.PaymentExecutionRequest;
-import com.fastcampus.payment.dto.PaymentExecutionResponse;
+import com.fastcampus.payment.dto.PaymentProgressRequest;
+import com.fastcampus.payment.dto.PaymentProgressResponse;
+import com.fastcampus.payment.entity.CardInfo;
+import com.fastcampus.payment.entity.PaymentMethod;
 import com.fastcampus.payment.entity.Transaction;
 import com.fastcampus.payment.entity.TransactionStatus;
-import com.fastcampus.payment.repository.TransactionRepositoryRedis;
-import com.fastcampus.payment.repository.TransactionRepository;
+import com.fastcampus.payment.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,11 +30,20 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class PaymentExecutionServiceImpl implements PaymentExecutionService {
     private final TransactionRepository transactionRepository; //jap 저장소
+
+
     private final TransactionRepositoryRedis redisTransactionRepository; //Redis 저장소
+
+    @Autowired
+    private final CardInfoRepository cardInfoRepository;
+
+    @Autowired
+    private final PaymentMethodRepository paymentMethodRepository;
+
 
     /**
      * 결제 요청을 실행하고 거래 상태를 갱신합니다.
-     *
+     * <p>
      * 결제 요청의 유효성을 검증한 후, 거래를 조회하여 이미 완료된 거래인지 확인합니다.
      * 카드 승인 시뮬레이션을 통해 승인 여부에 따라 거래 상태를 COMPLETED 또는 FAILED로 변경하고,
      * 변경된 거래 정보를 데이터베이스와 Redis에 반영합니다.
@@ -38,31 +52,29 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
      * @param request 결제 실행에 필요한 거래 토큰과 카드 토큰을 포함한 요청 객체
      * @return 처리 결과를 담은 PaymentProgressResponse 객체
      * @throws IllegalArgumentException 요청 값이 유효하지 않을 경우
-     * @throws RuntimeException 거래를 찾을 수 없을 경우
-     * @throws IllegalStateException 이미 완료된 거래이거나 처리할 수 없는 상태일 경우
+     * @throws RuntimeException         거래를 찾을 수 없을 경우
+     * @throws IllegalStateException    이미 완료된 거래이거나 처리할 수 없는 상태일 경우
      */
     @Override
     @Transactional
-    public PaymentExecutionResponse execute(PaymentExecutionRequest request) {
+    public PaymentProgressResponse execute(PaymentExecutionRequest request) {
         log.info("결제 실행 시작 - transactionToken: {}",request.getTransactionToken());
         //입력 값 검증
         validateRequest(request);
 
         //1. 거래 조회 (Redis -> DB Fallback)
-        Transaction tx = redisTransactionRepository.findByToken(request.getTransactionToken())
-                .orElseGet(() -> transactionRepository.findByTransactionToken(request.getTransactionToken())
-                        .orElseThrow(() -> new RuntimeException("거래를 찾을 수 없습니다.")));
+        Transaction tx = findTransaction(request.getTransactionToken());
+        validateTransactionStatus(tx);
 
-        //2. 거래 상태 검증 추가
-        if(tx.getStatus().isFinal()){
-            throw new IllegalStateException("이미 완료된 거래입니다.:" + tx.getStatus());
-        }
+        // 2. 카드 & 결제수단 검증
+        CardInfo cardInfo = validateAndGetCardInfo(request.getCardToken());
+        PaymentMethod paymentMethod = validatePaymentMethod(request.getPaymentMethodType());
 
         //3. 카드 승인 여부 판단(시뮬레이션)
-        boolean approved = simulateCardApproval(request.getCardToken());
+        boolean approvalResult = simulateCardApproval(request.getCardToken());
 
         //상태 결정 및 업데이트(수정)
-        TransactionStatus newStatus = approved ? TransactionStatus.COMPLETED : TransactionStatus.FAILED;
+        TransactionStatus newStatus = approvalResult ? TransactionStatus.COMPLETED : TransactionStatus.FAILED;
         tx.setStatus(newStatus);
         tx.setCardToken(request.getCardToken());
 
@@ -75,11 +87,57 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
         log.info("결제 실행 완료- transactionToken: {}, 상태: {}", tx.getTransactionToken(), tx.getStatus());
 
         //6. 결과 반환
-       return new PaymentExecutionResponse(
-               tx.getTransactionToken(),
-               tx.getStatus()
-       );
+        return PaymentProgressResponse.builder()
+                .transactionToken(tx.getTransactionToken())
+                .status(tx.getStatus())
+                .amount(tx.getAmount())
+                .merchantId(Long.toString(tx.getMerchantId()))
+                .merchantOrderId(tx.getMerchantOrderId())
+                .createdAt(tx.getCreatedAt())
+                .cardInfo(cardInfo)
+                .paymentMethod(paymentMethod)
+                .approvalResult(approvalResult)
+                .build();
 
+
+    }
+
+    /**
+     * 카드 정보 검증 및 조회
+     */
+    private CardInfo validateAndGetCardInfo(String cardToken) {
+        return cardInfoRepository.findByToken(cardToken)
+                .orElseThrow(() -> new BadRequestException(PaymentErrorCode.CARD_NOT_FOUND));
+    }
+
+    /**
+     * 결제 수단 검증
+     */
+    private PaymentMethod validatePaymentMethod(String methodType) {
+        PaymentMethod method = paymentMethodRepository.findByType(methodType)
+                .orElseThrow(() -> new BadRequestException(PaymentErrorCode.INVALID_PAYMENT_METHOD));
+
+        if (!method.getIsActive()) {
+            throw new BadRequestException(PaymentErrorCode.INACTIVE_PAYMENT_METHOD);
+        }
+
+        return method;
+    }
+
+    /**
+     * 요청 검증 (기존 로직 개선)
+     */
+    private void validateRequest(PaymentProgressRequest request) {
+        request.nullCheckRequiredParam();
+
+        // 추가 검증 로직
+        if (request.getCardToken() == null || request.getCardToken().trim().isEmpty()) {
+            throw new BadRequestException(PaymentErrorCode.PAYMENT_PROGRESS_NULL_VALUE);
+        }
+
+        if (request.getPaymentMethodType() == null || request.getPaymentMethodType().trim().isEmpty()) {
+            throw new BadRequestException(PaymentErrorCode.PAYMENT_PROGRESS_NULL_VALUE);
+        }
     }
 
     /**
@@ -105,11 +163,8 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
      */
     private Transaction findTransaction(String transactionToken) {
         return redisTransactionRepository.findByToken(transactionToken)
-                .orElseGet(() -> {
-                    log.info("Redis에서 거래 조회 실패, DB에서 조회 - transactionToken: {}", transactionToken);
-                    return transactionRepository.findByTransactionToken(transactionToken)
-                            .orElseThrow(() -> new RuntimeException("거래를 찾을 수 없습니다: " + transactionToken));
-                });
+                .orElseGet(() -> transactionRepository.findByTransactionToken(transactionToken)
+                        .orElseThrow(() -> new BadRequestException(PaymentErrorCode.PAYMENT_NOT_FOUND)));
     }
 
     /**
@@ -121,16 +176,8 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
      * @throws IllegalStateException 거래 상태가 유효하지 않거나 만료된 경우
      */
     private void validateTransactionStatus(Transaction tx) {
-        if (tx.getStatus() == null) {
-            throw new IllegalStateException("거래 상태가 설정되지 않았습니다.");
-        }
-        if(tx.getStatus().isFinal()){
-            throw new IllegalStateException("이미 완료된 거래입니다. 현재 상태: " + tx.getStatus());
-
-        }
-        //만료 시간 검증 추가
-        if(tx.getExpireAt() != null && tx.getExpireAt().isBefore(java.time.LocalDateTime.now())) {
-            throw new IllegalStateException("거래가 만료되었습니다.");
+        if (tx.getStatus().isFinal()) {
+            throw new BadRequestException(PaymentErrorCode.PAYMENT_ALREADY_PROCESSED);
         }
     }
 
@@ -154,5 +201,20 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
            log.error("카드 승인 시뮬레이션 중 인터럽트 발생", e);
            return false;
        }
+    }
+
+
+    /**
+     * 카드 승인 시뮬레이션
+     *
+     */
+
+    private boolean simulateCardApproval(CardInfo cardInfo) {
+        // 실제로는 PG사 API 호출
+        // 여기서는 시뮬레이션
+        if (cardInfo.getCardCompany().equals("BLOCKED")) {
+            throw new BadRequestException(PaymentErrorCode.CARD_APPROVAL_FAILED);
+        }
+        return true;
     }
 }
