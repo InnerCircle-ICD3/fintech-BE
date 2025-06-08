@@ -55,6 +55,9 @@ public class Payment {
 
 
     public void changeLastTransaction(Transaction transaction) {
+        if(transaction == null) {
+            throw new IllegalArgumentException("transaction 가 null 입니다");
+        }
         if(this.lastTransaction != transaction) {
             this.lastTransaction = transaction;
             this.status = transaction.getStatus();

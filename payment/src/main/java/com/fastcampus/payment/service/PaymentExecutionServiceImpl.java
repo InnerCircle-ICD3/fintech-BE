@@ -279,9 +279,9 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
     }
 
     private void updatePayment(Payment payment, Transaction transaction, PaymentExecutionRequest request) {
+        transaction.setAmount(payment.getTotalAmount());    // TODO - 결제할 금액은 총액 : payment 안에 들고 있던 totalAmount
         payment.changeLastTransaction(transaction);
         payment.setUserId(request.getUserId());
-        transaction.setAmount(payment.getTotalAmount());    // TODO - 결제할 금액은 총액 : payment 안에 들고 있던 totalAmount
         paymentRepository.save(payment);
         transactionRepository.save(transaction);
     }
