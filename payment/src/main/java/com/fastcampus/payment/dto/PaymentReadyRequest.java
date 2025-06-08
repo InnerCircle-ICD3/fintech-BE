@@ -35,6 +35,7 @@ public class PaymentReadyRequest {
         payment.setTotalAmount(this.amount);
         payment.setMerchantOrderId(this.merchantOrderId);
         payment.setMerchantId(this.merchantId);
+        payment.setStatus(PaymentStatus.READY);
         return payment;
     }
 

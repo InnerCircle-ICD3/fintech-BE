@@ -16,7 +16,7 @@ public class PaymentExecutionResponse {
     private final PaymentStatus status;
 
     private final Long amount;
-    private final String merchantId;
+    private final Long merchantId;
     private final String merchantOrderId;
     private final LocalDateTime createdAt;
 
@@ -28,7 +28,7 @@ public class PaymentExecutionResponse {
 
     public PaymentExecutionResponse(Payment payment, CardInfo cardInfo, PaymentMethod paymentMethod, Boolean approvalResult) {
         Transaction transaction =  payment.getLastTransaction();
-        this.merchantId = Long.toString(payment.getMerchantId());
+        this.merchantId = payment.getMerchantId();
         this.merchantOrderId = payment.getMerchantOrderId();
         this.token = payment.getToken();
         this.status = payment.getStatus();

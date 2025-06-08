@@ -2,7 +2,6 @@ package com.fastcampus.payment.entity;
 
 
 import jakarta.persistence.*;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
@@ -68,7 +67,7 @@ public class Payment {
 
         boolean isNull = targetList.stream().anyMatch(obj -> Objects.isNull(obj));
         if (isNull) {
-            throw new RuntimeException("파라미터 내용을 확인해 주세요");
+            throw new IllegalArgumentException("필수 파라미터가 누락되었습니다: totalAmount, merchantId, merchantOrderId");
         }
     }
 }
