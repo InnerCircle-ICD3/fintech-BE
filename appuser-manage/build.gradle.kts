@@ -28,6 +28,7 @@ dependencies {
 
     // 공용 모듈
     implementation(project(":common"))
+    implementation(project(":payment-method"))
 
     // UTIL
     compileOnly("org.projectlombok:lombok")
