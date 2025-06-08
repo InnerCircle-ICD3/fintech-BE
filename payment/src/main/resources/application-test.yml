@@ -1,19 +1,21 @@
+# src/test/resources/application-test.yml
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;MODE=PostgreSQL
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
     driver-class-name: org.h2.Driver
     username: sa
     password:
+
   jpa:
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
     database-platform: org.hibernate.dialect.H2Dialect
-  h2:
-    console:
-      enabled: true
-  # 🔥 Redis 자동 설정 완전 비활성화
+
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+
+# Redis 완전 비활성화
+redis:
+  enabled: false
