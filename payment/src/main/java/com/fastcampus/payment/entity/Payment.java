@@ -55,9 +55,12 @@ public class Payment {
     private LocalDateTime updatedAt;
 
 
-    public void setLastTransaction(Transaction transaction) {
-        this.lastTransaction = transaction;
-        this.status = transaction.getStatus();
+    public void changeLastTransaction(Transaction transaction) {
+        if(this.lastTransaction != transaction) {
+            this.lastTransaction = transaction;
+            this.status = transaction.getStatus();
+            transaction.changePayment(this);
+        }
     }
 
     public void nullCheckRequiredParam() {

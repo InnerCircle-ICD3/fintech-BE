@@ -24,6 +24,10 @@ public class Transaction {
     private PaymentStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment_id")
+    private Payment payment;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payment_method")
     private PaymentMethod paymentMethod;
 
@@ -39,6 +43,12 @@ public class Transaction {
     private LocalDateTime updatedAt;
 
 
+    public void changePayment(Payment payment) {
+        if(this.payment != payment) {
+            this.payment = payment;
+            payment.changeLastTransaction(this);
+        }
+    }
 
     public void checkStatusAlreadyDone() {
         if (PaymentStatus.COMPLETED.equals(this.status)) {
@@ -48,6 +58,7 @@ public class Transaction {
 
     public Transaction(Payment payment) {
         this.status = payment.getStatus();
-        payment.setLastTransaction(this);
+        this.changePayment(payment);
+        payment.changeLastTransaction(this);
     }
 }
