@@ -1,27 +1,25 @@
 package com.fastcampus.payment.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@AllArgsConstructor
+
 public class PaymentProgressRequest {
 
-    private String cardToken;
-    private String paymentMethodType;
 
+    @NotBlank(message = "token 값은 필수입니다.")
+    private final String token;
 
-    @jakarta.validation.constraints.NotBlank
-    private final String transactionToken;
-
-    public PaymentProgressRequest(String transactionToken) {
-        this.transactionToken = transactionToken;
+    @JsonCreator
+    public PaymentProgressRequest(
+            @JsonProperty("token") String token
+    ) {
+        this.token = token;
     }
 
-    public void nullCheckRequiredParam(){
-        if(transactionToken == null || transactionToken.trim().isEmpty()){
-            throw new IllegalArgumentException("transactionToken은 필수값입니다.");
-        }
-    }
 }

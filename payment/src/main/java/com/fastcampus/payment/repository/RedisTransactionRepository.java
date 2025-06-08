@@ -28,8 +28,8 @@ public class RedisTransactionRepository {
      * @param transaction 저장할 거래 정보
      * @param ttlSeconds 거래 정보의 만료 시간(초)
      */
-    public void save(Transaction transaction, int ttlSeconds) {
-        String key = PREFIX + transaction.getTransactionToken();
+    public void save(Transaction transaction, int ttlSeconds, String token) {
+        String key = PREFIX + token;
         redisTemplate.opsForValue().set(key, transaction, ttlSeconds, TimeUnit.SECONDS);
     }
 
@@ -50,8 +50,8 @@ public class RedisTransactionRepository {
      *
      * @param transaction 갱신할 거래 정보
      */
-    public void update(Transaction transaction) {
-        save(transaction, 180);
+    public void update(Transaction transaction, String token) {
+        save(transaction, 180, token);
     }
 
     /****

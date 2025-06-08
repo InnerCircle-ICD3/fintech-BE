@@ -1,18 +1,24 @@
 package com.fastcampus.payment.parksay;
 
 import com.fastcampus.payment.PaymentApplication;
+import com.fastcampus.payment.common.util.CommonUtil;
 import com.fastcampus.payment.controller.PaymentController;
-import com.fastcampus.payment.dto.PaymentProgressRequest;
 import com.fastcampus.payment.dto.PaymentProgressResponse;
 import com.fastcampus.payment.dto.PaymentReadyRequest;
 import com.fastcampus.payment.dto.PaymentReadyResponse;
 import com.fastcampus.payment.repository.TransactionRepositoryRedis;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 
 @SpringBootTest(classes = PaymentApplication.class)
 @Import(TestRedisConfig.class)
@@ -24,28 +30,55 @@ public class ParksayTest {
     @Autowired
     PaymentController controller;
 
+    @Autowired
+    CommonUtil commonUtil;
+
+    @Value("${lifetime.qr}")
+    private String ttlQr; // 단위: 초
+
+    private static String TEST_TOKEN;
+    private static Long TEST_TOTAL_AMOUNT;
+    private static Long TEST_MERCHANT_ID;
+    private static String TEST_MERCHANT_ORDER_ID;
+    @BeforeEach
+    public void beforeEach() {
+        TEST_TOTAL_AMOUNT = 256329L;
+        TEST_MERCHANT_ID = 245L;
+        TEST_MERCHANT_ORDER_ID = "TEST_ORDER_21";
+        PaymentReadyRequest request = new PaymentReadyRequest(TEST_TOTAL_AMOUNT, TEST_MERCHANT_ID, TEST_MERCHANT_ORDER_ID);
+        PaymentReadyResponse response = controller.initiateTransaction(request);
+        TEST_TOKEN = response.getToken();
+        System.out.println("before ========= " + TEST_TOTAL_AMOUNT);
+    }
+
     @Test
     void contextLoads() {
     }
 
-//    @Test
-//    public void readyTest() {
-//        PaymentReadyRequest request = new PaymentReadyRequest("26", 143L, "54881");
-//
-//        PaymentReadyResponse response = controller.initiateTransaction(request);
-//        System.out.println("response.getTransactionToken() = " + response.getTransactionToken());
-//        System.out.println("response.getExpireAt() = " + response.getExpireAt());
-//    }
-//
-//    @Test
-//    public void progressTest() {
-//        String testToken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJxcl90b2tlbiIsInRyYW5zYWN0aW9uSWQiOjEsImlhdCI6MTc0OTI2MTg4MCwiZXhwIjoxNzQ5MjYyMDYwfQ.ZseCmPuDNxoifV6ozCPBDAoURrh5CdAxEf3LfEtNwqs";
-////        Assertions.assertThrows(RuntimeException.class, ()->{
-////            PaymentProgressResponse response = controller.getTransactionProgress(testToken);
-////            System.out.println("response = " + response.toString());
-////        });
-//        PaymentProgressResponse response = controller.getTransactionProgress(testToken);
-//        System.out.println("response = " + response.toString());
-//    }
+    @Test
+    public void readyTest() {
+        //
+        PaymentReadyRequest request = new PaymentReadyRequest(TEST_MERCHANT_ID, TEST_TOTAL_AMOUNT, TEST_MERCHANT_ORDER_ID);
+        PaymentReadyResponse response = controller.initiateTransaction(request);
+        //
+        LocalDateTime limit = commonUtil.generateExpiresAt();
+        limit = limit.plusSeconds(5L);  // 테스트 작동 시간
+        //
+        System.out.println("limit = " + limit);
+        System.out.println("response.getExpireAt() = " + response.getExpireAt());
+        Assertions.assertNotNull(response.getToken());
+        Assertions.assertTrue(response.getExpireAt().isBefore(limit));
+    }
+
+    @Test
+    public void progressTest() {
+        //
+        PaymentProgressResponse response = controller.getTransactionProgress(TEST_TOKEN);
+        //
+        Assertions.assertEquals(TEST_TOTAL_AMOUNT, response.getAmount());
+        Assertions.assertEquals(TEST_MERCHANT_ID, response.getMerchantId());
+        Assertions.assertEquals(TEST_MERCHANT_ORDER_ID, response.getMerchantOrderId());
+        Assertions.assertEquals(TEST_TOKEN, response.getToken());
+    }
 
 }

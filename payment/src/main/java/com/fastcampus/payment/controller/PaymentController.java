@@ -1,7 +1,7 @@
 package com.fastcampus.payment.controller;
 
 import com.fastcampus.payment.dto.*;
-import com.fastcampus.payment.entity.Transaction;
+import com.fastcampus.payment.entity.Payment;
 import com.fastcampus.payment.service.PaymentExecutionService;
 import com.fastcampus.payment.service.PaymentProgressService;
 import com.fastcampus.payment.service.PaymentReadyService;
@@ -29,9 +29,8 @@ public class PaymentController {
      */
     @PostMapping("/transactions/ready")
     public PaymentReadyResponse initiateTransaction(@RequestBody @Valid PaymentReadyRequest request) {
-
-        Transaction transaction = paymentReadyService.readyPayment(request.convertToTransaction());
-        return new PaymentReadyResponse(transaction);
+        Payment payment = paymentReadyService.readyPayment(request.convertToPayment());
+        return new PaymentReadyResponse(payment);
     }
 
     /**
@@ -40,8 +39,8 @@ public class PaymentController {
      */
     @GetMapping("/transactions/{token}")
     public PaymentProgressResponse getTransactionProgress(@NotBlank @PathVariable String token) {
-        Transaction transaction = paymentProgressService.progressPayment(token);
-        PaymentProgressResponse response = new PaymentProgressResponse(transaction);
+        Payment payment = paymentProgressService.progressPayment(token);
+        PaymentProgressResponse response = new PaymentProgressResponse(payment);
         return response;
     }
 
@@ -50,8 +49,8 @@ public class PaymentController {
      * - transaction_token + card_token 이용해 결제 처리
      */
     @PostMapping("/payments/execute")
-    public Object executePayment(@RequestBody @Valid PaymentExecutionRequest request) {
-        PaymentProgressResponse response = paymentExecutionService.execute(request);
+    public PaymentExecutionResponse executePayment(@RequestBody @Valid PaymentExecutionRequest request) {
+        PaymentExecutionResponse response = paymentExecutionService.execute(request);
         return response;
     }
 }
