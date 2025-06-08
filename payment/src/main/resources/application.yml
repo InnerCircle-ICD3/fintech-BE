@@ -49,7 +49,7 @@ jwt:
   secret: dYVzdC1zZWNyZXQta2V5LXlvdS2jYW4tY2hhbmdlPXRoaXM=
 
 lifetime:
-  qr: 180
+  qr: 300
 
 time:
   zoneId: Asia/Seoul

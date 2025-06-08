@@ -1,9 +1,8 @@
 package com.fastcampus.payment.dto;
 
-import com.fastcampus.payment.entity.CardInfo;
-import com.fastcampus.payment.entity.PaymentMethod;
+import com.fastcampus.payment.entity.Payment;
 import com.fastcampus.payment.entity.Transaction;
-import com.fastcampus.payment.entity.TransactionStatus;
+import com.fastcampus.payment.entity.PaymentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,34 +16,24 @@ import java.time.LocalDateTime;
 @ToString
 public class PaymentProgressResponse {
 
-
-    private final TransactionStatus status;
+    private final PaymentStatus status;
     private final Long amount;
-    private final String merchantId;
+    private final Long merchantId;
     private final String merchantOrderId;
     private final LocalDateTime createdAt;
+    private String token;
 
-    //  추가 필드들
-    private final String transactionToken;
-    private final CardInfo cardInfo;
-    private final PaymentMethod paymentMethod;
-    private final Boolean approvalResult;
-
-    // 기존 생성자 유지 (하위 호환성)
-    public PaymentProgressResponse(Transaction transaction) {
-        this.status = transaction.getStatus();
-        this.amount = transaction.getAmount();
-        this.createdAt = transaction.getCreatedAt();
-        this.merchantId = Long.toString(transaction.getMerchantId());
-        this.merchantOrderId = transaction.getMerchantOrderId();
-        this.transactionToken = transaction.getTransactionToken();
-        this.cardInfo = null;  // 기본값
-        this.paymentMethod = null;  // 기본값
-        this.approvalResult = null;  // 기본값
+    public PaymentProgressResponse(Payment payment) {
+        this.status = payment.getStatus();
+        this.amount = payment.getTotalAmount();
+        this.createdAt = payment.getCreatedAt();
+        this.merchantId = payment.getMerchantId();
+        this.merchantOrderId = payment.getMerchantOrderId();
+        this.token = payment.getToken();
     }
 
-    // 확장된 생성자
-
     public String getStatus() {
-        return this.status.name();}
+        return this.status.name();
+    }
+
 }

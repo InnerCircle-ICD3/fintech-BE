@@ -11,7 +11,7 @@ package com.fastcampus.payment.entity;
  * - FAILED: 결제 실패
  * - CANCELED: 결제 취소
  */
-public enum TransactionStatus {
+public enum PaymentStatus {
     READY,  //  결제 요청
     REQUESTED,  // 결제 조회
     COMPLETED,  // 결제 완료

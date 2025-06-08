@@ -1,6 +1,7 @@
 package com.fastcampus.payment.dto;
 
-import com.fastcampus.payment.entity.Transaction;
+import com.fastcampus.payment.entity.Payment;
+import com.fastcampus.payment.entity.PaymentStatus;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
@@ -11,7 +12,7 @@ import lombok.Getter;
 public class PaymentReadyRequest {
 
     @NotBlank(message = "merchantId는 필수입니다.")
-    private final String merchantId;
+    private final Long merchantId;
 
     @NotNull(message = "amount는 필수입니다.")
     private final Long amount;
@@ -20,26 +21,22 @@ public class PaymentReadyRequest {
 
     @JsonCreator
     public PaymentReadyRequest(
-            @JsonProperty("merchantId") String merchantId,
             @JsonProperty("amount") Long amount,
+            @JsonProperty("merchantId") Long merchantId,
             @JsonProperty("merchantOrderId") String merchantOrderId
     ) {
-        this.merchantId = merchantId;
         this.amount = amount;
+        this.merchantId = merchantId;
         this.merchantOrderId = merchantOrderId;
     }
 
-    public Transaction convertToTransaction() {
-        Transaction transaction = new Transaction();
-        transaction.setMerchantId(Long.valueOf(this.merchantId));
-        transaction.setAmount(this.amount);
-        transaction.setMerchantOrderId(this.merchantOrderId);
-        try {
-            transaction.setMerchantId(Long.valueOf(this.merchantId));
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("유효하지 않은 merchantId 형식입니다: " + this.merchantId, e);
-        }
-        return transaction;
+    public Payment convertToPayment() {
+        Payment payment = new Payment();
+        payment.setTotalAmount(this.amount);
+        payment.setMerchantOrderId(this.merchantOrderId);
+        payment.setMerchantId(this.merchantId);
+        payment.setStatus(PaymentStatus.READY);
+        return payment;
     }
 
 }

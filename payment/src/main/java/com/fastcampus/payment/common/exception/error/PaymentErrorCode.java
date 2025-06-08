@@ -13,7 +13,7 @@ public enum PaymentErrorCode implements ErrorCode {
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 결제 정보를 찾을 수 없습니다."),
     PAYMENT_EXPIRED(HttpStatus.GONE, "결제 유효 시간이 만료되었습니다."),
 
-    PAYMENT_PROGRESS_NULL_VALUE(HttpStatus.BAD_REQUEST, "필수값입니다: transactionToken, cardToken"), // 추가
+    PAYMENT_EXECUTION_NULL_VALUE(HttpStatus.BAD_REQUEST, "필수값입니다: token, cardToken, paymentMethodType"), // 추가
 
 
     // code 정보 관련 error

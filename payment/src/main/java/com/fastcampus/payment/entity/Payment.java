@@ -3,38 +3,47 @@ package com.fastcampus.payment.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table
 @Data
+@NoArgsConstructor
 public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long paymentId;
+    private Long id;
 
-    @JoinColumn(name = "merchant_id")
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "user_id") // FK 컬럼명. DB에서 이 이름으로 FK 생성됨
+//    private AppUser userId;   // TODO - backoffice 쪽 appUser 참초하기
+    private Long userId;
+
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "merchant_id") // FK 컬럼명. DB에서 이 이름으로 FK 생성됨
+//    private Merchant merchantId; // TODO - backoffice 쪽 merchant 참초하기 / 아니 id만 넣어놔도 되나? 어차피 내용 열어볼 일도 없을 것 같고
     private Long merchantId;
 
-    private Long transactionId;
-    private Long userId;
-    private Long paymentMethod;
-    private String paymentStatus;
-    private Long paidAmount;
+    private String merchantOrderId;
+
+    private String token;
+
+
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus status;
+
+    private Long totalAmount;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "card_info_id")  // FK 컬럼명. DB에서 이 이름으로 FK 생성됨
-    private CardInfo cardInfo;
-
-    @CreationTimestamp
-    @Column(columnDefinition = "TIMESTAMP")
-    private LocalDateTime approvedAt;
-
-    private String failReason;
-    private Long lastTransactionId;
+    @JoinColumn(name = "last_transaction_id") // FK 컬럼명. DB에서 이 이름으로 FK 생성됨
+    private Transaction lastTransaction;
 
     @CreationTimestamp
     @Column(columnDefinition = "TIMESTAMP")
@@ -43,4 +52,25 @@ public class Payment {
     @UpdateTimestamp
     @Column(columnDefinition = "TIMESTAMP")
     private LocalDateTime updatedAt;
+
+
+    public void changeLastTransaction(Transaction transaction) {
+        if(transaction == null) {
+            throw new IllegalArgumentException("transaction 가 null 입니다");
+        }
+        if(this.lastTransaction != transaction) {
+            this.lastTransaction = transaction;
+            this.status = transaction.getStatus();
+            transaction.changePayment(this);
+        }
+    }
+
+    public void nullCheckRequiredParam() {
+        List<Object> targetList = Arrays.asList(totalAmount, merchantId, merchantOrderId);
+
+        boolean isNull = targetList.stream().anyMatch(obj -> Objects.isNull(obj));
+        if (isNull) {
+            throw new IllegalArgumentException("필수 파라미터가 누락되었습니다: totalAmount, merchantId, merchantOrderId");
+        }
+    }
 }

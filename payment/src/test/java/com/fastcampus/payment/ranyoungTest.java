@@ -1,19 +1,14 @@
 package com.fastcampus.payment;
 
 import com.fastcampus.payment.common.exception.BadRequestException;
+import com.fastcampus.payment.dto.PaymentExecutionResponse;
 import com.fastcampus.payment.dto.PaymentExecutionRequest;
-import com.fastcampus.payment.dto.PaymentProgressResponse;
-import com.fastcampus.payment.entity.CardInfo;
-import com.fastcampus.payment.entity.PaymentMethod;
-import com.fastcampus.payment.entity.PaymentMethodType;
-import com.fastcampus.payment.entity.Transaction;
-import com.fastcampus.payment.entity.TransactionStatus;
-import com.fastcampus.payment.repository.CardInfoRepository;
-import com.fastcampus.payment.repository.PaymentMethodRepository;
-import com.fastcampus.payment.repository.TransactionRepository;
-import com.fastcampus.payment.repository.TransactionRepositoryRedis;
+import com.fastcampus.payment.entity.*;
+import com.fastcampus.payment.repository.*;
 import com.fastcampus.payment.service.PaymentExecutionService;
 
+import com.fastcampus.payment.service.PaymentReadyService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,14 +70,31 @@ class PaymentExecutionServiceImplTest {
     @Autowired
     private TransactionRepository transactionRepository;
 
+    @Autowired
+    private PaymentRepository paymentRepository;
+    @Autowired
+    private PaymentReadyService paymentReadyService;
+
+
+    private static String TEST_TOKEN;
+    private static Long TOTAL_AMOUNT;
+
+    @BeforeEach
+    public void beforeEach() {
+        TOTAL_AMOUNT = 1000L;
+        Payment payment = new Payment();
+        payment.setMerchantId(1000L);
+        payment.setMerchantOrderId("ORDER_123");
+        payment.setTotalAmount(TOTAL_AMOUNT);
+        paymentReadyService.readyPayment(payment);
+        TEST_TOKEN = payment.getToken();
+    }
+
     @Test
     @Transactional
     @DisplayName("카드 결제 실행 성공")
     void executePayment_Card_Success() {
         // Given
-        Transaction transaction = createTestTransaction("test_transaction_card");
-        transactionRepository.save(transaction);
-
         CardInfo cardInfo = createTestCardInfo("valid_card_token", "VISA");
         cardInfoRepository.save(cardInfo);
 
@@ -90,18 +102,18 @@ class PaymentExecutionServiceImplTest {
         PaymentMethod paymentMethod = getOrCreatePaymentMethod(PaymentMethodType.CARD);
 
         PaymentExecutionRequest request = new PaymentExecutionRequest();
-        request.setTransactionToken("test_transaction_card");
+        request.setToken(TEST_TOKEN);
         request.setCardToken("valid_card_token");
         request.setPaymentMethodType("CARD");
 
         // When
-        PaymentProgressResponse response = paymentExecutionService.execute(request);
+        PaymentExecutionResponse response = paymentExecutionService.execute(request);
 
         // Then
         assertThat(response).isNotNull();
-        assertThat(response.getTransactionToken()).isEqualTo("test_transaction_card");
-        assertThat(response.getStatus()).isIn("COMPLETED", "FAILED"); // 시뮬레이션이므로 둘 다 가능
-        assertThat(response.getAmount()).isEqualTo(10000L);
+        assertThat(response.getToken()).isEqualTo(TEST_TOKEN);
+        assertThat(response.getStatus()).isIn(PaymentStatus.COMPLETED, PaymentStatus.FAILED); // 시뮬레이션이므로 둘 다 가능
+        assertThat(response.getAmount()).isEqualTo(TOTAL_AMOUNT);
     }
 
     @Test
@@ -109,9 +121,6 @@ class PaymentExecutionServiceImplTest {
     @DisplayName("계좌이체 결제 실행 성공")
     void executePayment_BankTransfer_Success() {
         // Given
-        Transaction transaction = createTestTransaction("test_transaction_bank");
-        transactionRepository.save(transaction);
-
         CardInfo cardInfo = createTestCardInfo("bank_account_token", "KB국민은행");
         cardInfoRepository.save(cardInfo);
 
@@ -119,18 +128,18 @@ class PaymentExecutionServiceImplTest {
         PaymentMethod paymentMethod = getOrCreatePaymentMethod(PaymentMethodType.BANK_TRANSFER);
 
         PaymentExecutionRequest request = new PaymentExecutionRequest();
-        request.setTransactionToken("test_transaction_bank");
+        request.setToken(TEST_TOKEN);
         request.setCardToken("bank_account_token");
         request.setPaymentMethodType("BANK_TRANSFER");
 
         // When
-        PaymentProgressResponse response = paymentExecutionService.execute(request);
+        PaymentExecutionResponse response = paymentExecutionService.execute(request);
 
         // Then
         assertThat(response).isNotNull();
-        assertThat(response.getTransactionToken()).isEqualTo("test_transaction_bank");
-        assertThat(response.getStatus()).isIn("COMPLETED", "FAILED");
-        assertThat(response.getAmount()).isEqualTo(10000L);
+        assertThat(response.getToken()).isEqualTo(TEST_TOKEN);
+        assertThat(response.getStatus()).isIn(PaymentStatus.COMPLETED, PaymentStatus.FAILED); // 시뮬레이션이므로 둘 다 가능
+        assertThat(response.getAmount()).isEqualTo(TOTAL_AMOUNT);
     }
 
     @Test
@@ -138,9 +147,6 @@ class PaymentExecutionServiceImplTest {
     @DisplayName("모바일페이 결제 실행 성공")
     void executePayment_MobilePay_Success() {
         // Given
-        Transaction transaction = createTestTransaction("test_transaction_mobile");
-        transactionRepository.save(transaction);
-
         CardInfo cardInfo = createTestCardInfo("mobile_pay_token", "카카오페이");
         cardInfoRepository.save(cardInfo);
 
@@ -148,16 +154,16 @@ class PaymentExecutionServiceImplTest {
         PaymentMethod paymentMethod = getOrCreatePaymentMethod(PaymentMethodType.MOBILE_PAY);
 
         PaymentExecutionRequest request = new PaymentExecutionRequest();
-        request.setTransactionToken("test_transaction_mobile");
+        request.setToken(TEST_TOKEN);
         request.setCardToken("mobile_pay_token");
         request.setPaymentMethodType("MOBILE_PAY");
 
         // When
-        PaymentProgressResponse response = paymentExecutionService.execute(request);
+        PaymentExecutionResponse response = paymentExecutionService.execute(request);
 
         // Then
         assertThat(response).isNotNull();
-        assertThat(response.getStatus()).isIn("COMPLETED", "FAILED");
+        assertThat(response.getStatus()).isIn(PaymentStatus.COMPLETED, PaymentStatus.FAILED); // 시뮬레이션이므로 둘 다 가능
     }
 
     @Test
@@ -165,14 +171,11 @@ class PaymentExecutionServiceImplTest {
     @DisplayName("존재하지 않는 카드 토큰 - 예외 발생")
     void executePayment_CardNotFound_ThrowsException() {
         // Given
-        Transaction transaction = createTestTransaction("test_transaction_456");
-        transactionRepository.save(transaction);
-
         //  수정: 이미 존재하는 PaymentMethod 조회 또는 생성
         PaymentMethod paymentMethod = getOrCreatePaymentMethod(PaymentMethodType.CARD);
 
         PaymentExecutionRequest request = new PaymentExecutionRequest();
-        request.setTransactionToken("test_transaction_456");
+        request.setToken(TEST_TOKEN);
         request.setCardToken("invalid_card_token");
         request.setPaymentMethodType("CARD");
 
@@ -187,9 +190,6 @@ class PaymentExecutionServiceImplTest {
     @DisplayName("비활성화된 결제 방식 - 예외 발생")
     void executePayment_InactivePaymentMethod_ThrowsException() {
         // Given
-        Transaction transaction = createTestTransaction("test_transaction_inactive");
-        transactionRepository.save(transaction);
-
         CardInfo cardInfo = createTestCardInfo("crypto_wallet_token", "Bitcoin");
         cardInfoRepository.save(cardInfo);
 
@@ -199,7 +199,7 @@ class PaymentExecutionServiceImplTest {
         paymentMethodRepository.save(inactiveMethod);
 
         PaymentExecutionRequest request = new PaymentExecutionRequest();
-        request.setTransactionToken("test_transaction_inactive");
+        request.setToken(TEST_TOKEN);
         request.setCardToken("crypto_wallet_token");
         request.setPaymentMethodType("CRYPTO");
 
@@ -213,14 +213,11 @@ class PaymentExecutionServiceImplTest {
     @DisplayName("지원하지 않는 결제 방식 - 예외 발생")
     void executePayment_UnsupportedPaymentMethod_ThrowsException() {
         // Given
-        Transaction transaction = createTestTransaction("test_transaction_unsupported");
-        transactionRepository.save(transaction);
-
         CardInfo cardInfo = createTestCardInfo("unknown_token", "UNKNOWN");
         cardInfoRepository.save(cardInfo);
 
         PaymentExecutionRequest request = new PaymentExecutionRequest();
-        request.setTransactionToken("test_transaction_unsupported");
+        request.setToken(TEST_TOKEN);
         request.setCardToken("unknown_token");
         request.setPaymentMethodType("UNSUPPORTED_METHOD");
 
@@ -278,13 +275,4 @@ class PaymentExecutionServiceImplTest {
         return createTestPaymentMethod(type);
     }
 
-    private Transaction createTestTransaction(String token) {
-        Transaction transaction = new Transaction();
-        transaction.setTransactionToken(token);
-        transaction.setMerchantId(1L);
-        transaction.setMerchantOrderId("ORDER_123");
-        transaction.setAmount(10000L);
-        transaction.setStatus(TransactionStatus.READY);
-        return transaction;
-    }
 }
