@@ -1,4 +1,4 @@
-package com.fastcampus.payment.entity;
+package com.fastcampus.paymentmethod.entity;
 
 /**
  * 결제 수단의 타입을 정의하는 Enum입니다.

@@ -1,8 +1,8 @@
-package com.fastcampus.payment.repository;
+package com.fastcampus.paymentmethod.repository;
 
 
-import com.fastcampus.payment.entity.PaymentMethod;
-import com.fastcampus.payment.entity.PaymentMethodType;
+import com.fastcampus.paymentmethod.entity.PaymentMethod;
+import com.fastcampus.paymentmethod.entity.PaymentMethodType;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

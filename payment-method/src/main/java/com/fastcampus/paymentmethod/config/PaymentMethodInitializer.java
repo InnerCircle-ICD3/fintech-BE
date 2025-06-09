@@ -1,8 +1,8 @@
-package com.fastcampus.payment.config;
+package com.fastcampus.paymentmethod.config;
 
-import com.fastcampus.payment.entity.PaymentMethod;
-import com.fastcampus.payment.entity.PaymentMethodType;
-import com.fastcampus.payment.repository.PaymentMethodRepository;
+import com.fastcampus.paymentmethod.entity.PaymentMethod;
+import com.fastcampus.paymentmethod.entity.PaymentMethodType;
+import com.fastcampus.paymentmethod.repository.PaymentMethodRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;

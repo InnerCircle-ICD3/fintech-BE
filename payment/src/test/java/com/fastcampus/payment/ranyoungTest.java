@@ -8,6 +8,9 @@ import com.fastcampus.payment.repository.*;
 import com.fastcampus.payment.service.PaymentExecutionService;
 
 import com.fastcampus.payment.service.PaymentReadyService;
+import com.fastcampus.paymentmethod.entity.PaymentMethod;
+import com.fastcampus.paymentmethod.entity.PaymentMethodType;
+import com.fastcampus.paymentmethod.repository.PaymentMethodRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

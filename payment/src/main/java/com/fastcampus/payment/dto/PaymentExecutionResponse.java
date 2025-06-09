@@ -1,6 +1,7 @@
 package com.fastcampus.payment.dto;
 
 import com.fastcampus.payment.entity.*;
+import com.fastcampus.paymentmethod.entity.PaymentMethod;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

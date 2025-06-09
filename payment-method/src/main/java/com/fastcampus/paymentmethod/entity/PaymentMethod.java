@@ -1,4 +1,4 @@
-package com.fastcampus.payment.entity;
+package com.fastcampus.paymentmethod.entity;
 
 
 import jakarta.persistence.*;

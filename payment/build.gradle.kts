@@ -34,6 +34,9 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql:42.7.3")
     runtimeOnly("com.h2database:h2")
 
+    // modules
+    implementation(project(":payment-method"))
+
     // JWT
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")

@@ -1,5 +1,6 @@
 package com.fastcampus.payment.entity;
 
+import com.fastcampus.paymentmethod.entity.PaymentMethod;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;

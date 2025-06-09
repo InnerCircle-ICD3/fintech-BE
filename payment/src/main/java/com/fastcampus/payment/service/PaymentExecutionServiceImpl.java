@@ -8,6 +8,9 @@ import com.fastcampus.payment.dto.PaymentExecutionResponse;
 import com.fastcampus.payment.dto.PaymentExecutionRequest;
 import com.fastcampus.payment.entity.*;
 import com.fastcampus.payment.repository.*;
+import com.fastcampus.paymentmethod.entity.PaymentMethod;
+import com.fastcampus.paymentmethod.entity.PaymentMethodType;
+import com.fastcampus.paymentmethod.repository.PaymentMethodRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,7 +86,7 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
                 .token(payment.getToken())
                 .status(newStatus) // 수정: 그냥 Enum을 전달, DTO의 getStatus()에서 String으로 변환
                 .amount(tx.getAmount())
-                .merchantId(Long.toString(payment.getMerchantId()))
+                .merchantId(payment.getMerchantId())
                 .merchantOrderId(payment.getMerchantOrderId())
                 .createdAt(tx.getCreatedAt())
                 .cardInfo(cardInfo)
