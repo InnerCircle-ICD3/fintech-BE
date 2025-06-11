@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 public class PaymentExecutionResponse {
 
-    private final String token;
+    private final String paymentToken;
     private final PaymentStatus status;
 
     private final Long amount;
@@ -23,21 +23,23 @@ public class PaymentExecutionResponse {
 
     //  추가 필드들
 
-    private final CardInfo cardInfo;
+    private final String cardToken;
     private final PaymentMethod paymentMethod;
     private final Boolean approvalResult;
 
-    public PaymentExecutionResponse(Payment payment, CardInfo cardInfo, PaymentMethod paymentMethod, Boolean approvalResult) {
+
+
+    public PaymentExecutionResponse(Payment payment) {
         Transaction transaction =  payment.getLastTransaction();
-        this.merchantId = payment.getMerchantId();
-        this.merchantOrderId = payment.getMerchantOrderId();
-        this.token = payment.getToken();
+        this.paymentToken = payment.getPaymentToken();
         this.status = payment.getStatus();
         this.amount = transaction.getAmount();
+        this.merchantId = payment.getMerchantId();
+        this.merchantOrderId = payment.getMerchantOrderId();
         this.createdAt = transaction.getCreatedAt();
-        this.cardInfo = cardInfo;
-        this.paymentMethod = paymentMethod;
-        this.approvalResult = approvalResult;
+        this.cardToken = transaction.getCardToken();
+        this.paymentMethod = transaction.getPaymentMethod();
+        this.approvalResult = transaction.getStatus() == PaymentStatus.COMPLETED;
     }
 
 

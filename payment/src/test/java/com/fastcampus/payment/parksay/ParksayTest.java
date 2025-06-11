@@ -3,10 +3,12 @@ package com.fastcampus.payment.parksay;
 import com.fastcampus.payment.PaymentApplication;
 import com.fastcampus.payment.common.util.CommonUtil;
 import com.fastcampus.payment.controller.PaymentController;
+import com.fastcampus.payment.dto.PaymentProgressRequest;
 import com.fastcampus.payment.dto.PaymentProgressResponse;
 import com.fastcampus.payment.dto.PaymentReadyRequest;
 import com.fastcampus.payment.dto.PaymentReadyResponse;
 import com.fastcampus.payment.repository.TransactionRepositoryRedis;
+import com.fastcampus.paymentmethod.entity.PaymentMethodType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,8 +19,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
 
 @SpringBootTest(classes = PaymentApplication.class)
 @Import(TestRedisConfig.class)
@@ -40,6 +40,7 @@ public class ParksayTest {
     private static Long TEST_TOTAL_AMOUNT;
     private static Long TEST_MERCHANT_ID;
     private static String TEST_MERCHANT_ORDER_ID;
+
     @BeforeEach
     public void beforeEach() {
         TEST_TOTAL_AMOUNT = 256329L;
@@ -47,7 +48,7 @@ public class ParksayTest {
         TEST_MERCHANT_ORDER_ID = "TEST_ORDER_21";
         PaymentReadyRequest request = new PaymentReadyRequest(TEST_TOTAL_AMOUNT, TEST_MERCHANT_ID, TEST_MERCHANT_ORDER_ID);
         PaymentReadyResponse response = controller.initiateTransaction(request);
-        TEST_TOKEN = response.getToken();
+        TEST_TOKEN = response.getPaymentToken();
         System.out.println("before ========= " + TEST_TOTAL_AMOUNT);
     }
 
@@ -66,19 +67,25 @@ public class ParksayTest {
         //
         System.out.println("limit = " + limit);
         System.out.println("response.getExpireAt() = " + response.getExpireAt());
-        Assertions.assertNotNull(response.getToken());
+        Assertions.assertNotNull(response.getPaymentToken());
         Assertions.assertTrue(response.getExpireAt().isBefore(limit));
     }
 
     @Test
     public void progressTest() {
         //
-        PaymentProgressResponse response = controller.getTransactionProgress(TEST_TOKEN);
+        PaymentProgressRequest request = new PaymentProgressRequest(TEST_TOKEN);
+        PaymentProgressResponse response = controller.getTransactionProgress(request);
         //
         Assertions.assertEquals(TEST_TOTAL_AMOUNT, response.getAmount());
         Assertions.assertEquals(TEST_MERCHANT_ID, response.getMerchantId());
         Assertions.assertEquals(TEST_MERCHANT_ORDER_ID, response.getMerchantOrderId());
-        Assertions.assertEquals(TEST_TOKEN, response.getToken());
+        Assertions.assertEquals(TEST_TOKEN, response.getPaymentToken());
     }
 
+
+    @Test
+    public void simpleTest() {
+        System.out.println("PaymentMethodType.BANK_TRANSFER.toString() = " + PaymentMethodType.BANK_TRANSFER.toString());
+    }
 }

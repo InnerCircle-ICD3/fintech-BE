@@ -3,9 +3,9 @@ package com.fastcampus.appusermanage.service;
 import com.fastcampus.appusermanage.dto.card.UserCardRegisterRequest;
 import com.fastcampus.appusermanage.dto.card.UserCardResponse;
 import com.fastcampus.paymentmethod.entity.User;
-import com.fastcampus.paymentmethod.entity.UserCard;
+import com.fastcampus.paymentmethod.entity.CardInfo;
 import com.fastcampus.appusermanage.jwt.JwtProvider;
-import com.fastcampus.paymentmethod.repository.CardRepository;
+import com.fastcampus.paymentmethod.repository.CardInfoRepository;
 import com.fastcampus.paymentmethod.repository.UserRepository;
 import com.fastcampus.common.exception.code.AuthErrorCode;
 import com.fastcampus.common.exception.code.CardErrorCode;
@@ -23,7 +23,7 @@ import java.util.List;
 public class UserCardService {
 
     private final UserRepository userRepository;
-    private final CardRepository cardRepository;
+    private final CardInfoRepository cardRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
@@ -34,7 +34,7 @@ public class UserCardService {
     public void registerCard(String authorizationHeader, UserCardRegisterRequest request) {
         User user = extractUserFromHeader(authorizationHeader);
 
-        UserCard userCard = UserCard.builder()
+        CardInfo userCard = CardInfo.builder()
                 .user(user)
                 .cardNumber(request.getCardNumber())
                 .expiryDate(request.getExpiryDate())
@@ -56,7 +56,7 @@ public class UserCardService {
     @Transactional
     public void deleteCard(String authorizationHeader, String cardToken) {
         User user = extractUserFromHeader(authorizationHeader);
-        UserCard card = extractUserCardForUser(user, cardToken);
+        CardInfo card = extractUserCardForUser(user, cardToken);
 
         user.getUserCards().remove(card);  // orphanRemoval=true 덕분에 DB에서도 삭제됨
     }
@@ -88,7 +88,7 @@ public class UserCardService {
     @Transactional(readOnly = true)
     public UserCardResponse getMyCardByToken(String authorizationHeader, String cardToken) {
         User user = extractUserFromHeader(authorizationHeader);
-        UserCard card = extractUserCardForUser(user, cardToken);
+        CardInfo card = extractUserCardForUser(user, cardToken);
         return UserCardResponse.from(card);
     }
 
@@ -98,7 +98,7 @@ public class UserCardService {
     @Transactional
     public void updatePaymentPassword(String authorizationHeader, String cardToken, String newPaymentPassword) {
         User user = extractUserFromHeader(authorizationHeader);
-        UserCard card = extractUserCardForUser(user, cardToken);
+        CardInfo card = extractUserCardForUser(user, cardToken);
 
         card.updatePaymentPassword(passwordEncoder.encode(newPaymentPassword));
     }
@@ -122,8 +122,8 @@ public class UserCardService {
                 .orElseThrow(() -> new NotFoundException(AuthErrorCode.NOT_FOUND_ID));
     }
 
-    private UserCard extractUserCardForUser(User user, String cardToken) {
-        UserCard card = cardRepository.findByToken(cardToken)
+    private CardInfo extractUserCardForUser(User user, String cardToken) {
+        CardInfo card = cardRepository.findByToken(cardToken)
                 .orElseThrow(() -> new NotFoundException(CardErrorCode.NOT_FOUND_CARD));
 
         if (!card.getUser().getEmail().equals(user.getEmail())) {
