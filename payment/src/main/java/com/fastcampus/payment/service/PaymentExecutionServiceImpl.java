@@ -8,8 +8,11 @@ import com.fastcampus.payment.dto.PaymentExecutionResponse;
 import com.fastcampus.payment.dto.PaymentExecutionRequest;
 import com.fastcampus.payment.entity.*;
 import com.fastcampus.payment.repository.*;
+import com.fastcampus.paymentmethod.entity.CardInfo;
 import com.fastcampus.paymentmethod.entity.PaymentMethod;
 import com.fastcampus.paymentmethod.entity.PaymentMethodType;
+import com.fastcampus.paymentmethod.entity.User;
+import com.fastcampus.paymentmethod.repository.CardInfoRepository;
 import com.fastcampus.paymentmethod.repository.PaymentMethodRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +20,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 
 /**
@@ -47,17 +52,17 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
     @Override
     @Transactional
     public PaymentExecutionResponse execute(PaymentExecutionRequest request) {
-        log.info("결제 실행 시작 - transactionToken: {}",request.getToken());
+        log.info("결제 실행 시작 - transactionToken: {}",request.getPaymentToken());
         //입력 값 검증
         validateRequest(request);
 
         //1. 거래 조회 (Redis -> DB Fallback)
-        Payment payment = findPayment(request.getToken());
+        Payment payment = findPayment(request.getPaymentToken());
         validatePaymentStatus(payment);
 
         // 3. 카드 & 결제수단 검증
         CardInfo cardInfo = validateAndGetCardInfo(request.getCardToken());
-        PaymentMethod paymentMethod = validatePaymentMethod(request.getPaymentMethodType());
+        PaymentMethod paymentMethod = validatePaymentMethod(request.getPaymentMethodType(), request.getUserId(), cardInfo);
 
         // 4. 결제 방식에 따른 승인 처리
         boolean approvalResult = processPaymentByMethod(request, paymentMethod);
@@ -65,11 +70,13 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
         //상태 결정 및 업데이트(수정)
         PaymentStatus newStatus = approvalResult ? PaymentStatus.COMPLETED : PaymentStatus.FAILED;
 
-        // transaction 저장
-        Transaction tx = makeTransaction(newStatus, paymentMethod, cardInfo);
+        // 데이터 업데이트
+        Transaction tx = new Transaction(payment);
+        updatePaymentData(payment, tx, newStatus, request);
+        updateTransactionData(payment, tx, paymentMethod, cardInfo);
 
         //4. DB에 저장
-        updatePayment(payment, tx, request);
+        savePaymentData(payment, tx);
 
         // 5. Redis 상태 갱신 (주석 처리된 부분 활성화)
         try {
@@ -82,17 +89,7 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
         log.info("결제 실행 완료- paymentId: {}, 상태: {}", payment.getId(), tx.getStatus());
 
         //6. 결과 반환
-        return PaymentExecutionResponse.builder()
-                .token(payment.getToken())
-                .status(newStatus) // 수정: 그냥 Enum을 전달, DTO의 getStatus()에서 String으로 변환
-                .amount(tx.getAmount())
-                .merchantId(payment.getMerchantId())
-                .merchantOrderId(payment.getMerchantOrderId())
-                .createdAt(tx.getCreatedAt())
-                .cardInfo(cardInfo)
-                .paymentMethod(paymentMethod)
-                .approvalResult(approvalResult)
-                .build();
+        return new PaymentExecutionResponse(payment);
     }
 
     /**
@@ -106,7 +103,7 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
     /**
      * 결제 수단 검증
      */
-    private PaymentMethod validatePaymentMethod(String methodType) {
+    private PaymentMethod validatePaymentMethod(String methodType, Long userId, CardInfo cardInfo) {
         // String을 Enum으로 변환하여 검증
         PaymentMethodType enumType;
         try {
@@ -115,11 +112,21 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
             throw new BadRequestException(PaymentErrorCode.INVALID_PAYMENT_METHOD);
         }
 
-        PaymentMethod method = paymentMethodRepository.findByType(enumType)
-                .orElseThrow(() -> new BadRequestException(PaymentErrorCode.INVALID_PAYMENT_METHOD));
+        List<PaymentMethod> methodList = paymentMethodRepository.findByUserIdAndMethodType(userId, enumType);
+        if(methodList.isEmpty()) {
+            throw new BadRequestException(PaymentErrorCode.PAYMENT_METHOD_NOT_FOUND);
+        }
+        List<PaymentMethod> yList = methodList.stream()
+                .filter(ele -> "Y".equals(ele.getUseYn())) 
+                .collect(Collectors.toList()); 
+        if(yList.isEmpty()) {
+            throw new BadRequestException(PaymentErrorCode.PAYMENT_METHOD_NOT_FOUND);
+        }
 
-        if (!method.getIsActive()) {
-            throw new BadRequestException(PaymentErrorCode.INACTIVE_PAYMENT_METHOD);
+        PaymentMethod method = methodList.get(0);   // TODO - 한 userId 와 한 method type 으로 조회 했는데 paymentMethod 결과가 여러 개일 경우 어떻게 처리할지? (예 - 신용 카드만 여러 개)
+        if(method.getPaymentMethodId() != cardInfo.getPaymentMethod().getPaymentMethodId()) {
+            // 요청한 userId 로 찾은 결과와 cardToken 으로 가져온 결과가 서로 다름
+            throw new BadRequestException(PaymentErrorCode.INVALID_PAYMENT_METHOD);
         }
 
         return method;
@@ -129,7 +136,7 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
      * 🔥 수정: PaymentExecutionRequest용 검증 메서드
      */
     private void validateRequest(PaymentExecutionRequest request) {
-        if(request.getToken() == null || request.getToken().trim().isEmpty()){
+        if(request.getPaymentToken() == null || request.getPaymentToken().trim().isEmpty()){
             throw new BadRequestException(PaymentErrorCode.PAYMENT_EXECUTION_NULL_VALUE);
         }
         if (request.getCardToken() == null || request.getCardToken().trim().isEmpty()) {
@@ -266,26 +273,23 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
         }
     }
 
-    /**
-     *  Payment 결제 데이터를 바탕으로 Transcation 객체를 생성하여 반환
-     *
-     * @param status
-     * @param paymentMethod
-     * @return
-     */
-    private Transaction makeTransaction(PaymentStatus status, PaymentMethod paymentMethod, CardInfo cardInfo) {
-        Transaction transation = new Transaction();
-        transation.setStatus(status);
-        transation.setPaymentMethod(paymentMethod);
-        transation.setCardToken(cardInfo.getToken());
-        return transation;
+
+    private void updatePaymentData(Payment payment, Transaction transaction, PaymentStatus paymentStatus, PaymentExecutionRequest request) {
+        payment.setStatus(paymentStatus);
+        payment.changeLastTransaction(transaction);
+        payment.setUser(User.builder().userId(request.getUserId()).build());
     }
 
-    private void updatePayment(Payment payment, Transaction transaction, PaymentExecutionRequest request) {
+    private void updateTransactionData(Payment payment, Transaction transaction, PaymentMethod paymentMethod, CardInfo cardInfo) {
+        transaction.setPaymentMethod(paymentMethod);
+        transaction.setCardToken(cardInfo.getToken());
+        transaction.changePayment(payment);
         transaction.setAmount(payment.getTotalAmount());    // TODO - 결제할 금액은 총액 : payment 안에 들고 있던 totalAmount
-        payment.changeLastTransaction(transaction);
-        payment.setUserId(request.getUserId());
+    }
+
+    private void savePaymentData(Payment payment, Transaction transaction) {
         paymentRepository.save(payment);
         transactionRepository.save(transaction);
     }
+
 }

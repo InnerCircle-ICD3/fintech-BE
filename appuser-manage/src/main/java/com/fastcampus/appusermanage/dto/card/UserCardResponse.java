@@ -1,7 +1,7 @@
 package com.fastcampus.appusermanage.dto.card;
 
 import com.fastcampus.paymentmethod.entity.CardType;
-import com.fastcampus.paymentmethod.entity.UserCard;
+import com.fastcampus.paymentmethod.entity.CardInfo;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -19,7 +19,7 @@ public class UserCardResponse {
     private LocalDateTime createdAt;
 
     // 정적 팩토리 메서드로 생성
-    public static UserCardResponse from(UserCard card) {
+    public static UserCardResponse from(CardInfo card) {
         return new UserCardResponse(
                 card.getToken(),
                 maskCardNumber(card.getCardNumber()),

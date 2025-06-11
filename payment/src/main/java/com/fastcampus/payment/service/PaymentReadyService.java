@@ -59,7 +59,7 @@ public class PaymentReadyService {
 
     private void inputPaymentValues(Payment payment, Transaction transaction) {
         String token = tokenHandler.generateTokenWithPayment(payment);
-        payment.setToken(token);
+        payment.setPaymentToken(token);
     }
 
 

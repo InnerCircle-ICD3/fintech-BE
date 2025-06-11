@@ -27,7 +27,7 @@ public class PaymentController {
      * 1. 결제 요청 처리
      * - 거래 생성 및 QR Token 반환
      */
-    @PostMapping("/transactions/ready")
+    @PostMapping("/payments/ready")
     public PaymentReadyResponse initiateTransaction(@RequestBody @Valid PaymentReadyRequest request) {
         Payment payment = paymentReadyService.readyPayment(request.convertToPayment());
         return new PaymentReadyResponse(payment);
@@ -37,9 +37,9 @@ public class PaymentController {
      * 2. QR 코드 거래 상태 조회
      * - transaction_token으로 거래 상태 확인
      */
-    @GetMapping("/transactions/{token}")
-    public PaymentProgressResponse getTransactionProgress(@NotBlank @PathVariable String token) {
-        Payment payment = paymentProgressService.progressPayment(token);
+    @PostMapping("/payments/progress")
+    public PaymentProgressResponse getTransactionProgress(@RequestBody @Valid PaymentProgressRequest request) {
+        Payment payment = paymentProgressService.progressPayment(request.getPaymentToken());
         PaymentProgressResponse response = new PaymentProgressResponse(payment);
         return response;
     }

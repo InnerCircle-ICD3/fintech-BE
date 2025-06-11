@@ -9,20 +9,20 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "user_card")
+@Table
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class UserCard {
+public class CardInfo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long cardId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @OneToOne
+    @JoinColumn(name = "payment_method_id", nullable = false)
+    private PaymentMethod paymentMethod;
 
     @Column(nullable = false, unique = true, length = 36)
     private String token;
@@ -52,12 +52,17 @@ public class UserCard {
     @Column(nullable = false, length = 10)
     private CardType type; // CREDIT, DEBIT 등
 
+    //추가 필드
+    private String issuerBank; // 발급 은행 이름
+
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
 
     // 카드 식별자(UUID) 발급 메서드 (저장 시 호출)
     public void generateToken() {
@@ -68,4 +73,21 @@ public class UserCard {
     public void updatePaymentPassword(String newPaymentPassword) {
         this.paymentPassword = newPaymentPassword;
     }
+
+    public String getLast4() {
+        if(this.cardNumber == null ||  this.cardNumber.isBlank()) {
+            throw new RuntimeException(""); // TODO - exception handling
+        }
+        int lastIdx = this.cardNumber.lastIndexOf("-");
+        if(this.cardNumber.length() < lastIdx + 1) {
+            throw new RuntimeException(""); // TODO - exception handling
+        }
+        String result = this.cardCompany.substring(lastIdx+1);
+        return result;
+    }
+
+    public String getMaskedNumber() {
+        return "****-****-****-"+getLast4();
+    }
+
 }

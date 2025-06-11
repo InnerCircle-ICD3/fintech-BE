@@ -44,7 +44,7 @@ public class PaymentMethodInitializer implements ApplicationRunner {
     private PaymentMethod createPaymentMethod(PaymentMethodType type) {
         PaymentMethod paymentMethod = new PaymentMethod();
         paymentMethod.setType(type);
-        paymentMethod.setIsActive(getDefaultActiveStatus(type));
+        paymentMethod.setUseYn(getDefaultActiveStatus(type));
         paymentMethod.setDescription(type.getDisplayName() + " 결제");
         return paymentMethod;
     }
@@ -53,12 +53,12 @@ public class PaymentMethodInitializer implements ApplicationRunner {
      * 결제 방식별 기본 활성화 상태 설정
      * 실제 운영에서는 안전한 결제 방식부터 단계적으로 활성화
      */
-    private Boolean getDefaultActiveStatus(PaymentMethodType type) {
+    private String getDefaultActiveStatus(PaymentMethodType type) {
         return switch (type) {
-            case CARD, BANK_TRANSFER -> true;  // 기본적으로 활성화
-            case MOBILE_PAY, PAYPAL -> true;   // 모바일 결제도 활성화
-            case CRYPTO -> false;              // 암호화폐는 기본 비활성화
-            case APPLE_PAY, GOOGLE_PAY -> true; // 간편 결제 활성화
+            case CARD, BANK_TRANSFER -> "Y";  // 기본적으로 활성화
+            case MOBILE_PAY, PAYPAL -> "Y";   // 모바일 결제도 활성화
+            case CRYPTO -> "N";              // 암호화폐는 기본 비활성화
+            case APPLE_PAY, GOOGLE_PAY -> "Y"; // 간편 결제 활성화
         };
     }
 }

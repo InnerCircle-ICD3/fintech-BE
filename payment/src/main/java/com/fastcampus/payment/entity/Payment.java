@@ -1,6 +1,7 @@
 package com.fastcampus.payment.entity;
 
 
+import com.fastcampus.paymentmethod.entity.User;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,10 +22,9 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "user_id") // FK 컬럼명. DB에서 이 이름으로 FK 생성됨
-//    private AppUser userId;   // TODO - backoffice 쪽 appUser 참초하기
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id") // FK 컬럼명. DB에서 이 이름으로 FK 생성됨
+    private User user;
 
 //    @ManyToOne(fetch = FetchType.LAZY)
 //    @JoinColumn(name = "merchant_id") // FK 컬럼명. DB에서 이 이름으로 FK 생성됨
@@ -33,7 +33,7 @@ public class Payment {
 
     private String merchantOrderId;
 
-    private String token;
+    private String paymentToken;
 
 
     @Enumerated(EnumType.STRING)
@@ -60,7 +60,6 @@ public class Payment {
         }
         if(this.lastTransaction != transaction) {
             this.lastTransaction = transaction;
-            this.status = transaction.getStatus();
             transaction.changePayment(this);
         }
     }

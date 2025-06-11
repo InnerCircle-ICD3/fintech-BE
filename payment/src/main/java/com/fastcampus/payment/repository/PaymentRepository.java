@@ -30,6 +30,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
      * @param token 조회할 거래의 토큰 값
      * @return 거래 토큰이 일치하는 Payment 객체의 Optional, 없으면 Optional.empty()
      */
-    Optional<Payment> findByToken(String token);
+    Optional<Payment> findByPaymentToken(String token);
 
 }

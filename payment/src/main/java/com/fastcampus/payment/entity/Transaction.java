@@ -47,6 +47,7 @@ public class Transaction {
     public void changePayment(Payment payment) {
         if(this.payment != payment) {
             this.payment = payment;
+            this.status = payment.getStatus();
             payment.changeLastTransaction(this);
         }
     }

@@ -1,7 +1,6 @@
 package com.fastcampus.payment.dto;
 
 import com.fastcampus.payment.entity.Payment;
-import com.fastcampus.payment.entity.Transaction;
 import com.fastcampus.payment.entity.PaymentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,7 +20,7 @@ public class PaymentProgressResponse {
     private final Long merchantId;
     private final String merchantOrderId;
     private final LocalDateTime createdAt;
-    private String token;
+    private String paymentToken;
 
     public PaymentProgressResponse(Payment payment) {
         this.status = payment.getStatus();
@@ -29,7 +28,7 @@ public class PaymentProgressResponse {
         this.createdAt = payment.getCreatedAt();
         this.merchantId = payment.getMerchantId();
         this.merchantOrderId = payment.getMerchantOrderId();
-        this.token = payment.getToken();
+        this.paymentToken = payment.getPaymentToken();
     }
 
     public String getStatus() {
