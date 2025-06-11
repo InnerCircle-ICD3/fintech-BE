@@ -35,6 +35,14 @@ public class PaymentService {
                 .map(this::convertToDto);
     }
 
+    /**
+     * Payment 엔티티를 PaymentDto로 변환합니다.
+     *
+     * 결제 정보와 함께 카드 정보가 포함되어 있을 경우, 카드 정보도 CardInfoDto로 변환하여 포함합니다.
+     *
+     * @param payment 변환할 Payment 엔티티
+     * @return 변환된 PaymentDto 객체
+     */
     private PaymentDto convertToDto(Payment payment) {
         PaymentDto dto = new PaymentDto();
         dto.setPaymentId(payment.getId());
