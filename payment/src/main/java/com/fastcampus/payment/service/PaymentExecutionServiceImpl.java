@@ -11,7 +11,7 @@ import com.fastcampus.payment.repository.*;
 import com.fastcampus.paymentmethod.entity.CardInfo;
 import com.fastcampus.paymentmethod.entity.PaymentMethod;
 import com.fastcampus.paymentmethod.entity.PaymentMethodType;
-import com.fastcampus.paymentmethod.entity.User;
+import com.fastcampus.paymentmethod.entity.UseYn;
 import com.fastcampus.paymentmethod.repository.CardInfoRepository;
 import com.fastcampus.paymentmethod.repository.PaymentMethodRepository;
 import lombok.RequiredArgsConstructor;
@@ -72,7 +72,7 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
 
         // 데이터 업데이트
         Transaction tx = new Transaction(payment);
-        updatePaymentData(payment, tx, newStatus, request);
+        updatePaymentData(payment, tx, paymentMethod, newStatus, request);
         updateTransactionData(payment, tx, paymentMethod, cardInfo);
 
         //4. DB에 저장
@@ -117,15 +117,16 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
             throw new BadRequestException(PaymentErrorCode.PAYMENT_METHOD_NOT_FOUND);
         }
         List<PaymentMethod> yList = methodList.stream()
-                .filter(ele -> "Y".equals(ele.getUseYn())) 
+                .filter(ele -> UseYn.Y.equals(ele.getUseYn()))
                 .collect(Collectors.toList()); 
         if(yList.isEmpty()) {
             throw new BadRequestException(PaymentErrorCode.PAYMENT_METHOD_NOT_FOUND);
         }
 
         PaymentMethod method = methodList.get(0);   // TODO - 한 userId 와 한 method type 으로 조회 했는데 paymentMethod 결과가 여러 개일 경우 어떻게 처리할지? (예 - 신용 카드만 여러 개)
-        if(method.getPaymentMethodId() != cardInfo.getPaymentMethod().getPaymentMethodId()) {
-            // 요청한 userId 로 찾은 결과와 cardToken 으로 가져온 결과가 서로 다름
+        if(!method.getPaymentMethodId().equals(cardInfo.getPaymentMethod().getPaymentMethodId())) {
+
+                // 요청한 userId 로 찾은 결과와 cardToken 으로 가져온 결과가 서로 다름
             throw new BadRequestException(PaymentErrorCode.INVALID_PAYMENT_METHOD);
         }
 
@@ -274,10 +275,10 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
     }
 
 
-    private void updatePaymentData(Payment payment, Transaction transaction, PaymentStatus paymentStatus, PaymentExecutionRequest request) {
+    private void updatePaymentData(Payment payment, Transaction transaction, PaymentMethod paymentMethod, PaymentStatus paymentStatus, PaymentExecutionRequest request) {
         payment.setStatus(paymentStatus);
         payment.changeLastTransaction(transaction);
-        payment.setUser(User.builder().userId(request.getUserId()).build());
+        payment.setUser(paymentMethod.getUser());
     }
 
     private void updateTransactionData(Payment payment, Transaction transaction, PaymentMethod paymentMethod, CardInfo cardInfo) {

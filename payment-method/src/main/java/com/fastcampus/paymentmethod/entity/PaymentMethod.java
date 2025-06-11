@@ -26,7 +26,8 @@ public class PaymentMethod {
     //추가 필드
     private String name;  // 카드 이름, 은행 이름 등
     @Column(length = 1)
-    private String useYn = "Y"; //활성화 여부
+    @Enumerated(EnumType.STRING)
+    private UseYn useYn = UseYn.Y; //활성화 여부
 
     @CreationTimestamp
     @Column(columnDefinition = "TIMESTAMP")
@@ -43,7 +44,7 @@ public class PaymentMethod {
     @Column(name = "description")
     private String description;
 
-    public PaymentMethod(PaymentMethodType type, String useYn) {
+    public PaymentMethod(PaymentMethodType type, UseYn useYn) {
         this.type = type;
         this.useYn = useYn;
         this.createdAt = LocalDateTime.now();

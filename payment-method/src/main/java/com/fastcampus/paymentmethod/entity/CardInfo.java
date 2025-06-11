@@ -82,7 +82,7 @@ public class CardInfo {
         if(this.cardNumber.length() < lastIdx + 1) {
             throw new RuntimeException(""); // TODO - exception handling
         }
-        String result = this.cardCompany.substring(lastIdx+1);
+        String result = this.cardNumber.substring(lastIdx+1);
         return result;
     }
 

@@ -5,7 +5,6 @@ import com.fastcampus.payment.dto.PaymentExecutionResponse;
 import com.fastcampus.payment.dto.PaymentExecutionRequest;
 import com.fastcampus.payment.entity.Payment;
 import com.fastcampus.payment.entity.PaymentStatus;
-import com.fastcampus.payment.entity.Transaction;
 import com.fastcampus.payment.repository.*;
 import com.fastcampus.payment.service.PaymentExecutionService;
 
@@ -94,7 +93,7 @@ class PaymentExecutionServiceImplTest {
         Payment testPayment = createTestPayment();
         TEST_TOKEN = testPayment.getPaymentToken();
         // test user
-        testUser = creatTesteUser();
+        testUser = createTestUser();
         // test poayment method
         testPaymentMethod = createTestPaymentMethod(PaymentMethodType.CARD, testUser);
         // test card info
@@ -108,7 +107,7 @@ class PaymentExecutionServiceImplTest {
     void executePayment_Card_Success() {
         // Given
         String testCardToken = "valid_card_token";
-        User user = creatTesteUser();
+        User user = createTestUser();
         PaymentMethod paymentMethod = getOrCreatePaymentMethod(PaymentMethodType.CARD, user);
         CardInfo cardInfo = createTestCardInfo(testCardToken, "VISA", paymentMethod);
         PaymentExecutionRequest request = prepareTestRequest(TEST_TOKEN, testCardToken, paymentMethod);
@@ -132,7 +131,7 @@ class PaymentExecutionServiceImplTest {
     void executePayment_BankTransfer_Success() {
         // Given
         String testCardToken = "bank_account_token";
-        User user = creatTesteUser();
+        User user = createTestUser();
         PaymentMethod paymentMethod = getOrCreatePaymentMethod(PaymentMethodType.BANK_TRANSFER, user);
         CardInfo cardInfo = createTestCardInfo(testCardToken, "KB국민은행", paymentMethod);
         PaymentExecutionRequest request = prepareTestRequest(TEST_TOKEN, testCardToken, paymentMethod);
@@ -156,7 +155,7 @@ class PaymentExecutionServiceImplTest {
     void executePayment_MobilePay_Success() {
         // Given
         String testCardToken = "mobile_pay_token";
-        User user = creatTesteUser();
+        User user = createTestUser();
         PaymentMethod paymentMethod = getOrCreatePaymentMethod(PaymentMethodType.MOBILE_PAY, user);
         CardInfo cardInfo = createTestCardInfo(testCardToken, "카카오페이", paymentMethod);
         PaymentExecutionRequest request = prepareTestRequest(TEST_TOKEN, testCardToken, paymentMethod);
@@ -178,7 +177,7 @@ class PaymentExecutionServiceImplTest {
         // Given
         //  수정: 이미 존재하는 PaymentMethod 조회 또는 생성
         String testCardToken = "invalid_card_token";
-        User user = creatTesteUser();
+        User user = createTestUser();
         PaymentMethod paymentMethod = getOrCreatePaymentMethod(PaymentMethodType.CARD, user);
         PaymentExecutionRequest request = prepareTestRequest(TEST_TOKEN, testCardToken, paymentMethod);
 
@@ -195,9 +194,9 @@ class PaymentExecutionServiceImplTest {
         // Given
         // 수정: 기존 PaymentMethod를 조회하고 비활성화
         String testCardToken = "crypto_wallet_token";
-        User user = creatTesteUser();
+        User user = createTestUser();
         PaymentMethod inactiveMethod = getOrCreatePaymentMethod(PaymentMethodType.CRYPTO, user);
-        inactiveMethod.setUseYn("N");
+        inactiveMethod.setUseYn(UseYn.N);
         CardInfo cardInfo = createTestCardInfo(testCardToken, "Bitcoin", inactiveMethod);
 
         // when
@@ -215,7 +214,7 @@ class PaymentExecutionServiceImplTest {
     void executePayment_UnsupportedPaymentMethod_ThrowsException() {
         // Given
         String testCardToken = "unknown_token";
-        User user = creatTesteUser();
+        User user = createTestUser();
         PaymentMethod paypalMethod = getOrCreatePaymentMethod(PaymentMethodType.PAYPAL, user);
         CardInfo cardInfo = createTestCardInfo(testCardToken, "UNKNOWN", paypalMethod);
         PaymentExecutionRequest request = prepareTestRequest(TEST_TOKEN, testCardToken, paypalMethod);
@@ -273,14 +272,14 @@ class PaymentExecutionServiceImplTest {
     private PaymentMethod createTestPaymentMethod(PaymentMethodType type, User user) {
         PaymentMethod paymentMethod = new PaymentMethod();
         paymentMethod.setType(type);
-        paymentMethod.setUseYn("Y");
+        paymentMethod.setUseYn(UseYn.Y);
         paymentMethod.setUser(user);
         paymentMethod.setDescription(type.getDisplayName() + " 테스트");
         paymentMethodRepository.save(paymentMethod);
         return paymentMethod;
     }
 
-    private User creatTesteUser() {
+    private User createTestUser() {
         Long time = new Date().getTime();
         String testEmail = Long.toBinaryString(time);
         User user = User.builder().

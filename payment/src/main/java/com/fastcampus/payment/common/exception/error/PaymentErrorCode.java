@@ -10,11 +10,11 @@ public enum PaymentErrorCode implements ErrorCode {
     INVALID_PAYMENT_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 결제 요청입니다."),
     PAYMENT_READY_NULL_VALUE(HttpStatus.BAD_REQUEST, "필수값입니다: merchantId, merchantOrderId, transactionToken"),
     QR_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "QR URL 생성에 실패했습니다."),
-    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 결제 정보를 찾을 수 없습니다."),
+    PAYMENT_NOT_FOUND(HttpStatus.BAD_REQUEST, "해당 결제 정보를 찾을 수 없습니다."),
     PAYMENT_EXPIRED(HttpStatus.GONE, "결제 유효 시간이 만료되었습니다."),
 
     PAYMENT_EXECUTION_NULL_VALUE(HttpStatus.BAD_REQUEST, "필수값입니다: token, cardToken, paymentMethodType"), // 추가
-
+    USER_NOT_FOUND(HttpStatus.BAD_REQUEST, "사용자 정보를 찾을 수 없습니다"),
 
     // code 정보 관련 error
     CARD_NOT_FOUND(HttpStatus.NOT_FOUND, "카드 정보를 찾을 수 없습니다."),
