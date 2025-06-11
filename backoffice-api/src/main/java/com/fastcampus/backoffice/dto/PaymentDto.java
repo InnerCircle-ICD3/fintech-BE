@@ -1,21 +1,18 @@
 package com.fastcampus.backoffice.dto;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
+@Data
 public class PaymentDto {
     private Long paymentId;
-    private Long transactionId;
+    private String paymentToken;
     private Long userId;
-    private Long paymentMethod;
+    private Long merchantId;
+    private String merchantOrderId;
     private String paymentStatus;
     private Long paidAmount;
-    private LocalDateTime approvedAt;
-    private String failReason;
     private Long lastTransactionId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -23,8 +20,7 @@ public class PaymentDto {
     // 카드 정보 필드 추가
     private CardInfoDto cardInfo;
     
-    @Getter
-    @Setter
+    @Data
     public static class CardInfoDto {
         private Long cardInfoId;
         private String type;

@@ -30,36 +30,23 @@ public class PaymentService {
         ).map(this::convertToDto);
     }
 
-    public Optional<PaymentDto> getPaymentDetail(Long transactionId) {
-        return paymentRepository.findByTransactionId(transactionId)
+    public Optional<PaymentDto> getPaymentDetail(String paymentToken) {
+        return paymentRepository.findByPaymentToken(paymentToken)
                 .map(this::convertToDto);
     }
 
     private PaymentDto convertToDto(Payment payment) {
         PaymentDto dto = new PaymentDto();
-        dto.setPaymentId(payment.getPaymentId());
-        dto.setTransactionId(payment.getTransactionId());
+        dto.setPaymentId(payment.getId());
+        dto.setPaymentToken(payment.getPaymentToken());
         dto.setUserId(payment.getUserId());
-        dto.setPaymentMethod(payment.getPaymentMethod());
-        dto.setPaymentStatus(payment.getPaymentStatus());
-        dto.setPaidAmount(payment.getPaidAmount());
-        dto.setApprovedAt(payment.getApprovedAt());
-        dto.setFailReason(payment.getFailReason());
-        dto.setLastTransactionId(payment.getLastTransactionId());
+        dto.setMerchantId(payment.getMerchantId());
+        dto.setMerchantOrderId(payment.getMerchantOrderId());
+        dto.setPaymentStatus(payment.getStatus().name());
+        dto.setPaidAmount(payment.getTotalAmount());
+        dto.setLastTransactionId(payment.getLastTransaction() != null ? payment.getLastTransaction().getId() : null);
         dto.setCreatedAt(payment.getCreatedAt());
         dto.setUpdatedAt(payment.getUpdatedAt());
-        
-        // 카드 정보 변환
-        if (payment.getCardInfo() != null) {
-            PaymentDto.CardInfoDto cardInfoDto = new PaymentDto.CardInfoDto();
-            cardInfoDto.setCardInfoId(payment.getCardInfo().getCardInfoId());
-            cardInfoDto.setType(payment.getCardInfo().getType());
-            cardInfoDto.setLast4(payment.getCardInfo().getLast4());
-            cardInfoDto.setCardCompany(payment.getCardInfo().getCardCompany());
-            cardInfoDto.setCreatedAt(payment.getCardInfo().getCreatedAt());
-            cardInfoDto.setUpdatedAt(payment.getCardInfo().getUpdatedAt());
-            dto.setCardInfo(cardInfoDto);
-        }
         
         return dto;
     }
