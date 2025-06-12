@@ -39,8 +39,19 @@ public class PaymentCancelService {
     public Payment cancelPayment(String token) {
         // payment 조회
         Payment payment = extractPaymentByToken(token);
-        // 취소 가능한지 확인
-        checkPaymentCancellable(payment);
+        // 결제 정보가 취소 가능한 status인지 확인
+        try {
+            // try catch 문을 여기다 두는 게 맞나...?
+            checkPaymentStatusCancel(payment);
+        } catch(HttpException e) {
+            if(PaymentErrorCode.PAYMENT_ALREADY_CANCELED.equals(e.getErrorCode())) {
+                return payment;
+            } else {
+                throw e;
+            }
+        }
+        // 결제 수단이 취소 가능한지 확인
+        checkPaymentMethodCancellable(payment);
         // 취소 실행
         doCancelPayment(payment);
         // transaction 생성
@@ -71,11 +82,19 @@ public class PaymentCancelService {
         return payment;
     }
 
-    private void checkPaymentCancellable(Payment payment) {
+    private void checkPaymentStatusCancel(Payment payment) {
+        // 멱등한 api 를 위해 이미 취소된 거래라면 같은 결과 던지기
+        if(PaymentStatus.CANCELED.equals(payment.getStatus())) {
+            throw new HttpException(PaymentErrorCode.PAYMENT_ALREADY_CANCELED);
+        }
         // 결제가 취소 가능한 결제인지 결제 상태 확인
         if(!(PaymentStatus.COMPLETED.equals(payment.getStatus()))) {
             throw new HttpException(PaymentErrorCode.PAYMENT_ILLEGAL_STATE);
         }
+
+    }
+
+    private void checkPaymentMethodCancellable(Payment payment) {
         //
         Transaction transaction = payment.getLastTransaction();
         PaymentMethod paymentMethod = transaction.getPaymentMethod();
@@ -101,7 +120,8 @@ public class PaymentCancelService {
         //
         Transaction transaction = payment.getLastTransaction();
         PaymentMethod paymentMethod = transaction.getPaymentMethod();
-        CardInfo cardInfo = cardInfoRepository.findByPaymentMethodId(paymentMethod.getId()).get();
+        CardInfo cardInfo = cardInfoRepository.findByPaymentMethodId(paymentMethod.getId())
+                .orElseThrow(()->{throw new HttpException(PaymentErrorCode.CARD_NOT_FOUND);});
         //
         doCancelCard(cardInfo);
         // TODO - 카드 외 결제 수단의 결제 취소는 추후 확장

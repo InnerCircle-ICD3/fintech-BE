@@ -88,7 +88,7 @@ public class ParksayTest {
     @Order(2)
     public void readyTest() {
         //
-        PaymentReadyRequest request = new PaymentReadyRequest(TEST_MERCHANT_ID, TEST_TOTAL_AMOUNT, TEST_MERCHANT_ORDER_ID);
+        PaymentReadyRequest request = new PaymentReadyRequest(TEST_TOTAL_AMOUNT, TEST_MERCHANT_ID, TEST_MERCHANT_ORDER_ID);
         PaymentReadyResponse response = controller.readyPayment(request);
         //
         LocalDateTime limit = commonUtil.generateExpiresAt();

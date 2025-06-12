@@ -26,8 +26,8 @@ public enum PaymentErrorCode implements ErrorCode {
     PAYMENT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 결제가 완료된 주문입니다."),
 
     // cancel
-    PAYMENT_ILLEGAL_STATE(HttpStatus.BAD_REQUEST, "취소할 수 있는 결제가 아닙니다");
-
+    PAYMENT_ILLEGAL_STATE(HttpStatus.BAD_REQUEST, "취소할 수 있는 결제가 아닙니다"),
+    PAYMENT_ALREADY_CANCELED(HttpStatus.CONFLICT, "이미 취소된 결제입니다.");
 
 
     private final HttpStatus status;
