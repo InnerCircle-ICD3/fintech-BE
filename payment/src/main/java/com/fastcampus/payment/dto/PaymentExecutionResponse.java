@@ -24,7 +24,6 @@ public class PaymentExecutionResponse {
     //  추가 필드들
 
     private final String cardToken;
-    private final PaymentMethod paymentMethod;
     private final Boolean approvalResult;
 
 
@@ -38,7 +37,6 @@ public class PaymentExecutionResponse {
         this.merchantOrderId = payment.getMerchantOrderId();
         this.createdAt = transaction.getCreatedAt();
         this.cardToken = transaction.getCardToken();
-        this.paymentMethod = transaction.getPaymentMethod();
         this.approvalResult = transaction.getStatus() == PaymentStatus.COMPLETED;
     }
 

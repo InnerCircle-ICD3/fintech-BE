@@ -20,12 +20,14 @@ public enum PaymentErrorCode implements ErrorCode {
     CARD_NOT_FOUND(HttpStatus.NOT_FOUND, "카드 정보를 찾을 수 없습니다."),
     PAYMENT_METHOD_NOT_FOUND(HttpStatus.BAD_REQUEST, "결제 수단을 찾을 수 없습니다."),
     INVALID_PAYMENT_METHOD(HttpStatus.BAD_REQUEST, "유효하지 않은 결제 수단입니다."),
+    CARD_INVALID_STATUS(HttpStatus.PAYMENT_REQUIRED, "현재 사용할 수 없는 카드입니다."),
     CARD_APPROVAL_FAILED(HttpStatus.PAYMENT_REQUIRED, "카드 승인이 거절되었습니다."),
     INACTIVE_PAYMENT_METHOD(HttpStatus.BAD_REQUEST, "비활성화된 결제 수단입니다."),
-    PAYMENT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 결제가 완료된 주문입니다.");
+    PAYMENT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 결제가 완료된 주문입니다."),
 
-
-
+    // cancel
+    PAYMENT_ILLEGAL_STATE(HttpStatus.BAD_REQUEST, "취소할 수 있는 결제가 아닙니다"),
+    PAYMENT_ALREADY_CANCELED(HttpStatus.CONFLICT, "이미 취소된 결제입니다.");
 
 
     private final HttpStatus status;

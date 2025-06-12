@@ -38,10 +38,6 @@ public class User {
     @Builder.Default
     private String status = "ACTIVE";  // 기본값 ACTIVE
 
-        @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-        @Builder.Default
-        private List<PaymentMethod> paymentMethodList = new ArrayList<>();
-
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

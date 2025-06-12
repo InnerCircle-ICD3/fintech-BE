@@ -41,7 +41,8 @@ public class Payment {
 
     private Long totalAmount;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    // 아직 save 되지 않은 transaction 을 payment 에 참조한 채로 payment 를 저장하려고 할 경우 "save the transient instance before flushing" 에러가 나므로 `@ManyToOne`에 cascade 설정 넣음
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "last_transaction_id") // FK 컬럼명. DB에서 이 이름으로 FK 생성됨
     private Transaction lastTransaction;
 
@@ -56,7 +57,7 @@ public class Payment {
 
     public void changeLastTransaction(Transaction transaction) {
         if(transaction == null) {
-            throw new IllegalArgumentException("transaction 가 null 입니다");
+            throw new IllegalArgumentException("transaction 이 null 입니다");
         }
         if(this.lastTransaction != transaction) {
             this.lastTransaction = transaction;

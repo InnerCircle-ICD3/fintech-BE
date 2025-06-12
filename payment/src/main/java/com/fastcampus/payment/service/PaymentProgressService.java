@@ -28,14 +28,14 @@ public class PaymentProgressService {
     @Idempotent
     public Payment progressPayment(String token) {
         Optional<Payment> payment = Optional.empty();
-        try {
-            // QR 토큰에서 거래 ID 디코딩
-            Long paymentId = tokenHandler.decodeQrToken(token);
-            // 거래 조회
-            payment = paymentRepository.findById(paymentId);
-        } catch (ExpiredJwtException e) {
-            // tokenHandler.decodeQrToken(); 중에 token 만료 exception 발생 시
-            throw new HttpException(PaymentErrorCode.PAYMENT_EXPIRED);
+            try {
+                // QR 토큰에서 거래 ID 디코딩
+                Long paymentId = tokenHandler.decodeQrToken(token);
+                // 거래 조회
+                payment = paymentRepository.findById(paymentId);
+            } catch (ExpiredJwtException e) {
+                // tokenHandler.decodeQrToken(); 중에 token 만료 exception 발생 시
+                throw new HttpException(PaymentErrorCode.PAYMENT_EXPIRED);
         }
         
         // payment 있으면 반환하고 없으면 NOT FOUND 예외 발생
