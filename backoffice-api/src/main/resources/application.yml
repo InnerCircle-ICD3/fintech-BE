@@ -3,7 +3,7 @@ spring:
     activate:
       on-profile: testing
   datasource:
-    url: jdbc:postgresql://postgres-service.db.svc.cluster.local:5432/testdb
+    url: jdbc:postgresql://34.64.149.32:5432/testdb
     username: testuser
     password: testpass
     driver-class-name: org.postgresql.Driver
@@ -17,7 +17,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   data:
     redis:
-      host: redis-service.db.svc.cluster.local
+      host: 34.64.149.32
       port: 6379
   application:
     name: backoffice-api
@@ -51,7 +51,7 @@ management:
 # 기본 프로파일 설정
 spring:
   datasource:
-    url: jdbc:postgresql://postgres-service.db.svc.cluster.local:5432/testdb
+    url: jdbc:postgresql://34.64.149.32:5432/testdb
     username: testuser
     password: testpass
     driver-class-name: org.postgresql.Driver
@@ -65,7 +65,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   data:
     redis:
-      host: localhost
+      host: 34.64.149.32
       port: 6379
   application:
     name: backoffice-api 

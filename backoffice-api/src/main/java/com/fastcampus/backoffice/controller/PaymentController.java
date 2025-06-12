@@ -12,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 @RestController
@@ -36,12 +35,12 @@ public class PaymentController {
         ));
     }
 
-    @GetMapping("/{transactionId}")
+    @GetMapping("/{paymentToken}")
     @Operation(summary = "결제내역 상세 조회")
     public ResponseEntity<PaymentDto> getPaymentDetail(
-            @PathVariable Long transactionId
+            @PathVariable String paymentToken
     ) {
-        Optional<PaymentDto> payment = paymentService.getPaymentDetail(transactionId);
+        Optional<PaymentDto> payment = paymentService.getPaymentDetail(paymentToken);
         return payment.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
