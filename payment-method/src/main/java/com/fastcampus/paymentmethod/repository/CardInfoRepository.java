@@ -11,4 +11,5 @@ public interface CardInfoRepository extends JpaRepository<CardInfo, Long> {
      * token으로 카드 찾기
      */
     Optional<CardInfo> findByToken(String token);
+    Optional<CardInfo> findByPaymentMethodId(Long paymentMethodId);
 }
