@@ -9,7 +9,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
       properties:
         hibernate:
           format_sql: true
@@ -41,9 +41,9 @@ server:
 
 #Redis settings
 redis:
-  host: localhost
+  host: 34.64.149.32
   port: 6379
-  timeout: 1000
+  password: fintechhost
 
 jwt:
   secret: dYVzdC1zZWNyZXQta2V5LXlvdS2jYW4tY2hhbmdlPXRoaXM=
