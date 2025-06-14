@@ -6,7 +6,6 @@ import com.fastcampus.payment.common.util.CommonUtil;
 import com.fastcampus.payment.controller.PaymentController;
 import com.fastcampus.payment.dto.*;
 import com.fastcampus.payment.entity.PaymentStatus;
-import com.fastcampus.payment.entity.Transaction;
 import com.fastcampus.paymentmethod.entity.*;
 import com.fastcampus.paymentmethod.repository.CardInfoRepository;
 import com.fastcampus.paymentmethod.repository.PaymentMethodRepository;
@@ -16,9 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -32,10 +29,6 @@ public class ParksayTest {
     PaymentController controller;
     @Autowired
     CommonUtil commonUtil;
-
-
-    @MockitoBean
-    private RedisTemplate<String, Transaction> redisTemplate;   // 이 class 에서는 쓰는 곳이 없어도 build 시 에러를 방지하기 위해 넣어줘야 함 
     @Autowired
     UserRepository userRepository;  // from PaymentMethod module
     @Autowired
