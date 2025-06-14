@@ -1,13 +1,12 @@
-server:
-  port: 8082
-
 spring:
+  config:
+    activate:
+      on-profile: testing
   datasource:
-    url: jdbc:postgresql://localhost:5432/testdb
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://34.64.149.32:5432/testdb
     username: testuser
     password: testpass
-
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
@@ -15,20 +14,66 @@ spring:
     properties:
       hibernate:
         format_sql: true
-
+        dialect: org.hibernate.dialect.PostgreSQLDialect
   data:
     redis:
-      host: localhost
+      host: 34.64.149.32
       port: 6379
+      password: fintechhost
+  application:
+    name: backoffice-manage
 
-jwt:
-  secret: dYVzdC1zZWNyZXQta2V5LXlvdS2jYW4tY2hhbmdlPXRoaXM=
-
-app:
-  timezone: Asia/Seoul
+server:
+  port: 8082
 
 springdoc:
   api-docs:
-    path: /v3/api-docs
+    path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+jwt:
+  secret: dYVzdC1zZWNyZXQta2V5LXlvdS2jYW4tY2hhbmdlPXRoaXM=
+  expiration: 180000 # 3 minutes in milliseconds
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+  security:
+    enabled: false
+
+---
+
+spring:
+  datasource:
+    url: jdbc:postgresql://34.64.149.32:5432/testdb
+    username: testuser
+    password: testpass
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  data:
+    redis:
+      host: 34.64.149.32
+      port: 6379
+      password: fintechhost
+  application:
+    name: backoffice-manage
+
+server:
+  port: 8082
+
+jwt:
+  secret: dYVzdC1zZWNyZXQta2V5LXlvdS2jYW4tY2hhbmdlPXRoaXM=
+  expiration: 180000 # 3 minutes in milliseconds

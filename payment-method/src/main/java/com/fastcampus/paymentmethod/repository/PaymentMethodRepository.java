@@ -16,7 +16,7 @@ import java.util.Optional;
 public interface PaymentMethodRepository extends JpaRepository<PaymentMethod, Long> {
 
 
-    @Query("SELECT pm FROM PaymentMethod pm WHERE pm.type = :type and pm.user.id = :userId")
+    @Query("SELECT pm FROM PaymentMethod pm WHERE pm.type = :type and pm.user.userId = :userId")
     List<PaymentMethod> findByUserIdAndMethodType(@Param("userId") Long userId, @Param("type")PaymentMethodType type);
 
     // 특정 타입이 존재하는지 확인
