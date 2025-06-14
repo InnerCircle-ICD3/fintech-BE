@@ -4,40 +4,23 @@ import com.fastcampus.payment.PaymentApplication;
 import com.fastcampus.payment.common.util.CommonUtil;
 import com.fastcampus.payment.controller.PaymentController;
 import com.fastcampus.payment.dto.*;
-import com.fastcampus.payment.entity.Payment;
 import com.fastcampus.payment.entity.PaymentStatus;
 import com.fastcampus.paymentmethod.entity.*;
 import com.fastcampus.paymentmethod.repository.CardInfoRepository;
 import com.fastcampus.paymentmethod.repository.PaymentMethodRepository;
 import com.fastcampus.paymentmethod.repository.UserRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.Date;
 
 @SpringBootTest(classes = PaymentApplication.class)
-@AutoConfigureMockMvc
 public class ParksayTest {
-
-
-    @Value("${lifetime.qr}")
-    private String ttlQr; // 단위: 초
-
-
-    @Autowired
-    private MockMvc mockMvc;
-    private ObjectMapper objectMapper;
 
     @Autowired
     PaymentController controller;
@@ -85,7 +68,6 @@ public class ParksayTest {
     }
 
     @Test
-    @Order(2)
     public void readyTest() {
         //
         PaymentReadyRequest request = new PaymentReadyRequest(TEST_TOTAL_AMOUNT, TEST_MERCHANT_ID, TEST_MERCHANT_ORDER_ID);
@@ -101,7 +83,6 @@ public class ParksayTest {
     }
 
     @Test
-    @Order(3)
     public void progressTest() {
         //
 //        PaymentProgressRequest request = new PaymentProgressRequest(TEST_TOKEN);
@@ -116,16 +97,7 @@ public class ParksayTest {
 
 
     @Test
-    @Order(4)
     public void cancelTest() throws Exception {
-//        //
-//        PaymentProgressResponse response = controller.progressPayment(TEST_TOKEN);
-//        //
-//        mockMvc.perform(
-//                delete("/api/payments/{paymentToken}", TEST_TOKEN))
-//                .andExpect(status().isOk())
-//                .andExpect(jsonPath("$.status").value("CANCELED")
-//        );
 
         // given
         PaymentExecutionRequest request = new PaymentExecutionRequest();
