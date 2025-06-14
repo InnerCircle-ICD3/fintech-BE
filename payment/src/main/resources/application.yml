@@ -2,14 +2,14 @@ spring:
   application:
     name: payment
   datasource:
-    url: jdbc:postgresql://postgres-service.db.svc.cluster.local:5432/testdb
+    url: jdbc:postgresql://34.64.149.32:5432/testdb
     driver-class-name: org.postgresql.Driver
     username: testuser
     password: testpass
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
       properties:
         hibernate:
           format_sql: true

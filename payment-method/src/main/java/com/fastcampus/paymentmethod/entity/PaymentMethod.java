@@ -25,6 +25,8 @@ public class PaymentMethod {
 
     //추가 필드
     private String name;  // 카드 이름, 은행 이름 등
+
+    @Builder.Default
     @Column(length = 1)
     @Enumerated(EnumType.STRING)
     private UseYn useYn = UseYn.Y; //활성화 여부
