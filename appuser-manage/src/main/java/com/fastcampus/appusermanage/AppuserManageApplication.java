@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EntityScan("com.fastcampus.paymentmethod.entity")
 @EnableJpaRepositories("com.fastcampus.paymentmethod.repository")
 @ComponentScan(basePackages = {
+        "com.fastcampus.appusermanage",
         "com.fastcampus.paymentmethod"
 })
 public class AppuserManageApplication {
