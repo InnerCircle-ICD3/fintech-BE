@@ -7,6 +7,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -22,6 +24,9 @@ public class PaymentMethod {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id") // FK 컬럼명. DB에서 이 이름으로 FK 생성됨
     private User user;
+
+    @OneToOne(mappedBy = "paymentMethod", cascade = CascadeType.ALL, orphanRemoval = true)
+    private CardInfo cardInfo;
 
     //추가 필드
     private String name;  // 카드 이름, 은행 이름 등

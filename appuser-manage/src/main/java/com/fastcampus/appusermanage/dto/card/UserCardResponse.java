@@ -12,13 +12,13 @@ import java.time.LocalDateTime;
 public class UserCardResponse {
 
     private String token;
-    private String maskedCardNumber;  // 마스킹된 카드번호
+    private String maskedCardNumber;
     private String expiryDate;
     private String cardCompany;
     private CardType type;
     private LocalDateTime createdAt;
+    private String paymentMethodName;
 
-    // 정적 팩토리 메서드로 생성
     public static UserCardResponse from(CardInfo card) {
         return new UserCardResponse(
                 card.getToken(),
@@ -26,12 +26,12 @@ public class UserCardResponse {
                 card.getExpiryDate(),
                 card.getCardCompany(),
                 card.getType(),
-                card.getCreatedAt()
+                card.getCreatedAt(),
+                card.getPaymentMethod().getName()
         );
     }
 
     private static String maskCardNumber(String cardNumber) {
-        // 예: 1234-****-****-5678
         return cardNumber.replaceAll("\\d{4}-\\d{4}-(\\d{4})-\\d{4}", "0000-****-****-$1");
     }
 }

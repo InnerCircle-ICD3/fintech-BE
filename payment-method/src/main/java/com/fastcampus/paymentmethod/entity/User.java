@@ -46,7 +46,9 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<PaymentMethod> paymentMethods = new ArrayList<>();
 
     // 활성화
     public void activate() {

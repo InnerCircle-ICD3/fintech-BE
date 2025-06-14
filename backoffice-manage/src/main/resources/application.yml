@@ -67,7 +67,7 @@ spring:
     redis:
       host: 34.64.149.32
       port: 6379
-      password: fintechhost
+      password: fintechpass
   application:
     name: backoffice-manage
 

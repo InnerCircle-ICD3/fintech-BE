@@ -2,10 +2,13 @@ package com.fastcampus.appusermanage.service;
 
 import com.fastcampus.appusermanage.dto.card.UserCardRegisterRequest;
 import com.fastcampus.appusermanage.dto.card.UserCardResponse;
+import com.fastcampus.paymentmethod.entity.PaymentMethodType;
 import com.fastcampus.paymentmethod.entity.User;
 import com.fastcampus.paymentmethod.entity.CardInfo;
+import com.fastcampus.paymentmethod.entity.PaymentMethod;
 import com.fastcampus.appusermanage.jwt.JwtProvider;
 import com.fastcampus.paymentmethod.repository.CardInfoRepository;
+import com.fastcampus.paymentmethod.repository.PaymentMethodRepository;
 import com.fastcampus.paymentmethod.repository.UserRepository;
 import com.fastcampus.common.exception.code.AuthErrorCode;
 import com.fastcampus.common.exception.code.CardErrorCode;
@@ -23,7 +26,8 @@ import java.util.List;
 public class UserCardService {
 
     private final UserRepository userRepository;
-    private final CardInfoRepository cardRepository;
+    private final CardInfoRepository cardInfoRepository;
+    private final PaymentMethodRepository paymentMethodRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
@@ -34,8 +38,13 @@ public class UserCardService {
     public void registerCard(String authorizationHeader, UserCardRegisterRequest request) {
         User user = extractUserFromHeader(authorizationHeader);
 
-        CardInfo userCard = CardInfo.builder()
+        PaymentMethod paymentMethod = PaymentMethod.builder()
                 .user(user)
+                .type(PaymentMethodType.CARD)
+                .name(request.getCardCompany())
+                .build();
+
+        CardInfo cardInfo = CardInfo.builder()
                 .cardNumber(request.getCardNumber())
                 .expiryDate(request.getExpiryDate())
                 .birthDate(request.getBirthDate())
@@ -44,10 +53,14 @@ public class UserCardService {
                 .paymentPassword(passwordEncoder.encode(request.getPaymentPassword()))
                 .cardCompany(request.getCardCompany())
                 .type(request.getType())
+                .paymentMethod(paymentMethod)
                 .build();
-        userCard.generateToken();
+        cardInfo.generateToken();
 
-        cardRepository.save(userCard);
+        paymentMethod.setCardInfo(cardInfo);
+
+        // cardInfo만 저장해도 cascade로 인해 paymentMethod도 저장됨
+        cardInfoRepository.save(cardInfo);
     }
 
     /**
@@ -56,9 +69,9 @@ public class UserCardService {
     @Transactional
     public void deleteCard(String authorizationHeader, String cardToken) {
         User user = extractUserFromHeader(authorizationHeader);
-        CardInfo card = extractUserCardForUser(user, cardToken);
+        PaymentMethod method = extractUserCardForUser(user, cardToken);
 
-        user.getUserCards().remove(card);  // orphanRemoval=true 덕분에 DB에서도 삭제됨
+        user.getPaymentMethods().remove(method); // orphanRemoval = true로 cardInfo도 함께 삭제됨
     }
 
     /**
@@ -67,7 +80,7 @@ public class UserCardService {
     @Transactional(readOnly = true)
     public boolean isValidCard(String authorizationHeader, String cardToken) {
         User user = extractUserFromHeader(authorizationHeader);
-        extractUserCardForUser(user, cardToken);  // 소유자 검증 포함
+        extractUserCardForUser(user, cardToken);
         return true;
     }
 
@@ -77,7 +90,8 @@ public class UserCardService {
     @Transactional(readOnly = true)
     public List<UserCardResponse> getMyCards(String authorizationHeader) {
         User user = extractUserFromHeader(authorizationHeader);
-        return user.getUserCards().stream()
+        return user.getPaymentMethods().stream()
+                .map(PaymentMethod::getCardInfo)
                 .map(UserCardResponse::from)
                 .toList();
     }
@@ -88,22 +102,20 @@ public class UserCardService {
     @Transactional(readOnly = true)
     public UserCardResponse getMyCardByToken(String authorizationHeader, String cardToken) {
         User user = extractUserFromHeader(authorizationHeader);
-        CardInfo card = extractUserCardForUser(user, cardToken);
-        return UserCardResponse.from(card);
+        return UserCardResponse.from(extractUserCardForUser(user, cardToken).getCardInfo());
     }
 
     /**
-     * 결제 비밀번호 등록/변경
+     * 결제 비밀번호 변경
      */
     @Transactional
     public void updatePaymentPassword(String authorizationHeader, String cardToken, String newPaymentPassword) {
         User user = extractUserFromHeader(authorizationHeader);
-        CardInfo card = extractUserCardForUser(user, cardToken);
-
-        card.updatePaymentPassword(passwordEncoder.encode(newPaymentPassword));
+        CardInfo cardInfo = extractUserCardForUser(user, cardToken).getCardInfo();
+        cardInfo.updatePaymentPassword(passwordEncoder.encode(newPaymentPassword));
     }
 
-    // == 내부 메서드 ==
+    // == 내부 유틸 메서드 ==
     private User extractUserFromHeader(String header) {
         String token = resolveBearerToken(header, AuthErrorCode.MISSING_ACCESS_TOKEN);
         String email = jwtProvider.getSubject(token);
@@ -122,13 +134,13 @@ public class UserCardService {
                 .orElseThrow(() -> new NotFoundException(AuthErrorCode.NOT_FOUND_ID));
     }
 
-    private CardInfo extractUserCardForUser(User user, String cardToken) {
-        CardInfo card = cardRepository.findByToken(cardToken)
+    private PaymentMethod extractUserCardForUser(User user, String cardToken) {
+        CardInfo card = cardInfoRepository.findByToken(cardToken)
                 .orElseThrow(() -> new NotFoundException(CardErrorCode.NOT_FOUND_CARD));
-
-        if (!card.getUser().getEmail().equals(user.getEmail())) {
+        PaymentMethod method = card.getPaymentMethod();
+        if (!method.getUser().getEmail().equals(user.getEmail())) {
             throw new UnauthorizedException(CardErrorCode.UNAUTHORIZED_CARD_ACCESS);
         }
-        return card;
+        return method;
     }
 }

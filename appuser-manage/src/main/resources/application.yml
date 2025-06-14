@@ -1,2 +1,39 @@
 server:
-  port: 8083
+  port: 8083  # 기존 유지
+
+spring:
+  datasource:
+    url: jdbc:postgresql://34.64.149.32:5432/testdb
+    driver-class-name: org.postgresql.Driver
+    username: testuser
+    password: testpass
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: 34.64.149.32
+      port: 6379
+      password: fintechpass
+
+  security:
+    filter:
+      dispatcher-types: ASYNC, ERROR, FORWARD, INCLUDE, REQUEST
+
+jwt:
+  secret: dYVzdC1zZWNyZXQta2V5LXlvdS2jYW4tY2hhbmdlPXRoaXM=
+
+app:
+  timezone: Asia/Seoul
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
