@@ -13,10 +13,10 @@ on:
       - '.github/workflows/backoffice-api-cicd.yml'
 
 env:
-  SERVER_HOST: ${{ secrets.SERVER_HOST }}
-  SERVER_USER: ${{ secrets.SERVER_USER }}
-  SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
-  SERVER_DEPLOY_PATH: ${{ secrets.SERVER_DEPLOY_PATH }}
+  SERVER_HOST: ${{ secrets.SSH_HOST }}
+  SERVER_USER: ${{ secrets.SSH_USERNAME }}
+  SERVER_SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  SERVER_DEPLOY_PATH: ${{ secrets.SSH_PORT }}
 
 jobs:
   build-and-deploy:
@@ -63,15 +63,13 @@ jobs:
     - name: Notify Slack
       uses: 8398a7/action-slack@v3
       with:
-        status: custom
+        status: ${{ job.status }}
         fields: repo,message,author
-        custom_payload: |
-          {
-            "attachments": [{
-              "color": "#439FE0",
-              "text": ":rocket: *Push 감지됨!*\n브랜치: `${{ github.ref_name }}`\n커밋 메시지: `${{ github.event.head_commit.message }}`\n작성자: `${{ github.actor }}`"
-            }]
-          }
+        text: |
+          :rocket: *Push 감지됨!*
+          브랜치: `${{ github.ref_name }}`
+          커밋 메시지: `${{ github.event.head_commit.message }}`
+          작성자: `${{ github.actor }}`
         author_name: GitHub Actions
       env:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
