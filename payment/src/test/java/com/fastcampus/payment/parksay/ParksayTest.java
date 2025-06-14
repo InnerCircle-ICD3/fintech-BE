@@ -1,6 +1,7 @@
 package com.fastcampus.payment.parksay;
 
 import com.fastcampus.payment.PaymentApplication;
+import com.fastcampus.payment.common.exception.base.HttpException;
 import com.fastcampus.payment.common.util.CommonUtil;
 import com.fastcampus.payment.controller.PaymentController;
 import com.fastcampus.payment.dto.*;
@@ -13,11 +14,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.UUID;
 
 @SpringBootTest(classes = PaymentApplication.class)
 public class ParksayTest {
@@ -58,7 +59,7 @@ public class ParksayTest {
         TEST_TOKEN = createTestPaymentToken();
         TEST_USER = createTestUser();
         TEST_METHOD = createTestPaymentMethod(PaymentMethodType.CARD, TEST_USER);
-        TEST_CARD = createTestCardInfo("test_card_token", "test_card_company", TEST_METHOD);
+        TEST_CARD = createTestCardInfo(UUID.randomUUID().toString(), "test_card_company", TEST_METHOD);
         //
         System.out.println("before ========= " + TEST_TOKEN);
     }
@@ -98,22 +99,37 @@ public class ParksayTest {
 
     @Test
     public void cancelTest() throws Exception {
-
         // given
+        String testToken = createTestPaymentToken();
+        User testUser = createTestUser();
+        PaymentMethod paymentMethod = createTestPaymentMethod(PaymentMethodType.CARD, testUser);
+        CardInfo testCard = createTestCardInfo(UUID.randomUUID().toString(), "test_card_company", paymentMethod);
+        //
         PaymentExecutionRequest request = new PaymentExecutionRequest();
-        request.setPaymentToken(TEST_TOKEN);
-        request.setCardToken(TEST_CARD.getToken());
-        request.setPaymentMethodType(TEST_METHOD.getType().toString());
-        request.setUserId(TEST_USER.getUserId());
-        controller.executePayment(request);
+        request.setPaymentToken(testToken);
+        request.setCardToken(testCard.getToken());
+        request.setPaymentMethodType(paymentMethod.getType().toString());
+        request.setUserId(testUser.getUserId());
+        PaymentExecutionResponse testResponse = controller.executePayment(request);
+        System.out.println("cancelTest() > testResponse = " + testResponse);
 
         // when
-//        PaymentCancelRequest request = new PaymentCancelRequest(TEST_TOKEN);
-        PaymentCancelResponse response = controller.cancelPayment(TEST_TOKEN);
-        // then
-        Assertions.assertEquals(TEST_MERCHANT_ORDER_ID, response.getMerchantOrderId());
-        Assertions.assertEquals(PaymentStatus.CANCELED.toString(), response.getStatus());
-        Assertions.assertEquals(TEST_TOKEN, response.getPaymentToken());
+        if(PaymentStatus.FAILED.equals(testResponse.getStatus())) {
+            Assertions.assertThrows(HttpException.class, ()->{
+                System.out.println("cancelTest() > ========== failed");
+                PaymentCancelResponse response = controller.cancelPayment(testToken);
+            });
+        } else {
+    //        PaymentCancelRequest request = new PaymentCancelRequest(TEST_TOKEN);
+            System.out.println("cancelTest() > ========== success");
+                PaymentCancelResponse response = controller.cancelPayment(testToken);
+
+                // then
+                Assertions.assertEquals(TEST_MERCHANT_ORDER_ID, response.getMerchantOrderId());
+                Assertions.assertEquals(PaymentStatus.CANCELED, response.getStatus());
+                Assertions.assertEquals(testToken, response.getPaymentToken());
+
+        }
     }
 
 
@@ -137,8 +153,7 @@ public class ParksayTest {
                 .cvc("1111")
                 .issuerBank("test_back")
                 .build();
-        cardInfoRepository.save(cardInfo);
-        return cardInfo;
+        return cardInfoRepository.save(cardInfo);
     }
 
     private PaymentMethod createTestPaymentMethod(PaymentMethodType type, User user) {
@@ -147,8 +162,7 @@ public class ParksayTest {
         paymentMethod.setUseYn(UseYn.Y);
         paymentMethod.setUser(user);
         paymentMethod.setDescription(type.getDisplayName() + " 테스트");
-        paymentMethodRepository.save(paymentMethod);
-        return paymentMethod;
+        return paymentMethodRepository.save(paymentMethod);
     }
 
     private User createTestUser() {
@@ -158,8 +172,7 @@ public class ParksayTest {
                 email(testEmail).
                 password("test_password").
                 name("test_name").build();
-        userRepository.save(user);
-        return user;
+        return userRepository.save(user);
     }
 
     private String createTestPaymentToken() {

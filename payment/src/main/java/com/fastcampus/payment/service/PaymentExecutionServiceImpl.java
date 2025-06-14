@@ -285,6 +285,7 @@ public class PaymentExecutionServiceImpl implements PaymentExecutionService {
         transaction.setPaymentMethod(paymentMethod);
         transaction.setCardToken(cardInfo.getToken());
         transaction.changePayment(payment);
+        transaction.setStatus(payment.getStatus());
         transaction.setAmount(payment.getTotalAmount());    // TODO - 결제할 금액은 총액 : payment 안에 들고 있던 totalAmount
     }
 
