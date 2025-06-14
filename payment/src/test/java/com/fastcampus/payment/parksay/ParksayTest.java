@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
 
-@SpringBootTest(classes = PaymentApplication.class)
+@SpringBootTest(classes = PaymentApplication.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("test")
 public class ParksayTest {
 
