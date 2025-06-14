@@ -15,6 +15,7 @@ import com.fastcampus.common.exception.code.CardErrorCode;
 import com.fastcampus.common.exception.exception.NotFoundException;
 import com.fastcampus.common.exception.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
+import org.apache.catalina.Store;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,7 @@ public class UserCardService {
 
     private final UserRepository userRepository;
     private final CardInfoRepository cardInfoRepository;
+    private final PaymentMethodRepository paymentMethodRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
@@ -52,14 +54,13 @@ public class UserCardService {
                 .paymentPassword(passwordEncoder.encode(request.getPaymentPassword()))
                 .cardCompany(request.getCardCompany())
                 .type(request.getType())
-                .paymentMethod(paymentMethod)
                 .build();
         cardInfo.generateToken();
 
         paymentMethod.setCardInfo(cardInfo);
+        cardInfo.setPaymentMethod(paymentMethod);
 
-        // cardInfo만 저장해도 cascade로 인해 paymentMethod도 저장됨
-        cardInfoRepository.save(cardInfo);
+        paymentMethodRepository.save(paymentMethod);
     }
 
     /**

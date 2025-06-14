@@ -74,6 +74,11 @@ public class CardInfo {
         this.paymentPassword = newPaymentPassword;
     }
 
+    // 등록 시 같이 등록
+    public void setPaymentMethod(PaymentMethod paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
     public String getLast4() {
         if(this.cardNumber == null ||  this.cardNumber.isBlank()) {
             throw new RuntimeException(""); // TODO - exception handling
