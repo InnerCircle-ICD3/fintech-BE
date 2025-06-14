@@ -27,7 +27,6 @@ public class UserCardService {
 
     private final UserRepository userRepository;
     private final CardInfoRepository cardInfoRepository;
-    private final PaymentMethodRepository paymentMethodRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
