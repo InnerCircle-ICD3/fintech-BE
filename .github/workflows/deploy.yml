@@ -35,15 +35,18 @@ jobs:
             # 애플리케이션 빌드
             ./gradlew build -x test
 
-            # payment-api 애플리케이션 재시작
-            if [ -f payment-api.pid ]; then
-              kill $(cat payment-api.pid) || true
-              rm payment-api.pid
+            # payment-method 모듈 먼저 빌드
+            ./gradlew :payment-method:build -x test
+            
+            # payment 애플리케이션 재시작
+            if [ -f payment.pid ]; then
+              kill $(cat payment.pid) || true
+              rm payment.pid
             fi
-            rm -f payment-api/build/libs/*.jar
-            ./gradlew :payment-api:build -x test
-            PAYMENT_JAR=$(find payment-api/build/libs -name "payment-api-*.jar" ! -name "*plain.jar" | sort | tail -1)
-            nohup java -jar $PAYMENT_JAR > payment-api.log 2>&1 & echo $! > payment-api.pid
+            rm -f payment/build/libs/*.jar
+            ./gradlew :payment:build -x test
+            PAYMENT_JAR=$(find payment/build/libs -name "payment-*.jar" ! -name "*plain.jar" | sort | tail -1)
+            nohup java -jar $PAYMENT_JAR > payment.log 2>&1 & echo $! > payment.pid
 
             # backoffice-api 애플리케이션 재시작
             if [ -f backoffice-api.pid ]; then
