@@ -9,10 +9,29 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
+      # 1. 푸시 감지 슬랙 알림
+      - name: Notify Slack - push detected
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          fields: repo,message,author
+          custom_payload: |
+            {
+              "attachments": [{
+                "color": "#439FE0",
+                "text": ":rocket: *Push 감지됨!*\n브랜치: `${{ github.ref_name }}`\n커밋 메시지: `${{ github.event.head_commit.message }}`\n작성자: `${{ github.actor }}`"
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      # 2. 코드 체크아웃
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 3. SSH를 통한 배포 스크립트 실행
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@master
         with:
@@ -21,24 +40,18 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            # 배포 디렉토리로 이동
-            cd ${{ secrets.DEPLOY_DIR }}
+            set -e
 
-            # 깃 저장소 업데이트
+            cd ${{ secrets.DEPLOY_DIR }}
             git fetch
             git checkout -f ${{ github.ref_name }}
             git pull origin ${{ github.ref_name }}
 
-            # gradlew에 실행 권한 부여
             chmod +x ./gradlew
 
-            # 애플리케이션 빌드
             ./gradlew build -x test
-
-            # payment-method 모듈 먼저 빌드
             ./gradlew :payment-method:build -x test
-            
-            # payment 애플리케이션 재시작
+
             if [ -f payment.pid ]; then
               kill $(cat payment.pid) || true
               rm payment.pid
@@ -48,7 +61,6 @@ jobs:
             PAYMENT_JAR=$(find payment/build/libs -name "payment-*.jar" ! -name "*plain.jar" | sort | tail -1)
             nohup java -jar $PAYMENT_JAR > payment.log 2>&1 & echo $! > payment.pid
 
-            # backoffice-api 애플리케이션 재시작
             if [ -f backoffice-api.pid ]; then
               kill $(cat backoffice-api.pid) || true
               rm backoffice-api.pid
@@ -58,7 +70,6 @@ jobs:
             BACKOFFICE_API_JAR=$(find backoffice-api/build/libs -name "backoffice-api-*.jar" ! -name "*plain.jar" | sort | tail -1)
             nohup java -jar $BACKOFFICE_API_JAR > backoffice-api.log 2>&1 & echo $! > backoffice-api.pid
 
-            # backoffice-manage 애플리케이션 재시작
             if [ -f backoffice-manage.pid ]; then
               kill $(cat backoffice-manage.pid) || true
               rm backoffice-manage.pid
@@ -70,7 +81,6 @@ jobs:
             BACKOFFICE_MANAGE_JAR=$(find backoffice-manage/build/libs -name "backoffice-manage-*.jar" ! -name "*plain.jar" | sort | tail -1)
             nohup java -jar $BACKOFFICE_MANAGE_JAR > backoffice-manage.log 2>&1 & echo $! > backoffice-manage.pid
 
-            # appuser-manage 애플리케이션 재시작
             if [ -f appuser-manage.pid ]; then
               kill $(cat appuser-manage.pid) || true
               rm appuser-manage.pid
@@ -82,5 +92,36 @@ jobs:
             APPUSER_MANAGE_JAR=$(find appuser-manage/build/libs -name "appuser-manage-*.jar" ! -name "*plain.jar" | sort | tail -1)
             nohup java -jar $APPUSER_MANAGE_JAR > appuser-manage.log 2>&1 & echo $! > appuser-manage.pid
 
-
             echo "모든 모듈 배포 및 재시작 완료"
+
+      # 4. 빌드 성공 알림
+      - name: Notify Slack - success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              "attachments": [{
+                "color": "#36a64f",
+                "text": ":white_check_mark: *배포 성공!*\n브랜치: `${{ github.ref_name }}`\n🔗 [로그 보기](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      # 5. 빌드 실패 알림
+      - name: Notify Slack - failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              "attachments": [{
+                "color": "#FF0000",
+                "text": ":x: *배포 실패!*\n브랜치: `${{ github.ref_name }}`\n🔗 [로그 보기](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
