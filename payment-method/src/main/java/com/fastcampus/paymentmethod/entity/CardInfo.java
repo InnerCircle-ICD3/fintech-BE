@@ -42,7 +42,7 @@ public class CardInfo {
     @Column(nullable = false, length = 4)
     private String cvc;
 
-    @Column(nullable = false, length = 6)
+    @Column(nullable = false, length = 100) // 암호화해서 저장하기 때문에 넉넉하게 잡음
     private String paymentPassword;
 
     @Column(nullable = false, length = 20)
