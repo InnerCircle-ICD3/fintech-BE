@@ -16,7 +16,8 @@ env:
   SERVER_HOST: ${{ secrets.SSH_HOST }}
   SERVER_USER: ${{ secrets.SSH_USERNAME }}
   SERVER_SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-  SERVER_DEPLOY_PATH: ${{ secrets.SSH_PORT }}
+  SERVER_DEPLOY_PATH: ${{ secrets.DEPLOY_DIR }}
+  SSH_PORT: ${{ secrets.SSH_PORT }}
 
 jobs:
   build-and-deploy:
@@ -50,11 +51,17 @@ jobs:
         echo "${{ env.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
         chmod 600 ~/.ssh/deploy_key
         
+        # 배포 디렉토리 생성
+        ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} '
+          sudo mkdir -p ${{ env.SERVER_DEPLOY_PATH }}
+          sudo chown ${{ env.SERVER_USER }}:${{ env.SERVER_USER }} ${{ env.SERVER_DEPLOY_PATH }}
+        '
+        
         # 서버에 JAR 파일 전송
-        scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no backoffice-api/build/libs/*.jar ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.SERVER_DEPLOY_PATH }}/backoffice-api.jar
+        scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -P ${{ env.SSH_PORT }} backoffice-api/build/libs/*.jar ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.SERVER_DEPLOY_PATH }}/backoffice-api.jar
         
         # 서버에서 애플리케이션 재시작
-        ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} '
+        ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} '
           sudo systemctl stop backoffice-api
           sleep 5
           sudo systemctl start backoffice-api
