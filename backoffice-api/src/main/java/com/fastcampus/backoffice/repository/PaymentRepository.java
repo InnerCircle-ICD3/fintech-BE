@@ -25,8 +25,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
      * @return 조건에 맞는 결제 내역의 페이지 객체
      */
     @Query("SELECT p FROM Payment p " +
-           "LEFT JOIN FETCH p.user " +
-           "LEFT JOIN FETCH p.lastTransaction " +
+           "LEFT JOIN FETCH p.lastTransaction t " +
+           "LEFT JOIN FETCH t.paymentMethod " +
            "WHERE p.merchantId = :merchantId " +
            "AND (:status IS NULL OR p.status = :status) " +
            "AND p.createdAt BETWEEN :startDate AND :endDate")
@@ -45,9 +45,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
      * @return 거래 ID에 해당하는 결제 정보가 존재하면 반환하며, 없으면 빈 Optional을 반환합니다.
      */
     @Query("SELECT p FROM Payment p " +
-           "LEFT JOIN FETCH p.user " +
-           "LEFT JOIN FETCH p.lastTransaction " +
+           "LEFT JOIN FETCH p.lastTransaction t " +
+           "LEFT JOIN FETCH t.paymentMethod " +
            "WHERE p.paymentToken = :paymentToken")
-    Optional<Payment> findByPaymentToken(@Param("paymentToken") String paymentToken);
+    Optional<Payment> findByPaymentToken(String paymentToken);
 }
 

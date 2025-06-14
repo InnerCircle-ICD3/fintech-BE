@@ -15,10 +15,15 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+    packages-to-scan:
+      - com.fastcampus.backoffice.entity
+      - com.fastcampus.payment.entity
+      - com.fastcampus.paymentmethod.entity
   data:
     redis:
       host: 34.64.149.32
       port: 6379
+      password: fintechhost
   application:
     name: backoffice-api
 
@@ -68,4 +73,8 @@ spring:
       host: 34.64.149.32
       port: 6379
   application:
-    name: backoffice-api 
+    name: backoffice-api
+
+jwt:
+  secret: dYVzdC1zZWNyZXQta2V5LXlvdS2jYW4tY2hhbmdlPXRoaXM=
+  expiration: 86400000 # 24 hours in milliseconds 
