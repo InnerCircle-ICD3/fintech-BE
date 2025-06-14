@@ -3,6 +3,7 @@ package com.fastcampus.backoffice.service;
 import com.fastcampus.backoffice.dto.PaymentDto;
 import com.fastcampus.backoffice.repository.PaymentRepository;
 import com.fastcampus.payment.entity.Payment;
+import com.fastcampus.paymentmethod.entity.CardInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -47,7 +48,7 @@ public class PaymentService {
         PaymentDto dto = new PaymentDto();
         dto.setPaymentId(payment.getId());
         dto.setPaymentToken(payment.getPaymentToken());
-        dto.setUserId(payment.getUserId());
+        dto.setUserId(payment.getUser().getUserId());
         dto.setMerchantId(payment.getMerchantId());
         dto.setMerchantOrderId(payment.getMerchantOrderId());
         dto.setPaymentStatus(payment.getStatus().name());
