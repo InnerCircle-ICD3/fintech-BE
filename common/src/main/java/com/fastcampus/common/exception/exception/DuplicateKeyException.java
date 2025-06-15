@@ -13,3 +13,4 @@ public class DuplicateKeyException extends HttpException {
         return new DuplicateKeyException(errorCode);
     }
 }
+

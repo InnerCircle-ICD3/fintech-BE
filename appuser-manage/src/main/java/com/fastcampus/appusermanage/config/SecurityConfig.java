@@ -25,20 +25,7 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/app-users/register",
-                                "/app-users/login",
-                                "/app-users/reissue",
-                                "/app-users/logout",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**",
-                                "/v3/api-docs",
-                                "/api-docs",
-                                "/api-docs/**",
-                                "/swagger-resources/**"
-                        ).permitAll()
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtProvider, redisTemplate),
                         org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);

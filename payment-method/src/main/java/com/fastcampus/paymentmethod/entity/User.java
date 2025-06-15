@@ -50,11 +50,6 @@ public class User {
     @Builder.Default
     private List<PaymentMethod> paymentMethods = new ArrayList<>();
 
-    // 활성화
-    public void activate() {
-        this.status = "ACTIVE";
-    }
-
     // 비활성화
     public void deactivate() {
         this.status = "INACTIVE";

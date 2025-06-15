@@ -3,9 +3,13 @@ package com.fastcampus.backofficemanage.controller;
 import com.fastcampus.backofficemanage.dto.common.CommonResponse;
 import com.fastcampus.backofficemanage.dto.sdk.SdkKeyResponse;
 import com.fastcampus.backofficemanage.service.SdkKeyService;
-import com.fastcampus.common.util.SwaggerDocs.StandardResponses;
+import com.fastcampus.common.exception.response.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +22,15 @@ public class SdkKeyController {
     private final SdkKeyService sdkKeyService;
 
     @Operation(summary = "내 SDK Key 조회")
-    @StandardResponses
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Key 없음",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "서버 오류",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping
     public ResponseEntity<SdkKeyResponse> getSdkKey(
             @Parameter(hidden = true)
@@ -29,7 +41,15 @@ public class SdkKeyController {
     }
 
     @Operation(summary = "SDK Key 비활성화")
-    @StandardResponses
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "비활성화 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Key 없음",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "서버 오류",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PostMapping("/deactivate")
     public ResponseEntity<CommonResponse> deactivateSdkKey(
             @Parameter(hidden = true)
@@ -40,7 +60,15 @@ public class SdkKeyController {
     }
 
     @Operation(summary = "SDK Key 활성화")
-    @StandardResponses
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "활성화 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Key 없음",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "서버 오류",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PostMapping("/activate")
     public ResponseEntity<CommonResponse> activateSdkKey(
             @Parameter(hidden = true)
@@ -51,7 +79,15 @@ public class SdkKeyController {
     }
 
     @Operation(summary = "SDK Key 유효성 확인")
-    @StandardResponses
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "검증 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Key 없음",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "서버 오류",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping("/validate")
     public ResponseEntity<CommonResponse> validateSdkKey(
             @Parameter(hidden = true)
@@ -62,7 +98,15 @@ public class SdkKeyController {
     }
 
     @Operation(summary = "SDK Key 재발급 처리")
-    @StandardResponses
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "재발급 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Key 없음",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "서버 오류",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PostMapping("/regenerate")
     public ResponseEntity<CommonResponse> regenerateSdkKey(
             @Parameter(hidden = true)
