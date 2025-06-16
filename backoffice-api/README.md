@@ -75,6 +75,37 @@ Backoffice API는 가맹점 관리자 대시보드를 위한 RESTful API 서비�
 java -jar backoffice-api/build/libs/backoffice-api.jar
 ```
 
+## 🔐 인증 가이드
+
+### JWT 토큰 발급
+백오피스 API를 사용하려면 먼저 JWT 토큰이 필요합니다.
+
+#### 관리자 로그인 (토큰 발급)
+```bash
+curl -X POST http://localhost:8080/merchants/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@example.com", 
+    "password": "password123"
+  }'
+```
+
+**성공 응답:**
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 86400
+}
+```
+
+### 인증이 필요한 API 호출
+모든 API 호출 시 Authorization 헤더에 Bearer 토큰을 포함해야 합니다:
+```bash
+curl -X GET http://localhost:8080/merchants/api-keys/1 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
 ## API 엔드포인트
 
 ### API 키 관리
@@ -94,18 +125,159 @@ java -jar backoffice-api/build/libs/backoffice-api.jar
     - size: 페이지 크기
 - GET /merchants/payment-histories/{paymentToken} - 결제 상세 조회
 
+## 🧪 API 테스트 가이드
+
+### cURL을 사용한 API 테스트
+
+#### 1. API 키 생성
+```bash
+curl -X POST http://localhost:8080/merchants/api-keys/1 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+**성공 응답:**
+```json
+{
+  "keyId": 1,
+  "merchantId": 1,
+  "keyValue": "ak_test_1234567890abcdef",
+  "status": "ACTIVE",
+  "createdAt": "2024-01-15T10:30:00",
+  "expiresAt": "2025-01-15T10:30:00"
+}
+```
+
+#### 2. 결제 내역 조회
+```bash
+curl -X GET "http://localhost:8080/merchants/payment-histories?merchantId=1&startDate=2024-01-01&endDate=2024-01-31&page=0&size=10" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+**성공 응답:**
+```json
+{
+  "content": [
+    {
+      "paymentToken": "payment_1234567890",
+      "merchantId": 1,
+      "amount": 15000,
+      "currency": "KRW",
+      "status": "COMPLETED",
+      "paymentMethod": "CREDIT_CARD",
+      "createdAt": "2024-01-15T14:30:00",
+      "updatedAt": "2024-01-15T14:31:00"
+    }
+  ],
+  "pageable": {
+    "pageNumber": 0,
+    "pageSize": 10
+  },
+  "totalElements": 1,
+  "totalPages": 1
+}
+```
+
+#### 3. 결제 상세 조회
+```bash
+curl -X GET http://localhost:8080/merchants/payment-histories/payment_1234567890 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### 🛠️ 개발 도구 활용
+
+#### Swagger UI 사용
+- **로컬**: http://localhost:8080/swagger-ui.html
+- **API 문서**: http://localhost:8080/v3/api-docs
+
+**⚠️ Swagger에서 인증하는 방법:**
+1. `Authorize` 버튼 클릭
+2. `Bearer YOUR_ACCESS_TOKEN` 형식으로 입력
+3. `Authorize` 클릭 후 API 테스트
+
+#### Postman 컬렉션 사용
+1. **환경 변수 설정**
+   - `BASE_URL`: http://localhost:8080
+   - `ACCESS_TOKEN`: 로그인 후 받은 토큰
+
+2. **사전 스크립트 (Pre-request Script)**
+   ```javascript
+   pm.request.headers.add({
+     key: 'Authorization',
+     value: 'Bearer ' + pm.environment.get('ACCESS_TOKEN')
+   });
+   ```
+
 ## 보안
 - JWT 기반 인증
 - Spring Security를 통한 엔드포인트 보호
 - HTTPS 적용 (프로덕션 환경)
 - 비밀번호 암호화 (BCrypt)
 
+## ⚠️ 에러 처리 가이드
+
+### 주요 에러 코드와 해결 방법
+
+#### 401 Unauthorized
+```json
+{
+  "error": "UNAUTHORIZED",
+  "message": "Access token이 유효하지 않습니다",
+  "code": "AUTH_001"
+}
+```
+**해결책**: 토큰 재발급 또는 로그인 다시 시도
+
+#### 403 Forbidden
+```json
+{
+  "error": "FORBIDDEN", 
+  "message": "해당 리소스에 접근 권한이 없습니다",
+  "code": "AUTH_002"
+}
+```
+**해결책**: 관리자 권한 확인
+
+#### 404 Not Found
+```json
+{
+  "error": "NOT_FOUND",
+  "message": "요청한 리소스를 찾을 수 없습니다",
+  "code": "RESOURCE_001"
+}
+```
+**해결책**: 요청 URL 및 파라미터 확인
+
 ## 모니터링
 - Actuator 엔드포인트:
   - /actuator/health: 서비스 상태 확인
   - /actuator/info: 서비스 정보 확인
+  - /actuator/metrics: 메트릭 정보 확인
 - Swagger UI: /swagger-ui.html
 - API 문서: /api-docs
+
+## 🔍 디버깅 및 로그
+
+### 로그 레벨 설정
+```yaml
+logging:
+  level:
+    com.fastcampus.backoffice: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+```
+
+### 주요 로그 확인 포인트
+```bash
+# JWT 인증 관련 로그
+grep "JWT" logs/application.log
+
+# API 호출 로그  
+grep "ApiKeyController\|PaymentController" logs/application.log
+
+# 에러 로그
+grep "ERROR" logs/application.log | tail -10
+```
 
 ## 문제 해결
 1. 서비스 상태 확인
@@ -122,6 +294,31 @@ java -jar backoffice-api/build/libs/backoffice-api.jar
    ```bash
    psql -U testuser -d testdb
    ```
+
+4. JWT 토큰 디버깅
+   ```bash
+   # 토큰 만료 확인
+   curl -X GET http://localhost:8080/actuator/info \
+     -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+   ```
+
+## 🧪 테스트 실행
+
+### 단위 테스트
+```bash
+./gradlew test
+```
+
+### 통합 테스트
+```bash
+./gradlew integrationTest
+```
+
+### 테스트 커버리지 확인
+```bash
+./gradlew jacocoTestReport
+# 리포트 위치: build/reports/jacoco/test/html/index.html
+```
 
 ## 기여
 1. Fork the Project
