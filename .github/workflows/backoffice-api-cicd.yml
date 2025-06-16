@@ -77,6 +77,7 @@ jobs:
           브랜치: `${{ github.ref_name }}`
           커밋 메시지: `${{ github.event.head_commit.message }}`
           작성자: `${{ github.actor }}`
+          상태: `${{ job.status }}`
         author_name: GitHub Actions
       env:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
