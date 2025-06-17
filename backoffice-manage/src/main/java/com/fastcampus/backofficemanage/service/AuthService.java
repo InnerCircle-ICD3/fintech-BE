@@ -79,6 +79,7 @@ public class AuthService {
         return MerchantLoginResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .userId(merchant.getMerchantId())
                 .build();
     }
 
