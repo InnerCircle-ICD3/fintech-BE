@@ -2,7 +2,7 @@ spring:
   application:
     name: payment
   datasource:
-    url: jdbc:postgresql://34.64.149.32:5432/testdb
+    url: jdbc:postgresql://127.0.0.1:5432/testdb
     driver-class-name: org.postgresql.Driver
     username: testuser
     password: testpass
@@ -41,7 +41,7 @@ server:
 
 #Redis settings
 redis:
-  host: 34.64.149.32
+  host: 127.0.0.1
   port: 6379
   password: fintechhost
 
