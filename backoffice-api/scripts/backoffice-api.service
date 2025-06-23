@@ -1,0 +1,15 @@
+[Unit]
+Description=Backoffice API Service
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=fastcampus009
+WorkingDirectory=/home/fastcampus009
+ExecStart=/usr/bin/java -jar /home/fastcampus009/backoffice-api.jar
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target 

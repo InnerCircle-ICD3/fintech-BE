@@ -18,12 +18,12 @@ jobs:
           status: custom
           fields: repo,message,author
           custom_payload: |
-            {
-              "attachments": [{
-                "color": "#439FE0",
-                "text": ":rocket: *Push 감지됨!*\n브랜치: `${{ github.ref_name }}`\n커밋 메시지: `${{ github.event.head_commit.message }}`\n작성자: `${{ github.actor }}`"
-              }]
-            }
+           {
+             "attachments": [{
+               "color": "#439FE0",
+               "text": ":rocket: *Push 감지됨!*\n브랜치: \"${{ github.ref_name }}\"\n커밋 메시지: \"${{ github.event.head_commit.message }}\"\n작성자: \"${{ github.actor }}\""
+             }]
+           }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 

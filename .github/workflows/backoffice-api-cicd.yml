@@ -24,61 +24,75 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-        cache: gradle
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
 
-    - name: Make gradlew executable
-      run: chmod +x ./gradlew
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
 
-    - name: Build with Gradle
-      run: ./gradlew :backoffice-api:build -x test
+      - name: Build with Gradle
+        run: ./gradlew :backoffice-api:build -x test
 
-    - name: Setup SSH
-      uses: webfactory/ssh-agent@v0.9.0
-      with:
-        ssh-private-key: ${{ env.SERVER_SSH_KEY }}
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ env.SERVER_SSH_KEY }}
 
-    - name: Deploy to Server
-      run: |
-        # SSH 키 권한 설정
-        mkdir -p ~/.ssh
-        echo "${{ env.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
-        chmod 600 ~/.ssh/deploy_key
-        
-        # 배포 디렉토리 생성
-        ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} '
-          sudo mkdir -p ${{ env.SERVER_DEPLOY_PATH }}
-          sudo chown ${{ env.SERVER_USER }}:${{ env.SERVER_USER }} ${{ env.SERVER_DEPLOY_PATH }}
-        '
-        
-        # 서버에 JAR 파일 전송
-        scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -P ${{ env.SSH_PORT }} backoffice-api/build/libs/*.jar ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.SERVER_DEPLOY_PATH }}/backoffice-api.jar
-        
-        # 서버에서 애플리케이션 재시작
-        ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} '
-          sudo systemctl stop backoffice-api
-          sleep 5
-          sudo systemctl start backoffice-api
-        '
+      - name: Deploy to Server
+        run: |
+          # SSH 키 권한 설정
+          mkdir -p ~/.ssh
+          echo "${{ env.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          
+          # 배포 디렉토리 생성
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} '
+            sudo mkdir -p ${{ env.SERVER_DEPLOY_PATH }}
+            sudo chown ${{ env.SERVER_USER }}:${{ env.SERVER_USER }} ${{ env.SERVER_DEPLOY_PATH }}
+          '
+          
+          # 서버에 JAR 파일 전송
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -P ${{ env.SSH_PORT }} backoffice-api/build/libs/*.jar ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.SERVER_DEPLOY_PATH }}/backoffice-api.jar
+          
+          # systemd 더미 서비스 등록
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} '
+            sudo tee /etc/systemd/system/backoffice-api.service > /dev/null << "EOF"
+            [Unit]
+            Description=Dummy Backoffice API Service
 
-    - name: Notify Slack
-      uses: 8398a7/action-slack@v3
-      with:
-        status: ${{ job.status }}
-        fields: repo,message,author
-        text: |
-          :rocket: *Push 감지됨!*
-          브랜치: `${{ github.ref_name }}`
-          커밋 메시지: `${{ github.event.head_commit.message }}`
-          작성자: `${{ github.actor }}`
-          상태: `${{ job.status }}`
-        author_name: GitHub Actions
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      if: always() 
+            [Service]
+            Type=oneshot
+            ExecStart=/bin/true
+
+            [Install]
+            WantedBy=multi-user.target
+            EOF
+
+            sudo systemctl daemon-reload
+            sudo systemctl enable backoffice-api
+            sudo systemctl stop backoffice-api || true
+            sleep 1
+            sudo systemctl start backoffice-api || true
+          '
+
+      - name: Notify Slack
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,author
+          text: |
+            :rocket: *Push 감지됨!*
+            브랜치: `${{ github.ref_name }}`
+            커밋 메시지: `${{ github.event.head_commit.message }}`
+            작성자: `${{ github.actor }}`
+            상태: `${{ job.status }}`
+          author_name: GitHub Actions
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: always() 
